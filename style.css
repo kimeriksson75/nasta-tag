@@ -27,6 +27,7 @@ html[data-status="rush"] { background: var(--rush); --muted: #ffe5e5; --line: #f
 p { margin: 0; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 #route { font-weight: 600; min-width: 0; }
+#open-settings { flex: none; display: grid; place-items: center; width: 44px; padding: 0; border-color: transparent; }
 button, input, select { font: inherit; }
 button {
   min-height: 44px;
@@ -83,6 +84,7 @@ dialog input, dialog select {
 #search-status:empty { display: none; }
 #results { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 #results button { width: 100%; text-align: left; padding: 8px 12px; border-color: #4a525e; }
-#results button[aria-pressed="true"] { border-color: #f5f6f7; background: #333a44; }
-#save-home { background: #f5f6f7; color: #14171c; border-color: #f5f6f7; font-weight: 600; }
+#results small { display: block; color: #aab2bd; font-size: 14px; }
+#results:empty { display: none; }
+#use-location { width: 100%; margin-top: 12px; border-color: #4a525e; }
 button.quiet { border-color: transparent; }

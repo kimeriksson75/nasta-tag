@@ -11,6 +11,7 @@ const REFRESH_MS = 30000;
 const WALK_CANDIDATES = 3; // fågelvägen ljuger vid vatten, så jämför gångvägen till flera
 const MOVED_METERS = 40;
 const LATER_COUNT = 3;
+const SEARCH_DELAY_MS = 250;
 
 const $ = (id) => document.getElementById(id);
 const clock = new Intl.DateTimeFormat('sv-SE', { hour: '2-digit', minute: '2-digit' });
@@ -160,7 +161,7 @@ function render() {
   }
   $('updated').textContent = state.fetchedAt ? `Uppdaterad ${clock.format(state.fetchedAt)}` : '';
 
-  if (!home) return renderMessage('Börja med att spara din hemadress.');
+  if (!home) return renderMessage('Börja med att ange var du bor.');
   if (state.problem) return renderMessage(state.problem.text, state.problem.retry);
   if (!start) return renderMessage('Letar efter din plats …');
   if (start.station.name === home.station) return renderMessage('Du är redan vid din hemstation.');
@@ -204,61 +205,89 @@ function placeLabel({ properties: p }) {
   return `${named}${street}, ${p.city ?? p.district ?? p.county ?? ''}`.replace(/, $/, '');
 }
 
-let chosenPlace = null;
-
-function choosePlace(feature, button) {
-  const [lon, lat] = feature.geometry.coordinates;
-  chosenPlace = { address: placeLabel(feature), lat, lon };
-  for (const other of $('results').querySelectorAll('button')) other.setAttribute('aria-pressed', other === button);
-  fillStationSelect($('home-station'), nearestStations(state.metro.stations, chosenPlace)[0].name);
-  $('home-choice').hidden = false;
-  $('save-home').disabled = false;
-}
-
-async function searchAddress(event) {
-  event.preventDefault();
-  $('results').replaceChildren();
-  $('home-choice').hidden = true;
-  $('save-home').disabled = true;
-  chosenPlace = null;
-  $('search-status').textContent = 'Söker …';
-  const params = new URLSearchParams({ q: $('address').value, limit: '5', bbox: STOCKHOLM_BBOX, lang: 'default' });
-  try {
-    const res = await fetch(`${GEOCODE_URL}?${params}`, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error();
-    const { features } = await res.json();
-    $('search-status').textContent = features.length ? 'Välj rätt adress:' : 'Hittade ingen adress i Stockholmsområdet.';
-    $('results').replaceChildren(...features.map((feature) => {
-      const item = document.createElement('li');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = placeLabel(feature);
-      button.setAttribute('aria-pressed', 'false');
-      button.addEventListener('click', () => choosePlace(feature, button));
-      item.append(button);
-      return item;
-    }));
-    if (features.length === 1) choosePlace(features[0], $('results').querySelector('button'));
-  } catch {
-    $('search-status').textContent = 'Adressökningen svarar inte just nu. Försök igen.';
-  }
-}
-
-function saveHome() {
-  state.home = { ...chosenPlace, station: $('home-station').value };
-  localStorage.setItem(HOME_KEY, JSON.stringify(state.home));
+function saveHome(place) {
+  state.home = { ...place, station: nearestStations(state.metro.stations, place)[0].name };
+  applyHome();
   $('settings').close();
+}
+
+function applyHome() {
+  localStorage.setItem(HOME_KEY, JSON.stringify(state.home));
   state.departures = null;
   render();
   if (state.start) refreshDepartures(); else startLocating();
 }
 
+function suggestionItem(feature) {
+  const [lon, lat] = feature.geometry.coordinates;
+  const place = { address: placeLabel(feature), lat, lon };
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = place.address;
+  const station = document.createElement('small');
+  station.textContent = `Närmaste station: ${nearestStations(state.metro.stations, place)[0].name}`;
+  button.append(station);
+  button.addEventListener('click', () => saveHome(place));
+  const item = document.createElement('li');
+  item.append(button);
+  return item;
+}
+
+let searchTimer = null;
+let searchAbort = null;
+
+async function searchAddress(query) {
+  searchAbort?.abort();
+  const search = new AbortController();
+  searchAbort = search;
+  const params = new URLSearchParams({
+    q: query, limit: '5', bbox: STOCKHOLM_BBOX, lat: '59.33', lon: '18.06', lang: 'default',
+  });
+  try {
+    const signal = AbortSignal.any([search.signal, AbortSignal.timeout(8000)]);
+    const res = await fetch(`${GEOCODE_URL}?${params}`, { signal });
+    if (!res.ok) throw new Error();
+    const { features } = await res.json();
+    const seen = new Set();
+    const unique = features.filter((f) => !seen.has(placeLabel(f)) && seen.add(placeLabel(f)));
+    $('search-status').textContent = unique.length ? '' : 'Hittar ingen sådan adress i Stockholmsområdet.';
+    $('results').replaceChildren(...unique.map(suggestionItem));
+  } catch {
+    if (!search.signal.aborted) $('search-status').textContent = 'Adressökningen svarar inte just nu. Försök igen.';
+  }
+}
+
+function onAddressInput() {
+  clearTimeout(searchTimer);
+  searchAbort?.abort();
+  const query = $('address').value.trim();
+  if (query.length < 3) {
+    $('results').replaceChildren();
+    $('search-status').textContent = '';
+    return;
+  }
+  searchTimer = setTimeout(() => searchAddress(query), SEARCH_DELAY_MS);
+}
+
+function useCurrentLocation() {
+  const failed = () => { $('search-status').textContent = 'Hittar inte din plats. Skriv adressen i stället.'; };
+  const save = (position) => saveHome({ address: 'Min plats', ...position });
+  if (state.position) return save(state.position);
+  if (!navigator.geolocation) return failed();
+  $('search-status').textContent = 'Hämtar din plats …';
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => save({ lat: coords.latitude, lon: coords.longitude }),
+    failed,
+    { enableHighAccuracy: true, timeout: 15000 },
+  );
+}
+
 function openSettings() {
-  $('address').value = state.home?.address ?? '';
-  $('search-status').textContent = state.home ? `Sparad hemstation: ${state.home.station}` : '';
+  $('address').value = '';
   $('results').replaceChildren();
-  $('home-choice').hidden = true;
-  $('save-home').disabled = true;
+  $('search-status').textContent = state.home ? `Sparad: ${state.home.address}` : '';
+  $('home-choice').hidden = !state.home;
+  if (state.home) fillStationSelect($('home-station'), state.home.station);
   $('settings').showModal();
 }
 
@@ -274,8 +303,16 @@ function pickStartManually() {
 
 $('open-settings').addEventListener('click', openSettings);
 $('close-settings').addEventListener('click', () => $('settings').close());
-$('search-form').addEventListener('submit', searchAddress);
-$('save-home').addEventListener('click', saveHome);
+$('search-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  $('results').querySelector('button')?.click();
+});
+$('address').addEventListener('input', onAddressInput);
+$('use-location').addEventListener('click', useCurrentLocation);
+$('home-station').addEventListener('change', () => {
+  state.home.station = $('home-station').value;
+  applyHome();
+});
 $('start-station').addEventListener('change', pickStartManually);
 $('retry').addEventListener('click', () => {
   state.problem = null;

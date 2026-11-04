@@ -4,6 +4,8 @@ En webbapp som gör en sak: visar nästa tunnelbanetåg hem som du faktiskt hinn
 Den tar med gångtiden till närmaste station. Färgen visar hur mycket marginal du har:
 grön från 5 minuter, gul från 2 minuter och röd under 2 minuter.
 
+Hemadressen anges under kugghjulet: förslag visas medan du skriver, och ett tryck sparar.
+
 Köra lokalt:
 
     python3 -m http.server 5180

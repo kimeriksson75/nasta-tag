@@ -17,7 +17,9 @@
 <body>
   <header>
     <p id="route"></p>
-    <button id="open-settings" type="button" aria-label="Inställningar">Hem</button>
+    <button id="open-settings" type="button" aria-label="Inställningar">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </header>
 
   <main>
@@ -42,21 +44,18 @@
 
   <dialog id="settings">
     <form id="search-form">
-      <h2>Hemadress</h2>
-      <label for="address">Gatuadress</label>
-      <div class="row">
-        <input id="address" autocomplete="street-address" placeholder="Sveavägen 20" required>
-        <button type="submit">Sök</button>
-      </div>
-      <p id="search-status" role="status"></p>
+      <h2>Var bor du?</h2>
+      <label for="address">Skriv din adress</label>
+      <input id="address" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Sveavägen 20">
       <ul id="results"></ul>
+      <p id="search-status" role="status"></p>
+      <button id="use-location" type="button">Jag är hemma nu</button>
       <div id="home-choice" hidden>
         <label for="home-station">Hemstation</label>
         <select id="home-station"></select>
       </div>
       <div class="row end">
         <button id="close-settings" type="button" class="quiet">Stäng</button>
-        <button id="save-home" type="button" disabled>Spara</button>
       </div>
     </form>
   </dialog>
