@@ -1,10 +1,12 @@
 import {
-  addressSuggestions, buildBoard, distanceMeters, nearestStations, planTrip,
+  addressSuggestions, buildBoard, distanceMeters, nearestStations, nextDestination, planTrip,
 } from './logic.js';
 import { fetchDepartures, findStart } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
-const HOME_KEY = 'nasta-tag.home';
+const OLD_HOME_KEY = 'nasta-tag.home';
+const PLACES_KEY = 'nasta-tag.places';
+const SUGGESTED_LABELS = ['Hem', 'Jobbet'];
 const REFRESH_MS = 30000;
 const MOVED_METERS = 40;
 const LATER_COUNT = 3;
@@ -13,9 +15,20 @@ const SEARCH_DELAY_MS = 250;
 const $ = (id) => document.getElementById(id);
 const clock = new Intl.DateTimeFormat('sv-SE', { hour: '2-digit', minute: '2-digit' });
 
+function loadPlaces() {
+  const saved = JSON.parse(localStorage.getItem(PLACES_KEY) ?? 'null');
+  if (saved) return saved;
+  const home = JSON.parse(localStorage.getItem(OLD_HOME_KEY) ?? 'null');
+  if (!home) return { places: [], activeId: null };
+  const id = crypto.randomUUID();
+  return { places: [{ ...home, id, label: 'Hem' }], activeId: id };
+}
+
 const state = {
   metro: null,
-  home: JSON.parse(localStorage.getItem(HOME_KEY) ?? 'null'),
+  ...loadPlaces(), // places: [{ id, label, address, lat, lon, station, weekdaysOnly }], activeId
+  chosenId: null, // destinationen du själv valt, gäller tills du är framme
+  draft: null, // destinationen som redigeras i inställningarna
   position: null,
   walkedFrom: null,
   start: null, // { station, walkMinutes, estimated }
@@ -25,15 +38,30 @@ const state = {
   problem: null, // { text, retry }
 };
 
+const activePlace = () => state.places.find((p) => p.id === state.activeId) ?? null;
+
+function savePlaces() {
+  const { places, activeId } = state;
+  localStorage.setItem(PLACES_KEY, JSON.stringify({ places, activeId }));
+}
+
 function stationByName(name) {
   return state.metro.stations.find((s) => s.name === name);
 }
 
 async function refreshDepartures() {
-  if (!state.start || !state.home) return;
+  if (!state.start || !state.places.length) return;
   const { station } = state.start;
-  state.plan = planTrip(state.metro.routes, station.name, state.home.station);
-  if (station.name === state.home.station) {
+  const destination = nextDestination(
+    state.places, state.activeId, station.name, new Date(), state.chosenId,
+  );
+  if (destination.id !== state.chosenId) state.chosenId = null;
+  if (destination.id !== state.activeId) {
+    state.activeId = destination.id;
+    savePlaces();
+  }
+  state.plan = planTrip(state.metro.routes, station.name, destination.station);
+  if (station.name === destination.station) {
     state.departures = [];
     render();
     return;
@@ -118,21 +146,45 @@ function laterRow(train) {
   return row;
 }
 
+function renderDestinations() {
+  const nav = $('destinations');
+  nav.hidden = state.places.length < 2;
+  const here = state.start?.station.name;
+  const key = JSON.stringify([state.places.map((p) => [p.id, p.label, p.station]), here, state.activeId]);
+  if (nav.dataset.key === key) return;
+  nav.dataset.key = key;
+  nav.replaceChildren(...state.places.map((place) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = place.label;
+    button.disabled = place.station === here;
+    button.setAttribute('aria-pressed', String(place.id === state.activeId));
+    button.addEventListener('click', () => {
+      state.activeId = place.id;
+      state.chosenId = place.id;
+      applyPlaces();
+    });
+    return button;
+  }));
+}
+
 function render() {
-  const { start, home, plan } = state;
+  const { start, plan } = state;
+  const destination = activePlace();
+  renderDestinations();
   if (start) {
     const walk = `${start.estimated ? 'ca ' : ''}${minutes(start.walkMinutes)} gång`;
     const walkPart = start.walkMinutes > 0 ? ` · ${walk}` : '';
-    $('route').textContent = `${start.station.name}${walkPart} → ${home?.station ?? ''}`;
+    $('route').textContent = `${start.station.name}${walkPart} → ${destination?.label ?? ''}`;
   } else {
-    $('route').textContent = home ? `Hem till ${home.station}` : '';
+    $('route').textContent = destination ? `Till ${destination.label}` : '';
   }
   $('updated').textContent = state.fetchedAt ? `Uppdaterad ${clock.format(state.fetchedAt)}` : '';
 
-  if (!home) return renderMessage('Börja med att ange var du bor.');
+  if (!destination) return renderMessage('Börja med att lägga till en destination.');
   if (state.problem) return renderMessage(state.problem.text, state.problem.retry);
   if (!start) return renderMessage('Letar efter din plats …');
-  if (start.station.name === home.station) return renderMessage('Du är redan vid din hemstation.');
+  if (start.station.name === destination.station) return renderMessage(`Du är redan vid ${destination.label}.`);
   if (!state.departures) return renderMessage('Hämtar avgångar …');
 
   const now = new Date();
@@ -167,17 +219,20 @@ function fillStationSelect(select, selected) {
   select.replaceChildren(...names.map((name) => new Option(name, name, false, name === selected)));
 }
 
-function saveHome(place) {
-  state.home = { ...place, station: nearestStations(state.metro.stations, place)[0].name };
-  applyHome();
-  $('settings').close();
-}
-
-function applyHome() {
-  localStorage.setItem(HOME_KEY, JSON.stringify(state.home));
+function applyPlaces() {
+  savePlaces();
   state.departures = null;
   render();
   if (state.start) refreshDepartures(); else startLocating();
+}
+
+function chooseLocation(location) {
+  const station = nearestStations(state.metro.stations, location)[0].name;
+  state.draft = { ...state.draft, ...location, station };
+  $('address').value = '';
+  $('results').replaceChildren();
+  $('search-status').textContent = '';
+  renderDraft();
 }
 
 function suggestionItem(place) {
@@ -187,7 +242,7 @@ function suggestionItem(place) {
   const station = document.createElement('small');
   station.textContent = `Närmaste station: ${nearestStations(state.metro.stations, place)[0].name}`;
   button.append(station);
-  button.addEventListener('click', () => saveHome(place));
+  button.addEventListener('click', () => chooseLocation(place));
   const item = document.createElement('li');
   item.append(button);
   return item;
@@ -228,7 +283,7 @@ function onAddressInput() {
 
 function useCurrentLocation() {
   const failed = () => { $('search-status').textContent = 'Hittar inte din plats. Skriv adressen i stället.'; };
-  const save = (position) => saveHome({ address: 'Min plats', ...position });
+  const save = (position) => chooseLocation({ address: 'Min plats', ...position });
   if (state.position) return save(state.position);
   if (!navigator.geolocation) return failed();
   $('search-status').textContent = 'Hämtar din plats …';
@@ -239,16 +294,88 @@ function useCurrentLocation() {
   );
 }
 
-function openSettings() {
+function renderDraft() {
+  const { draft } = state;
+  $('saved-address').textContent = draft.address ?? '';
+  $('saved-row').hidden = !draft.address;
+  $('station-choice').hidden = !draft.station;
+  if (draft.station) fillStationSelect($('place-station'), draft.station);
+  $('nav-action').disabled = !draft.station || !$('place-label').value.trim();
+}
+
+function placeRow(place) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = place.label;
+  const details = document.createElement('small');
+  details.textContent = [place.address, place.station, place.weekdaysOnly && 'Vardagar'].filter(Boolean).join(' · ');
+  button.append(details);
+  button.addEventListener('click', () => showPlaceForm(place));
+  const item = document.createElement('li');
+  item.append(button);
+  return item;
+}
+
+function showList() {
+  state.draft = null;
+  $('settings-title').textContent = 'Inställningar';
+  $('nav-back').hidden = true;
+  $('nav-action').textContent = 'Klar';
+  $('nav-action').disabled = false;
+  $('place-form').hidden = true;
+  $('view-list').hidden = false;
+  $('place-list').replaceChildren(...state.places.map(placeRow));
+  $('settings').scrollTop = 0;
+}
+
+function showPlaceForm(place) {
+  const taken = new Set(state.places.map((p) => p.label));
+  const label = place?.label ?? SUGGESTED_LABELS.find((name) => !taken.has(name)) ?? '';
+  state.draft = { ...place };
+  $('settings-title').textContent = place ? place.label : 'Ny destination';
+  $('nav-back').hidden = false;
+  $('nav-action').textContent = 'Spara';
+  $('view-list').hidden = true;
+  $('place-form').hidden = false;
+  $('delete-group').hidden = !place;
+  $('place-label').value = label;
   $('address').value = '';
   $('results').replaceChildren();
   $('search-status').textContent = '';
-  $('saved-address').textContent = state.home?.address ?? '';
-  $('saved-row').hidden = !state.home;
-  $('home-choice').hidden = !state.home;
-  if (state.home) fillStationSelect($('home-station'), state.home.station);
+  $('place-weekdays').checked = place?.weekdaysOnly ?? label === 'Jobbet';
+  renderDraft();
+  $('settings').scrollTop = 0;
+}
+
+function saveDraft() {
+  const place = {
+    ...state.draft,
+    label: $('place-label').value.trim(),
+    weekdaysOnly: $('place-weekdays').checked,
+  };
+  if (place.id) {
+    state.places = state.places.map((p) => (p.id === place.id ? place : p));
+  } else {
+    place.id = crypto.randomUUID();
+    state.places = [...state.places, place];
+  }
+  state.activeId ??= place.id;
+  applyPlaces();
+  showList();
+}
+
+function deleteDraft() {
+  state.places = state.places.filter((p) => p.id !== state.draft.id);
+  if (state.activeId === state.draft.id) state.activeId = state.places[0]?.id ?? null;
+  applyPlaces();
+  showList();
+}
+
+function openSettings() {
+  showList();
+  if (!state.places.length) showPlaceForm();
   $('settings').showModal();
-  if (!state.home) $('address').focus();
+  if (!state.places.length) $('address').focus();
 }
 
 function pickStartManually() {
@@ -262,16 +389,21 @@ function pickStartManually() {
 }
 
 $('open-settings').addEventListener('click', openSettings);
-$('close-settings').addEventListener('click', () => $('settings').close());
-$('search-form').addEventListener('submit', (event) => {
+$('nav-back').addEventListener('click', showList);
+$('nav-action').addEventListener('click', () => {
+  if (state.draft) saveDraft(); else $('settings').close();
+});
+$('add-place').addEventListener('click', () => showPlaceForm());
+$('delete-place').addEventListener('click', deleteDraft);
+$('place-form').addEventListener('submit', (event) => {
   event.preventDefault();
   $('results').querySelector('button')?.click();
 });
+$('place-label').addEventListener('input', renderDraft);
 $('address').addEventListener('input', onAddressInput);
 $('use-location').addEventListener('click', useCurrentLocation);
-$('home-station').addEventListener('change', () => {
-  state.home.station = $('home-station').value;
-  applyHome();
+$('place-station').addEventListener('change', () => {
+  state.draft.station = $('place-station').value;
 });
 $('start-station').addEventListener('change', pickStartManually);
 $('retry').addEventListener('click', () => {
@@ -284,7 +416,7 @@ state.metro = await (await fetch('data/metro.json')).json();
 fillStationSelect($('start-station'), '');
 $('start-station').prepend(new Option('Välj station', '', true, true));
 render();
-if (state.home) startLocating(); else openSettings();
+if (state.places.length) startLocating(); else openSettings();
 setInterval(render, 1000);
 setInterval(() => { if (!document.hidden) refreshDepartures(); }, REFRESH_MS);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshDepartures(); });

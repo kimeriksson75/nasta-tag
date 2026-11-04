@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, nearestStations, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, isAvailable, nearestStations, nextDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -102,4 +102,39 @@ test('klocksvar: redan hemma och inga tåg', () => {
   const start = { station: { name: 'Hökarängen' }, walkMinutes: 1 };
   assert.equal(watchSummary({ start, home: 'Hökarängen', plan: {}, board: [] }), '🏠 Du är redan vid Hökarängen');
   assert.match(watchSummary({ start, home: 'Slussen', plan: {}, board: [] }), /^Inga tåg/);
+});
+
+test('destination: byter när du är framme, annars ligger valet kvar', () => {
+  const hem = { id: 'h', station: 'Hökarängen' };
+  const jobbet = { id: 'j', station: 'Odenplan' };
+  const gymmet = { id: 'g', station: 'Odenplan' };
+  const places = [hem, jobbet, gymmet];
+  assert.equal(nextDestination(places, 'h', 'Hökarängen', now), jobbet);
+  assert.equal(nextDestination(places, 'j', 'Odenplan', now), hem, 'hoppar över platser vid samma station');
+  assert.equal(nextDestination(places, 'j', 'Slussen', now), jobbet, 'mitt under resan');
+  assert.equal(nextDestination([hem], 'h', 'Hökarängen', now), hem, 'bara en destination');
+  assert.equal(nextDestination(places, 'borta', 'Slussen', now), hem, 'okänt val');
+});
+
+test('destination: bara vardagar', () => {
+  const saturday = new Date('2026-11-07T09:00:00');
+  const hem = { id: 'h', station: 'Hökarängen' };
+  const jobbet = { id: 'j', station: 'Odenplan', weekdaysOnly: true };
+  const places = [hem, jobbet];
+  assert.equal(isAvailable(jobbet, now), true);
+  assert.equal(isAvailable(jobbet, saturday), false);
+  assert.equal(nextDestination(places, 'h', 'Hökarängen', now), jobbet, 'onsdag hemma');
+  assert.equal(nextDestination(places, 'h', 'Hökarängen', saturday), hem, 'lördag hemma: ingen resa till jobbet');
+  assert.equal(nextDestination(places, 'j', 'Hökarängen', saturday), hem, 'lördag med Jobbet kvar från fredagen');
+  assert.equal(nextDestination(places, 'j', 'Slussen', saturday), hem, 'lördag på stan: hem');
+});
+
+test('destination: det du själv valt gäller tills du är framme', () => {
+  const saturday = new Date('2026-11-07T09:00:00');
+  const hem = { id: 'h', station: 'Hökarängen' };
+  const jobbet = { id: 'j', station: 'Odenplan', weekdaysOnly: true };
+  const places = [hem, jobbet];
+  assert.equal(nextDestination(places, 'j', 'Hökarängen', saturday, 'j'), jobbet, 'lördag, men du ska till jobbet');
+  assert.equal(nextDestination(places, 'j', 'Slussen', saturday, 'j'), jobbet, 'på vägen');
+  assert.equal(nextDestination(places, 'j', 'Odenplan', saturday, 'j'), hem, 'framme: hem är nästa');
 });

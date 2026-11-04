@@ -134,3 +134,22 @@ export function watchSummary({ start, home, plan, board }) {
     `${start.station.name} → ${home}${plan.transfer ? `, byt vid ${plan.transfer}` : ''}`,
   ].join('\n');
 }
+
+// Bara vardagar: appen föreslår inte destinationen på helgen, men du kan fortfarande välja den själv.
+export function isAvailable(place, now) {
+  return !place.weekdaysOnly || ![0, 6].includes(now.getDay());
+}
+
+// När du är framme blir nästa destination aktiv, så Hem ger Jobbet och tvärtom.
+// Annars ligger valet kvar, så att Jobbet inte hoppar tillbaka till Hem under resan.
+// `chosenId` är det du själv valt, det gäller tills du är framme.
+export function nextDestination(places, activeId, stationName, now, chosenId = null) {
+  const active = places.find((place) => place.id === activeId) ?? places[0];
+  const open = (place) => isAvailable(place, now);
+  if (active.station !== stationName && (open(active) || active.id === chosenId)) return active;
+  const index = places.indexOf(active);
+  const others = [...places.slice(index + 1), ...places.slice(0, index)];
+  return others.find((place) => place.station !== stationName && open(place))
+    ?? [active, ...others].find((place) => place.station === stationName && open(place))
+    ?? active;
+}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Nästa tåg hem</title>
+  <title>Nästa tåg</title>
   <meta name="theme-color" content="#14171c">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,6 +21,7 @@
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </header>
+  <nav id="destinations" aria-label="Destination" hidden></nav>
 
   <main>
     <section id="hero" aria-live="polite">
@@ -44,33 +45,55 @@
 
   <dialog id="settings" aria-labelledby="settings-title">
     <div class="nav">
+      <button id="nav-back" type="button" hidden>‹ Tillbaka</button>
       <h2 id="settings-title">Inställningar</h2>
-      <button id="close-settings" type="button">Klar</button>
+      <button id="nav-action" type="button">Klar</button>
     </div>
-    <form id="search-form" class="sheet">
-      <h3>Hemadress</h3>
+    <div id="view-list" class="sheet">
+      <h3>Destinationer</h3>
       <div class="group">
-        <p id="saved-row" class="cell" hidden><span>Sparad</span><span id="saved-address"></span></p>
+        <ul id="place-list"></ul>
+        <button id="add-place" type="button" class="cell blue">Lägg till destination</button>
+      </div>
+      <p class="note">När du kommer fram till en destination byter appen själv till nästa, till exempel från Hem till Jobbet.</p>
+    </div>
+    <form id="place-form" class="sheet" hidden>
+      <h3>Namn</h3>
+      <div class="group">
+        <label class="cell search">
+          <input id="place-label" type="text" enterkeyhint="done" autocomplete="off" maxlength="24" placeholder="Till exempel Gymmet" aria-label="Namn">
+        </label>
+      </div>
+      <h3>Adress</h3>
+      <div class="group">
+        <p id="saved-row" class="cell" hidden><span>Vald</span><span id="saved-address"></span></p>
         <label class="cell search">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
           <input id="address" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Sök adress" aria-label="Sök adress">
         </label>
         <ul id="results"></ul>
-        <button id="use-location" type="button" class="cell">
+        <button id="use-location" type="button" class="cell blue">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z"/></svg>
-          Jag är hemma nu
+          Jag är här nu
         </button>
       </div>
       <p id="search-status" class="note" role="status"></p>
-      <div id="home-choice" hidden>
-        <h3>Hemstation</h3>
+      <div id="station-choice" hidden>
+        <h3>Station</h3>
         <div class="group">
           <label class="cell picker"><span>Station</span>
-            <select id="home-station"></select>
+            <select id="place-station"></select>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 9 5-5 5 5M7 15l5 5 5-5"/></svg>
           </label>
         </div>
         <p class="note">Tåget ska stanna här. Ändra om du brukar använda en annan station än den närmaste.</p>
+      </div>
+      <div class="group gap">
+        <label class="cell picker"><span>Bara vardagar</span><input id="place-weekdays" type="checkbox" role="switch"></label>
+      </div>
+      <p class="note">På helgen byter appen inte hit av sig själv. Du kan alltid välja den själv.</p>
+      <div id="delete-group" class="group gap" hidden>
+        <button id="delete-place" type="button" class="cell red">Ta bort destination</button>
       </div>
     </form>
   </dialog>
