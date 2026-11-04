@@ -1,7 +1,7 @@
 import {
   addressSuggestions, buildBoard, distanceMeters, nearestStations, nextDestination, planTrip,
 } from './logic.js';
-import { fetchDepartures, findStart } from './trip.js';
+import { abortAfter, fetchDepartures, findStart } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const OLD_HOME_KEY = 'nasta-tag.home';
@@ -257,21 +257,21 @@ async function searchAddress(query) {
   searchAbort = search;
   const params = new URLSearchParams({ name_sf: query, type_sf: 'any', any_obj_filter_sf: '12' });
   try {
-    const signal = AbortSignal.any([search.signal, AbortSignal.timeout(8000)]);
-    const res = await fetch(`${ADDRESS_URL}?${params}`, { signal });
+    const res = await fetch(`${ADDRESS_URL}?${params}`, { signal: abortAfter(8000, search) });
     if (!res.ok) throw new Error();
     const { locations } = await res.json();
     const places = addressSuggestions(locations ?? []);
     $('search-status').textContent = places.length ? '' : 'Hittar ingen sådan adress i Stockholmsområdet.';
     $('results').replaceChildren(...places.map(suggestionItem));
   } catch {
-    if (!search.signal.aborted) $('search-status').textContent = 'Adressökningen svarar inte just nu. Försök igen.';
+    if (searchAbort === search) $('search-status').textContent = 'Adressökningen svarar inte just nu. Försök igen.';
   }
 }
 
 function onAddressInput() {
   clearTimeout(searchTimer);
   searchAbort?.abort();
+  searchAbort = null;
   const query = $('address').value.trim();
   if (query.length < 3) {
     $('results').replaceChildren();

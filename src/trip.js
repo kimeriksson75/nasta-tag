@@ -7,6 +7,12 @@ const WALK_CANDIDATES = 3; // fågelvägen ljuger vid vatten, så jämför gång
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// AbortSignal.any och timeout saknas i äldre Safari, så vi avbryter med en vanlig timer.
+export function abortAfter(ms, controller = new AbortController()) {
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 export async function fetchDepartures(siteId) {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${SL_URL}/sites/${siteId}/departures?transport=METRO`);
@@ -19,7 +25,7 @@ export async function fetchDepartures(siteId) {
 
 async function fetchWalkMinutes(position, station) {
   const path = `${position.lon},${position.lat};${station.lon},${station.lat}`;
-  const res = await fetch(`${WALK_URL}/${path}?overview=false`, { signal: AbortSignal.timeout(6000) });
+  const res = await fetch(`${WALK_URL}/${path}?overview=false`, { signal: abortAfter(6000) });
   if (!res.ok) throw new Error(`Gångvägen svarade ${res.status}`);
   return (await res.json()).routes[0].duration / 60;
 }
