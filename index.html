@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="sv" data-status="idle">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nästa tåg hem</title>
+  <meta name="theme-color" content="#14171c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Nästa tåg">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <p id="route"></p>
+    <button id="open-settings" type="button" aria-label="Inställningar">Hem</button>
+  </header>
+
+  <main>
+    <section id="hero" aria-live="polite">
+      <p id="verdict"></p>
+      <p id="time"></p>
+      <p id="train"></p>
+      <p id="advice"></p>
+      <button id="retry" type="button" hidden>Försök igen</button>
+    </section>
+    <p id="missed"></p>
+    <ol id="later"></ol>
+  </main>
+
+  <footer>
+    <label id="start-picker" hidden>Jag utgår från
+      <select id="start-station"></select>
+    </label>
+    <p id="updated"></p>
+    <p>Data: SL via Trafiklab · Karta © OpenStreetMap</p>
+  </footer>
+
+  <dialog id="settings">
+    <form id="search-form">
+      <h2>Hemadress</h2>
+      <label for="address">Gatuadress</label>
+      <div class="row">
+        <input id="address" autocomplete="street-address" placeholder="Sveavägen 20" required>
+        <button type="submit">Sök</button>
+      </div>
+      <p id="search-status" role="status"></p>
+      <ul id="results"></ul>
+      <div id="home-choice" hidden>
+        <label for="home-station">Hemstation</label>
+        <select id="home-station"></select>
+      </div>
+      <div class="row end">
+        <button id="close-settings" type="button" class="quiet">Stäng</button>
+        <button id="save-home" type="button" disabled>Spara</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
