@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, isAvailable, nearestStations, nextDestination, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -131,6 +131,35 @@ test('klockan: hem och jobb utan minne', () => {
   assert.equal(at(saturday, 'Hökarängen'), 'Hökarängen', 'lördag hemma');
   assert.equal(at(saturday, 'Slussen'), 'Hökarängen', 'lördag på stan');
   assert.equal(at(morning, 'Slussen', null), 'Hökarängen', 'äldre genväg utan jobb');
+});
+
+test('besked: minuter kvar rundas nedåt, bråttom blir nu', () => {
+  const time = new Date('2026-11-04T21:51:00');
+  assert.equal(departureMessage({ status: 'hurry', slackMinutes: 4.9, time }).wait, '4 min');
+  assert.equal(departureMessage({ status: 'calm', slackMinutes: 12.2, time }).wait, '12 min');
+  assert.equal(departureMessage({ status: 'rush', slackMinutes: 1.5, time }).wait, 'nu');
+  assert.match(departureMessage({ status: 'hurry', slackMinutes: 3, time }).lead, /Gå om$/);
+  assert.match(departureMessage({ status: 'rush', slackMinutes: 1, time }).lead, /Gå$/);
+});
+
+test('besked: orden ligger still för samma avgång och varierar mellan avgångar', () => {
+  const at = (minute) => departureMessage({
+    status: 'calm', slackMinutes: 9, time: new Date(2026, 10, 4, 21, minute),
+  }).lead;
+  assert.equal(at(51), at(51));
+  assert.ok(new Set([50, 51, 52, 53].map(at)).size > 1);
+});
+
+test('knappar: bara när det finns något att välja', () => {
+  const hem = { id: 'h', station: 'Hökarängen' };
+  const jobbet = { id: 'j', station: 'Odenplan' };
+  const gymmet = { id: 'g', station: 'Slussen' };
+  assert.deepEqual(destinationChoices([hem, jobbet], 'j', 'Hökarängen'), [], 'hemma med bara jobbet kvar');
+  assert.deepEqual(destinationChoices([hem, jobbet], 'h', 'Hökarängen'), [jobbet], 'helg hemma: jobbet går att välja');
+  assert.deepEqual(destinationChoices([hem, jobbet], 'j', 'Medborgarplatsen'), [hem, jobbet], 'på stan');
+  assert.deepEqual(destinationChoices([hem, jobbet, gymmet], 'j', 'Hökarängen'), [jobbet, gymmet]);
+  assert.deepEqual(destinationChoices([hem], 'h', 'Slussen'), [], 'bara en destination');
+  assert.deepEqual(destinationChoices([hem, jobbet], 'h', undefined), [], 'plats okänd');
 });
 
 test('destination: bara vardagar', () => {

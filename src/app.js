@@ -1,5 +1,6 @@
 import {
-  addressSuggestions, buildBoard, distanceMeters, nearestStations, nextDestination, planTrip,
+  addressSuggestions, buildBoard, departureMessage, destinationChoices, distanceMeters,
+  nearestStations, nextDestination, planTrip,
 } from './logic.js';
 import { abortAfter, fetchDepartures, findStart } from './trip.js';
 
@@ -112,52 +113,33 @@ function minutes(value) {
   return `${Math.max(1, Math.round(value))} min`;
 }
 
-function adviceFor(train, now) {
-  if (train.status === 'rush') return train.slackMinutes < 1 ? 'Gå nu, marginalen är under en minut' : 'Gå nu';
-  const wait = (train.leaveBy - now) / 60000;
-  return `Gå senast ${clock.format(train.leaveBy)}, om ${minutes(wait)}`;
-}
-
-const VERDICTS = { calm: 'Gott om tid', hurry: 'Raska på', rush: 'Spring' };
-
 function renderMessage(text, retry = false) {
   document.documentElement.dataset.status = 'idle';
   $('verdict').textContent = text;
   $('time').textContent = '';
   $('train').textContent = '';
   $('advice').textContent = '';
-  $('missed').textContent = '';
   $('later').replaceChildren();
   $('retry').hidden = !retry;
 }
 
 function laterRow(train) {
   const row = document.createElement('li');
-  const at = document.createElement('span');
-  at.className = 'at';
-  at.textContent = clock.format(train.time);
-  const to = document.createElement('span');
-  to.className = 'to';
-  to.textContent = `${train.line} ${train.destination}`;
-  const tag = document.createElement('span');
-  tag.className = 'tag';
-  tag.textContent = `gå ${clock.format(train.leaveBy)}`;
-  row.append(at, to, tag);
+  row.textContent = `${clock.format(train.time)}  ${train.line} ${train.destination}`;
   return row;
 }
 
 function renderDestinations() {
   const nav = $('destinations');
-  nav.hidden = state.places.length < 2;
-  const here = state.start?.station.name;
-  const key = JSON.stringify([state.places.map((p) => [p.id, p.label, p.station]), here, state.activeId]);
+  const choices = destinationChoices(state.places, state.activeId, state.start?.station.name);
+  nav.hidden = !choices.length;
+  const key = JSON.stringify([choices.map((p) => [p.id, p.label]), state.activeId]);
   if (nav.dataset.key === key) return;
   nav.dataset.key = key;
-  nav.replaceChildren(...state.places.map((place) => {
+  nav.replaceChildren(...choices.map((place) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = place.label;
-    button.disabled = place.station === here;
     button.setAttribute('aria-pressed', String(place.id === state.activeId));
     button.addEventListener('click', () => {
       state.activeId = place.id;
@@ -168,17 +150,18 @@ function renderDestinations() {
   }));
 }
 
+function routeText(start, plan, destination) {
+  if (!start || !destination || start.station.name === destination.station) return '';
+  const walk = start.walkMinutes > 0 && `${start.estimated ? 'ca ' : ''}${minutes(start.walkMinutes)} gång`;
+  const transfer = plan?.transfer && `byte ${plan.transfer}`;
+  return [walk, start.station.name, transfer, destination.label].filter(Boolean).join(' → ');
+}
+
 function render() {
   const { start, plan } = state;
   const destination = activePlace();
   renderDestinations();
-  if (start) {
-    const walk = `${start.estimated ? 'ca ' : ''}${minutes(start.walkMinutes)} gång`;
-    const walkPart = start.walkMinutes > 0 ? ` · ${walk}` : '';
-    $('route').textContent = `${start.station.name}${walkPart} → ${destination?.label ?? ''}`;
-  } else {
-    $('route').textContent = destination ? `Till ${destination.label}` : '';
-  }
+  $('route').textContent = routeText(start, plan, destination);
   $('updated').textContent = state.fetchedAt ? `Uppdaterad ${clock.format(state.fetchedAt)}` : '';
 
   if (!destination) return renderMessage('Börja med att lägga till en destination.');
@@ -187,30 +170,24 @@ function render() {
   if (start.station.name === destination.station) return renderMessage(`Du är redan vid ${destination.label}.`);
   if (!state.departures) return renderMessage('Hämtar avgångar …');
 
-  const now = new Date();
   const board = buildBoard({
     departures: state.departures,
     routes: state.metro.routes,
     from: start.station.name,
     target: plan.target,
-    now,
+    now: new Date(),
     walkMinutes: start.walkMinutes,
   });
-  const reachable = board.filter((t) => t.status !== 'missed');
-  const missed = board.filter((t) => t.status === 'missed');
-  const [next, ...later] = reachable;
+  const [next, ...later] = board.filter((t) => t.status !== 'missed');
   if (!next) return renderMessage('Inga tåg du hinner med inom den närmaste timmen.');
 
+  const message = departureMessage(next);
   document.documentElement.dataset.status = next.status;
   $('retry').hidden = true;
-  $('verdict').textContent = VERDICTS[next.status];
-  $('time').textContent = clock.format(next.time);
-  const change = plan.transfer ? `, byt vid ${plan.transfer}` : '';
-  $('train').textContent = `Linje ${next.line} mot ${next.destination}${change}`;
-  $('advice').textContent = adviceFor(next, now);
-  $('missed').textContent = missed.length
-    ? `Du hinner inte ${missed.map((t) => clock.format(t.time)).join(', ')}`
-    : '';
+  $('verdict').textContent = message.lead;
+  $('time').textContent = message.wait;
+  $('advice').textContent = message.bridge;
+  $('train').textContent = `Linje ${next.line} mot ${next.destination} ${clock.format(next.time)}`;
   $('later').replaceChildren(...later.slice(0, LATER_COUNT).map(laterRow));
 }
 

@@ -94,6 +94,32 @@ export function buildBoard({ departures, routes, from, target, now, walkMinutes 
     .sort((a, b) => a.time - b.time);
 }
 
+const LEADS = {
+  calm: ['Ingen stress. Gå om', 'Lugnt läge. Gå om', 'Gott om tid. Gå om', 'Ta en kaffe till. Gå om'],
+  hurry: ['Raska på. Gå om', 'Snart dags. Gå om', 'Börja packa ihop. Gå om', 'Skorna på. Gå om'],
+  rush: ['Spring. Gå', 'Nu gäller det. Gå', 'Full fart. Gå', 'Ut genom dörren. Gå'],
+};
+const BRIDGES = ['för att hinna med', 'så hinner du med', 'så når du'];
+
+// Orden följer avgången, så att de inte byts varje gång skärmen ritas om.
+// Minuterna rundas nedåt: hellre en minut för tidigt än ett missat tåg.
+export function departureMessage({ status, slackMinutes, time }) {
+  const pick = (list) => list[Math.floor(time / 60000) % list.length];
+  return {
+    lead: pick(LEADS[status]),
+    wait: status === 'rush' ? 'nu' : `${Math.floor(slackMinutes)} min`,
+    bridge: pick(BRIDGES),
+  };
+}
+
+// Knappar behövs bara när det finns ett val: inte för platsen du är på,
+// och inte för den enda andra destinationen om appen redan valt den.
+export function destinationChoices(places, activeId, stationName) {
+  if (!stationName) return [];
+  const choices = places.filter((place) => place.station !== stationName);
+  return choices.length === 1 && choices[0].id === activeId ? [] : choices;
+}
+
 const CITY_CENTRE = { lat: 59.3303, lon: 18.0586 };
 const MAX_SUGGESTIONS = 5;
 
