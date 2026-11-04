@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, nearestStations, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, nearestStations, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -78,4 +78,28 @@ test('adressförslag: bästa träff först, sedan närmast stan', () => {
     'Sveavägen 20, Stockholm', 'Sveavägen 20, Botkyrka', 'Sveavägen 2, Stockholm',
   ]);
   assert.deepEqual(places[0], { address: 'Sveavägen 20, Stockholm', lat: 59.33477, lon: 18.064698 });
+});
+
+test('klocksvar: besked, tid, gå senast och rutt', () => {
+  const start = { station: { name: 'Slussen' }, walkMinutes: 3, estimated: false };
+  const time = new Date('2026-11-04T10:12:00+01:00');
+  const train = {
+    time, leaveBy: new Date(time - 180000), status: 'calm', line: '18', destination: 'Farsta strand',
+  };
+  const missed = { ...train, status: 'missed' };
+  const text = watchSummary({
+    start, home: 'Hökarängen', plan: { transfer: null }, board: [missed, train],
+  });
+  assert.equal(text, [
+    '🟢 Gott om tid',
+    '10:12 linje 18 mot Farsta strand',
+    'Gå senast 10:09, 3 min gång',
+    'Slussen → Hökarängen',
+  ].join('\n'));
+});
+
+test('klocksvar: redan hemma och inga tåg', () => {
+  const start = { station: { name: 'Hökarängen' }, walkMinutes: 1 };
+  assert.equal(watchSummary({ start, home: 'Hökarängen', plan: {}, board: [] }), '🏠 Du är redan vid Hökarängen');
+  assert.match(watchSummary({ start, home: 'Slussen', plan: {}, board: [] }), /^Inga tåg/);
 });

@@ -115,3 +115,22 @@ export function addressSuggestions(locations) {
     .slice(0, MAX_SUGGESTIONS)
     .map(({ address, lat, lon }) => ({ address, lat, lon }));
 }
+
+const WATCH_VERDICTS = { calm: '🟢 Gott om tid', hurry: '🟡 Raska på', rush: '🔴 Spring' };
+
+// Kort svar för klockan: färg och besked först, sedan tid och rutt.
+export function watchSummary({ start, home, plan, board }) {
+  if (start.station.name === home) return `🏠 Du är redan vid ${home}`;
+  const next = board.find((train) => train.status !== 'missed');
+  if (!next) return `Inga tåg du hinner med just nu\n${start.station.name} → ${home}`;
+  const clock = new Intl.DateTimeFormat('sv-SE', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm',
+  });
+  const walk = Math.max(1, Math.round(start.walkMinutes));
+  return [
+    WATCH_VERDICTS[next.status],
+    `${clock.format(next.time)} linje ${next.line} mot ${next.destination}`,
+    `Gå senast ${clock.format(next.leaveBy)}, ${start.estimated ? 'ca ' : ''}${walk} min gång`,
+    `${start.station.name} → ${home}${plan.transfer ? `, byt vid ${plan.transfer}` : ''}`,
+  ].join('\n');
+}

@@ -1,20 +1,17 @@
 import {
-  addressSuggestions, buildBoard, distanceMeters, estimateWalkMinutes, nearestStations, planTrip,
+  addressSuggestions, buildBoard, distanceMeters, nearestStations, planTrip,
 } from './logic.js';
+import { fetchDepartures, findStart } from './trip.js';
 
-const SL_URL = 'https://transport.integration.sl.se/v1';
-const WALK_URL = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const HOME_KEY = 'nasta-tag.home';
 const REFRESH_MS = 30000;
-const WALK_CANDIDATES = 3; // fågelvägen ljuger vid vatten, så jämför gångvägen till flera
 const MOVED_METERS = 40;
 const LATER_COUNT = 3;
 const SEARCH_DELAY_MS = 250;
 
 const $ = (id) => document.getElementById(id);
 const clock = new Intl.DateTimeFormat('sv-SE', { hour: '2-digit', minute: '2-digit' });
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const state = {
   metro: null,
@@ -30,34 +27,6 @@ const state = {
 
 function stationByName(name) {
   return state.metro.stations.find((s) => s.name === name);
-}
-
-async function fetchDepartures(siteId) {
-  for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${SL_URL}/sites/${siteId}/departures?transport=METRO`);
-    if (res.ok) return (await res.json()).departures;
-    // SL:s öppna API svarar ibland 429 på enstaka anrop; nästa brukar gå igenom.
-    if (res.status !== 429 || attempt === 3) throw new Error(`SL svarade ${res.status}`);
-    await sleep(1500 * (attempt + 1));
-  }
-}
-
-async function fetchWalkMinutes(position, station) {
-  const path = `${position.lon},${position.lat};${station.lon},${station.lat}`;
-  const res = await fetch(`${WALK_URL}/${path}?overview=false`, { signal: AbortSignal.timeout(6000) });
-  if (!res.ok) throw new Error(`Gångvägen svarade ${res.status}`);
-  return (await res.json()).routes[0].duration / 60;
-}
-
-async function findStart(position) {
-  const candidates = nearestStations(state.metro.stations, position, WALK_CANDIDATES);
-  const walks = await Promise.allSettled(candidates.map((s) => fetchWalkMinutes(position, s)));
-  const measured = candidates
-    .map((station, i) => ({ station, walkMinutes: walks[i].value, estimated: false }))
-    .filter((c) => c.walkMinutes !== undefined)
-    .sort((a, b) => a.walkMinutes - b.walkMinutes);
-  if (measured.length) return measured[0];
-  return { station: candidates[0], walkMinutes: estimateWalkMinutes(position, candidates[0]), estimated: true };
 }
 
 async function refreshDepartures() {
@@ -88,7 +57,7 @@ async function onPosition({ coords }) {
   $('start-picker').hidden = true;
   if (state.walkedFrom && distanceMeters(state.walkedFrom, position) < MOVED_METERS) return;
   state.walkedFrom = position;
-  const start = await findStart(position);
+  const start = await findStart(state.metro.stations, position);
   const changed = start.station !== state.start?.station;
   state.start = start;
   if (changed) state.departures = null;
