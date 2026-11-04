@@ -42,20 +42,35 @@
     <p>Data: SL via Trafiklab · Karta © OpenStreetMap</p>
   </footer>
 
-  <dialog id="settings">
-    <form id="search-form">
-      <h2>Var bor du?</h2>
-      <label for="address">Skriv din adress</label>
-      <input id="address" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Sveavägen 20">
-      <ul id="results"></ul>
-      <p id="search-status" role="status"></p>
-      <button id="use-location" type="button">Jag är hemma nu</button>
-      <div id="home-choice" hidden>
-        <label for="home-station">Hemstation</label>
-        <select id="home-station"></select>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <div class="nav">
+      <h2 id="settings-title">Inställningar</h2>
+      <button id="close-settings" type="button">Klar</button>
+    </div>
+    <form id="search-form" class="sheet">
+      <h3>Hemadress</h3>
+      <div class="group">
+        <p id="saved-row" class="cell" hidden><span>Sparad</span><span id="saved-address"></span></p>
+        <label class="cell search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+          <input id="address" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Sök adress" aria-label="Sök adress">
+        </label>
+        <ul id="results"></ul>
+        <button id="use-location" type="button" class="cell">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z"/></svg>
+          Jag är hemma nu
+        </button>
       </div>
-      <div class="row end">
-        <button id="close-settings" type="button" class="quiet">Stäng</button>
+      <p id="search-status" class="note" role="status"></p>
+      <div id="home-choice" hidden>
+        <h3>Hemstation</h3>
+        <div class="group">
+          <label class="cell picker"><span>Station</span>
+            <select id="home-station"></select>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 9 5-5 5 5M7 15l5 5 5-5"/></svg>
+          </label>
+        </div>
+        <p class="note">Tåget ska stanna här. Ändra om du brukar använda en annan station än den närmaste.</p>
       </div>
     </form>
   </dialog>

@@ -273,10 +273,13 @@ function useCurrentLocation() {
 function openSettings() {
   $('address').value = '';
   $('results').replaceChildren();
-  $('search-status').textContent = state.home ? `Sparad: ${state.home.address}` : '';
+  $('search-status').textContent = '';
+  $('saved-address').textContent = state.home?.address ?? '';
+  $('saved-row').hidden = !state.home;
   $('home-choice').hidden = !state.home;
   if (state.home) fillStationSelect($('home-station'), state.home.station);
   $('settings').showModal();
+  if (!state.home) $('address').focus();
 }
 
 function pickStartManually() {
