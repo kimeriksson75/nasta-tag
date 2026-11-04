@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildBoard, classify, nearestStations, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, nearestStations, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -63,4 +63,19 @@ test('röda grenar som inte delar sträcka kräver byte vid Liljeholmen eller Ö
 
 test('närmaste station', () => {
   assert.equal(nearestStations(stations, { lat: 59.3429, lon: 18.0491 })[0].name, 'Odenplan');
+});
+
+test('adressförslag: bästa träff först, sedan närmast stan', () => {
+  const location = (disassembledName, city, coord, matchQuality) => (
+    { disassembledName, parent: { name: city }, coord, matchQuality }
+  );
+  const places = addressSuggestions([
+    location('Sveavägen 20', 'Botkyrka', [59.195585, 17.818165], 1000),
+    location('Sveavägen 2', 'Stockholm', [59.33, 18.06], 900),
+    location('Sveavägen 20', 'Stockholm', [59.33477, 18.064698], 1000),
+  ]);
+  assert.deepEqual(places.map((place) => place.address), [
+    'Sveavägen 20, Stockholm', 'Sveavägen 20, Botkyrka', 'Sveavägen 2, Stockholm',
+  ]);
+  assert.deepEqual(places[0], { address: 'Sveavägen 20, Stockholm', lat: 59.33477, lon: 18.064698 });
 });

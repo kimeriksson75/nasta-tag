@@ -21,6 +21,6 @@ Tjänster, ingen kräver API-nyckel:
 
 - Avgångar och stationer: SL Transport via Trafiklab
 - Gångtid: routing.openstreetmap.de. Vid fel används en uppskattning, som visas med "ca".
-- Adressökning: Photon (OpenStreetMap)
+- Adressökning: SL:s reseplanerare (stop-finder), ingen nyckel
 
 Platsen kräver https på telefonen, så appen måste ligga på en https-adress för att fungera där.

@@ -1,11 +1,10 @@
 import {
-  buildBoard, distanceMeters, estimateWalkMinutes, nearestStations, planTrip,
+  addressSuggestions, buildBoard, distanceMeters, estimateWalkMinutes, nearestStations, planTrip,
 } from './logic.js';
 
 const SL_URL = 'https://transport.integration.sl.se/v1';
 const WALK_URL = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
-const GEOCODE_URL = 'https://photon.komoot.io/api/';
-const STOCKHOLM_BBOX = '17.4,58.9,18.8,59.8';
+const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const HOME_KEY = 'nasta-tag.home';
 const REFRESH_MS = 30000;
 const WALK_CANDIDATES = 3; // fågelvägen ljuger vid vatten, så jämför gångvägen till flera
@@ -199,12 +198,6 @@ function fillStationSelect(select, selected) {
   select.replaceChildren(...names.map((name) => new Option(name, name, false, name === selected)));
 }
 
-function placeLabel({ properties: p }) {
-  const street = p.street ? `${p.street} ${p.housenumber ?? ''}`.trim() : p.name;
-  const named = p.street && p.name && p.name !== p.street ? `${p.name}, ` : '';
-  return `${named}${street}, ${p.city ?? p.district ?? p.county ?? ''}`.replace(/, $/, '');
-}
-
 function saveHome(place) {
   state.home = { ...place, station: nearestStations(state.metro.stations, place)[0].name };
   applyHome();
@@ -218,9 +211,7 @@ function applyHome() {
   if (state.start) refreshDepartures(); else startLocating();
 }
 
-function suggestionItem(feature) {
-  const [lon, lat] = feature.geometry.coordinates;
-  const place = { address: placeLabel(feature), lat, lon };
+function suggestionItem(place) {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = place.address;
@@ -240,18 +231,15 @@ async function searchAddress(query) {
   searchAbort?.abort();
   const search = new AbortController();
   searchAbort = search;
-  const params = new URLSearchParams({
-    q: query, limit: '5', bbox: STOCKHOLM_BBOX, lat: '59.33', lon: '18.06', lang: 'default',
-  });
+  const params = new URLSearchParams({ name_sf: query, type_sf: 'any', any_obj_filter_sf: '12' });
   try {
     const signal = AbortSignal.any([search.signal, AbortSignal.timeout(8000)]);
-    const res = await fetch(`${GEOCODE_URL}?${params}`, { signal });
+    const res = await fetch(`${ADDRESS_URL}?${params}`, { signal });
     if (!res.ok) throw new Error();
-    const { features } = await res.json();
-    const seen = new Set();
-    const unique = features.filter((f) => !seen.has(placeLabel(f)) && seen.add(placeLabel(f)));
-    $('search-status').textContent = unique.length ? '' : 'Hittar ingen sådan adress i Stockholmsområdet.';
-    $('results').replaceChildren(...unique.map(suggestionItem));
+    const { locations } = await res.json();
+    const places = addressSuggestions(locations ?? []);
+    $('search-status').textContent = places.length ? '' : 'Hittar ingen sådan adress i Stockholmsområdet.';
+    $('results').replaceChildren(...places.map(suggestionItem));
   } catch {
     if (!search.signal.aborted) $('search-status').textContent = 'Adressökningen svarar inte just nu. Försök igen.';
   }

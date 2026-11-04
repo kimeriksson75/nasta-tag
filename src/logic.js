@@ -93,3 +93,25 @@ export function buildBoard({ departures, routes, from, target, now, walkMinutes 
     .filter((train) => train.minutesLeft > -0.5)
     .sort((a, b) => a.time - b.time);
 }
+
+const CITY_CENTRE = { lat: 59.3303, lon: 18.0586 };
+const MAX_SUGGESTIONS = 5;
+
+// Best match first; among equally good ones, the address closest to the city.
+export function addressSuggestions(locations) {
+  return locations
+    .filter((location) => location.coord)
+    .map((location) => {
+      const [lat, lon] = location.coord;
+      return {
+        address: `${location.disassembledName}, ${location.parent?.name}`,
+        lat,
+        lon,
+        quality: location.matchQuality ?? 0,
+      };
+    })
+    .sort((a, b) => b.quality - a.quality
+      || distanceMeters(a, CITY_CENTRE) - distanceMeters(b, CITY_CENTRE))
+    .slice(0, MAX_SUGGESTIONS)
+    .map(({ address, lat, lon }) => ({ address, lat, lon }));
+}
