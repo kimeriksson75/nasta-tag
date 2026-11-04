@@ -47,11 +47,12 @@ button:disabled { opacity: .5; cursor: default; }
 #destinations button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg-on-ink, #14171c); }
 html[data-status="hurry"] { --bg-on-ink: #f2b632; }
 main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: 24px 0; }
-#verdict { font-size: 24px; font-weight: 700; }
+#verdict { font-size: 24px; font-weight: 700; line-height: 1.25; white-space: pre-line; }
 #time { font-size: clamp(72px, 22vw, 130px); line-height: 1.1; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-#time:empty, #advice:empty, #train:empty { display: none; }
+#time:empty, #advice:empty, #train:empty, #line:empty { display: none; }
 #advice { color: var(--muted); font-size: 19px; }
 #train { font-size: 20px; font-weight: 600; }
+#line { color: var(--muted); font-size: 15px; }
 #retry { margin-top: 16px; }
 #later:empty { display: none; }
 #later { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; white-space: pre; }

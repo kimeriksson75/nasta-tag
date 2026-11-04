@@ -95,9 +95,9 @@ export function buildBoard({ departures, routes, from, target, now, walkMinutes 
 }
 
 const LEADS = {
-  calm: ['Ingen stress. Gå om', 'Lugnt läge. Gå om', 'Gott om tid. Gå om', 'Ta en kaffe till. Gå om'],
-  hurry: ['Raska på. Gå om', 'Snart dags. Gå om', 'Börja packa ihop. Gå om', 'Skorna på. Gå om'],
-  rush: ['Spring. Gå', 'Nu gäller det. Gå', 'Full fart. Gå', 'Ut genom dörren. Gå'],
+  calm: ['Ingen stress.\nDu behöver gå om', 'Lugnt läge.\nDet räcker att gå om', 'Gott om tid.\nDu kan gå om', 'Ta en kaffe till.\nGå om'],
+  hurry: ['Raska på.\nDu behöver gå om', 'Snart dags.\nDu behöver gå om', 'Börja packa ihop.\nGå om', 'Skorna på.\nDu behöver gå om'],
+  rush: ['Spring.\nDu behöver gå', 'Nu gäller det.\nDu måste gå', 'Full fart.\nGå', 'Ut genom dörren.\nGå'],
 };
 const BRIDGES = ['för att hinna med', 'så hinner du med', 'så når du'];
 
@@ -111,6 +111,10 @@ export function departureMessage({ status, slackMinutes, time }) {
     bridge: pick(BRIDGES),
   };
 }
+
+const TRIP_PHRASES = { Hem: 'hem', Jobbet: 'till jobbet' };
+
+export const tripPhrase = (label) => TRIP_PHRASES[label] ?? `till ${label}`;
 
 // Knappar behövs bara när det finns ett val: inte för platsen du är på,
 // och inte för den enda andra destinationen om appen redan valt den.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -138,8 +138,8 @@ test('besked: minuter kvar rundas nedåt, bråttom blir nu', () => {
   assert.equal(departureMessage({ status: 'hurry', slackMinutes: 4.9, time }).wait, '4 min');
   assert.equal(departureMessage({ status: 'calm', slackMinutes: 12.2, time }).wait, '12 min');
   assert.equal(departureMessage({ status: 'rush', slackMinutes: 1.5, time }).wait, 'nu');
-  assert.match(departureMessage({ status: 'hurry', slackMinutes: 3, time }).lead, /Gå om$/);
-  assert.match(departureMessage({ status: 'rush', slackMinutes: 1, time }).lead, /Gå$/);
+  assert.match(departureMessage({ status: 'hurry', slackMinutes: 3, time }).lead, /gå om$/i);
+  assert.match(departureMessage({ status: 'rush', slackMinutes: 1, time }).lead, /gå$/i);
 });
 
 test('besked: orden ligger still för samma avgång och varierar mellan avgångar', () => {
@@ -148,6 +148,12 @@ test('besked: orden ligger still för samma avgång och varierar mellan avgånga
   }).lead;
   assert.equal(at(51), at(51));
   assert.ok(new Set([50, 51, 52, 53].map(at)).size > 1);
+});
+
+test('resans mål i löpande text', () => {
+  assert.equal(tripPhrase('Hem'), 'hem');
+  assert.equal(tripPhrase('Jobbet'), 'till jobbet');
+  assert.equal(tripPhrase('Gymmet'), 'till Gymmet');
 });
 
 test('knappar: bara när det finns något att välja', () => {

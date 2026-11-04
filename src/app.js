@@ -1,6 +1,6 @@
 import {
   addressSuggestions, buildBoard, departureMessage, destinationChoices, distanceMeters,
-  nearestStations, nextDestination, planTrip,
+  nearestStations, nextDestination, planTrip, tripPhrase,
 } from './logic.js';
 import { abortAfter, fetchDepartures, findStart } from './trip.js';
 
@@ -118,6 +118,7 @@ function renderMessage(text, retry = false) {
   $('verdict').textContent = text;
   $('time').textContent = '';
   $('train').textContent = '';
+  $('line').textContent = '';
   $('advice').textContent = '';
   $('later').replaceChildren();
   $('retry').hidden = !retry;
@@ -187,7 +188,8 @@ function render() {
   $('verdict').textContent = message.lead;
   $('time').textContent = message.wait;
   $('advice').textContent = message.bridge;
-  $('train').textContent = `Linje ${next.line} mot ${next.destination} ${clock.format(next.time)}`;
+  $('train').textContent = `${clock.format(next.time)}-tåget ${tripPhrase(destination.label)}`;
+  $('line').textContent = `Linje ${next.line} mot ${next.destination}`;
   $('later').replaceChildren(...later.slice(0, LATER_COUNT).map(laterRow));
 }
 
