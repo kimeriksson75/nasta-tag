@@ -1,0 +1,42 @@
+name: Publicera på medgesej.se
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lägg appen under /nasta-tag
+        run: |
+          mkdir -p _site/nasta-tag
+          cp -R index.html style.css manifest.webmanifest icon.svg icon-180.png icon-512.png src data _site/nasta-tag/
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Nästa tåg hem</title>
+          <meta http-equiv="refresh" content="0; url=/nasta-tag/">
+          <link rel="canonical" href="/nasta-tag/">
+          <a href="/nasta-tag/">Nästa tåg hem</a>
+          HTML
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
