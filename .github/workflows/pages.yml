@@ -25,14 +25,14 @@ jobs:
       - name: Lägg appen under /nasta-tag
         run: |
           mkdir -p _site/nasta-tag
-          cp -R index.html style.css manifest.webmanifest icon.svg icon-180.png icon-512.png src data _site/nasta-tag/
+          cp -R index.html style.css manifest.webmanifest icon.svg icon-180.png icon-512.png "Nästa tåg.shortcut" src data _site/nasta-tag/
           cat > _site/index.html <<'HTML'
           <!doctype html>
           <meta charset="utf-8">
-          <title>Nästa tåg hem</title>
+          <title>Nästa tåg</title>
           <meta http-equiv="refresh" content="0; url=/nasta-tag/">
           <link rel="canonical" href="/nasta-tag/">
-          <a href="/nasta-tag/">Nästa tåg hem</a>
+          <a href="/nasta-tag/">Nästa tåg</a>
           HTML
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

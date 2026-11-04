@@ -1,9 +1,9 @@
 // Webbappen plus /api/next, som ger klockans genväg ett färdigt textsvar.
-// Position och hemstation används bara för svaret och sparas eller loggas inte.
+// Position och stationer används bara för svaret och sparas eller loggas inte.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-import { buildBoard, planTrip, watchSummary } from './src/logic.js';
+import { buildBoard, planTrip, watchDestination, watchSummary } from './src/logic.js';
 import { fetchDepartures, findStart } from './src/trip.js';
 
 const ROOT = import.meta.dirname;
@@ -39,6 +39,8 @@ async function readJson(req) {
   return JSON.parse(body);
 }
 
+const stationNamed = (name) => metro.stations.find((s) => s.name.toLowerCase() === name.toLowerCase())?.name;
+
 // Genvägar skickar tal som text, ibland med decimalkomma.
 const coordinate = (value) => Number(String(value).trim().replace(',', '.'));
 
@@ -50,23 +52,29 @@ async function nextTrain(req, res) {
     return text(res, 400, 'Kunde inte läsa frågan.');
   }
   const position = { lat: coordinate(input.lat), lon: coordinate(input.lon) };
-  const home = String(input.home ?? '').trim();
+  const homeName = String(input.home ?? '').trim();
+  const workName = String(input.work ?? '').trim();
+  const home = stationNamed(homeName);
+  const work = workName ? stationNamed(workName) : null;
   if (!Number.isFinite(position.lat) || !Number.isFinite(position.lon)) return text(res, 400, 'Hittar inte din plats.');
-  if (!metro.stations.some((s) => s.name === home)) return text(res, 400, `Okänd hemstation: ${home}`);
+  if (!home) return text(res, 400, `Okänd hemstation: ${homeName}`);
+  if (workName && !work) return text(res, 400, `Okänd jobbstation: ${workName}`);
 
   try {
     const start = await findStart(metro.stations, position);
-    const plan = planTrip(metro.routes, start.station.name, home);
-    const departures = start.station.name === home ? [] : await fetchDepartures(start.station.siteId);
+    const now = new Date();
+    const destination = watchDestination({ home, work, stationName: start.station.name, now });
+    const plan = planTrip(metro.routes, start.station.name, destination);
+    const departures = start.station.name === destination ? [] : await fetchDepartures(start.station.siteId);
     const board = buildBoard({
       departures,
       routes: metro.routes,
       from: start.station.name,
       target: plan.target,
-      now: new Date(),
+      now,
       walkMinutes: start.walkMinutes,
     });
-    text(res, 200, watchSummary({ start, home, plan, board }));
+    text(res, 200, watchSummary({ start, home: destination, plan, board }));
   } catch {
     text(res, 502, 'Kunde inte hämta avgångar från SL.');
   }

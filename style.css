@@ -177,6 +177,7 @@ dialog[open] { animation: sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
 }
 .group * + .blue { border-top: 0.5px solid #38383a; }
 .group .red { color: #ff453a; }
+.group a.blue { display: flex; align-items: center; text-decoration: none; }
 .group.gap { margin-top: 32px; }
 .picker input {
   position: relative;

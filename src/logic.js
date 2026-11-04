@@ -116,6 +116,14 @@ export function addressSuggestions(locations) {
     .map(({ address, lat, lon }) => ({ address, lat, lon }));
 }
 
+// Genvägen minns inget mellan körningarna, så under en resa får klockan avgöra:
+// på förmiddagen är du på väg till jobbet, annars hem.
+export function watchDestination({ home, work, stationName, now }) {
+  const places = [{ id: 'home', station: home }];
+  if (work) places.push({ id: 'work', station: work, weekdaysOnly: true });
+  return nextDestination(places, now.getHours() < 12 ? 'work' : 'home', stationName, now).station;
+}
+
 const WATCH_VERDICTS = { calm: '🟢 Gott om tid', hurry: '🟡 Raska på', rush: '🔴 Spring' };
 
 // Kort svar för klockan: färg och besked först, sedan tid och rutt.

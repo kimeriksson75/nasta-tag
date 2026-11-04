@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, isAvailable, nearestStations, nextDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, isAvailable, nearestStations, nextDestination, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -114,6 +114,23 @@ test('destination: byter när du är framme, annars ligger valet kvar', () => {
   assert.equal(nextDestination(places, 'j', 'Slussen', now), jobbet, 'mitt under resan');
   assert.equal(nextDestination([hem], 'h', 'Hökarängen', now), hem, 'bara en destination');
   assert.equal(nextDestination(places, 'borta', 'Slussen', now), hem, 'okänt val');
+});
+
+test('klockan: hem och jobb utan minne', () => {
+  const at = (date, stationName, work = 'Odenplan') => watchDestination({
+    home: 'Hökarängen', work, stationName, now: new Date(date),
+  });
+  const morning = '2026-11-04T08:00:00';
+  const evening = '2026-11-04T17:00:00';
+  const saturday = '2026-11-07T09:00:00';
+  assert.equal(at(morning, 'Hökarängen'), 'Odenplan');
+  assert.equal(at(evening, 'Hökarängen'), 'Odenplan', 'hemma går resan alltid till jobbet på vardagar');
+  assert.equal(at(morning, 'Odenplan'), 'Hökarängen');
+  assert.equal(at(morning, 'Slussen'), 'Odenplan', 'på väg till jobbet');
+  assert.equal(at(evening, 'Slussen'), 'Hökarängen', 'på väg hem');
+  assert.equal(at(saturday, 'Hökarängen'), 'Hökarängen', 'lördag hemma');
+  assert.equal(at(saturday, 'Slussen'), 'Hökarängen', 'lördag på stan');
+  assert.equal(at(morning, 'Slussen', null), 'Hökarängen', 'äldre genväg utan jobb');
 });
 
 test('destination: bara vardagar', () => {

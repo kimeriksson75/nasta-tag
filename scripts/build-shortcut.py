@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Bygger genvägen till Apple Watch: python3 scripts/build-shortcut.py Hökarängen ut.shortcut"""
+"""Bygger genvägen till Apple Watch: python3 scripts/build-shortcut.py ut.shortcut
+
+Stationerna frågas efter när genvägen läggs till, så filen innehåller inga egna uppgifter.
+"""
 import plistlib
 import sys
 import uuid
@@ -35,8 +38,18 @@ def action(identifier, **parameters):
     return {'WFWorkflowActionIdentifier': f'is.workflow.actions.{identifier}', 'WFWorkflowActionParameters': parameters}
 
 
-def build(home):
-    location, lat, lon, answer = (str(uuid.uuid4()).upper() for _ in range(4))
+def question(index, prompt):
+    return {
+        'ActionIndex': index,
+        'Category': 'Parameter',
+        'DefaultValue': '',
+        'ParameterKey': 'WFTextActionText',
+        'Text': prompt,
+    }
+
+
+def build():
+    home, work, location, lat, lon, answer = (str(uuid.uuid4()).upper() for _ in range(6))
     place = output(location, 'Current Location')
     return {
         'WFWorkflowClientVersion': '2607.0.5',
@@ -45,11 +58,16 @@ def build(home):
         'WFWorkflowHasOutputFallback': False,
         'WFWorkflowHasShortcutInputVariables': False,
         'WFWorkflowIcon': {'WFWorkflowIconStartColor': 4282601983, 'WFWorkflowIconGlyphNumber': 59511},
-        'WFWorkflowImportQuestions': [],
+        'WFWorkflowImportQuestions': [
+            question(0, 'Vilken tunnelbanestation bor du vid?'),
+            question(1, 'Vilken tunnelbanestation jobbar du vid?'),
+        ],
         'WFWorkflowInputContentItemClasses': [],
         'WFWorkflowOutputContentItemClasses': [],
         'WFWorkflowTypes': ['Watch'],
         'WFWorkflowActions': [
+            action('gettext', UUID=home, WFTextActionText=''),
+            action('gettext', UUID=work, WFTextActionText=''),
             action('getcurrentlocation', UUID=location),
             action('properties.locations', UUID=lat, WFContentItemPropertyName='Latitude', WFInput=attachment(place)),
             action('properties.locations', UUID=lon, WFContentItemPropertyName='Longitude', WFInput=attachment(place)),
@@ -64,7 +82,8 @@ def build(home):
                     'Value': {'WFDictionaryFieldValueItems': [
                         field('lat', token(output(lat, 'Latitude'))),
                         field('lon', token(output(lon, 'Longitude'))),
-                        field('home', text(home)),
+                        field('home', token(output(home, 'Text'))),
+                        field('work', token(output(work, 'Text'))),
                     ]},
                     'WFSerializationType': 'WFDictionaryFieldValue',
                 },
@@ -75,6 +94,5 @@ def build(home):
 
 
 if __name__ == '__main__':
-    home, path = sys.argv[1:3]
-    with open(path, 'wb') as file:
-        plistlib.dump(build(home), file, fmt=plistlib.FMT_BINARY)
+    with open(sys.argv[1], 'wb') as file:
+        plistlib.dump(build(), file, fmt=plistlib.FMT_BINARY)
