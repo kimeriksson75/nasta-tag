@@ -54,6 +54,8 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
 #train { font-size: 20px; font-weight: 600; }
 #line { color: var(--muted); font-size: 15px; }
 #retry { margin-top: 16px; }
+#remind { margin-top: 20px; border-radius: 22px; font-size: 15px; font-weight: 600; }
+#remind[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg-on-ink, #14171c); }
 #later:empty { display: none; }
 #later { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; white-space: pre; }
 footer { color: var(--muted); font-size: 13px; display: grid; gap: 6px; }

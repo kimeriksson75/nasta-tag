@@ -7,6 +7,10 @@ import { abortAfter, fetchDepartures, findStart } from './trip.js';
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const OLD_HOME_KEY = 'nasta-tag.home';
 const PLACES_KEY = 'nasta-tag.places';
+const REMINDER_KEY = 'nasta-tag.reminder';
+const API_URL = location.hostname === 'medgesej.se' ? 'https://nasta-tag-production.up.railway.app' : '';
+const PUSH_KEY = 'BNkk_La9F8B2DPFc6wgGUCp_8uRT3ZvUzQQiuVHnyHsfEHQKBbKOiC2AqtGWFMJQ9cw1xRIHLbFpldAwRmri0dQ';
+const CAN_NOTIFY = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const SUGGESTED_LABELS = ['Hem', 'Jobbet'];
 const REFRESH_MS = 30000;
 const MOVED_METERS = 40;
@@ -29,6 +33,9 @@ const state = {
   metro: null,
   ...loadPlaces(), // places: [{ id, label, address, lat, lon, station, weekdaysOnly }], activeId
   chosenId: null, // destinationen du själv valt, gäller tills du är framme
+  next: null, // tåget som visas stort
+  reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until }
+  reminderProblem: null,
   draft: null, // destinationen som redigeras i inställningarna
   position: null,
   walkedFrom: null,
@@ -113,7 +120,73 @@ function minutes(value) {
   return `${Math.max(1, Math.round(value))} min`;
 }
 
+function saveReminder(reminder) {
+  state.reminder = reminder;
+  if (reminder) localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder));
+  else localStorage.removeItem(REMINDER_KEY);
+}
+
+function renderReminder() {
+  if (state.reminder && Date.now() > state.reminder.until) saveReminder(null);
+  const button = $('remind');
+  const on = Boolean(state.reminder);
+  button.hidden = !CAN_NOTIFY || (!on && !['calm', 'hurry'].includes(state.next?.status));
+  button.setAttribute('aria-pressed', String(on));
+  button.textContent = state.reminderProblem ?? (on ? 'Notiser på' : 'Påminn mig');
+}
+
+async function pushSubscription() {
+  const registration = await navigator.serviceWorker.register('sw.js');
+  await navigator.serviceWorker.ready;
+  const key = Uint8Array.from(atob(PUSH_KEY.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+  return await registration.pushManager.getSubscription()
+    ?? registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+}
+
+async function post(path, body) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Servern svarade ${res.status}`);
+  return res.text();
+}
+
+async function startReminder() {
+  const { next, start } = state;
+  const destination = activePlace();
+  if (await Notification.requestPermission() !== 'granted') {
+    throw new Error('Tillåt notiser för appen i Inställningar');
+  }
+  const id = await post('/api/remind', {
+    subscription: await pushSubscription(),
+    journey: next.journey,
+    status: next.status,
+    walkMinutes: start.walkMinutes,
+    from: start.station.name,
+    destination: destination.station,
+    label: destination.label,
+  });
+  saveReminder({ id, until: next.time.getTime() + 60000 });
+}
+
+async function toggleReminder() {
+  state.reminderProblem = null;
+  try {
+    if (state.reminder) {
+      await post('/api/remind/cancel', { id: state.reminder.id });
+      saveReminder(null);
+    } else {
+      await startReminder();
+    }
+  } catch (error) {
+    state.reminderProblem = error.message.startsWith('Tillåt') ? error.message : 'Det gick inte. Försök igen.';
+  }
+  renderReminder();
+}
+
 function renderMessage(text, retry = false) {
+  state.next = null;
+  renderReminder();
   document.documentElement.dataset.status = 'idle';
   $('verdict').textContent = text;
   $('time').textContent = '';
@@ -182,6 +255,8 @@ function render() {
   const [next, ...later] = board.filter((t) => t.status !== 'missed');
   if (!next) return renderMessage('Inga tåg du hinner med inom den närmaste timmen.');
 
+  state.next = next;
+  renderReminder();
   const message = departureMessage(next);
   document.documentElement.dataset.status = next.status;
   $('retry').hidden = true;
@@ -296,6 +371,7 @@ function placeRow(place) {
 }
 
 function showList() {
+  $('push-note').hidden = CAN_NOTIFY;
   state.draft = null;
   $('settings-title').textContent = 'Inställningar';
   $('nav-back').hidden = true;
@@ -373,6 +449,7 @@ $('nav-action').addEventListener('click', () => {
   if (state.draft) saveDraft(); else $('settings').close();
 });
 $('add-place').addEventListener('click', () => showPlaceForm());
+$('remind').addEventListener('click', toggleReminder);
 $('delete-place').addEventListener('click', deleteDraft);
 $('place-form').addEventListener('submit', (event) => {
   event.preventDefault();

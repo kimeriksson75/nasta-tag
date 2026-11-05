@@ -86,6 +86,7 @@ export function buildBoard({ departures, routes, from, target, now, walkMinutes 
         slackMinutes,
         leaveBy: new Date(time.getTime() - walkMinutes * 60000),
         status: classify(slackMinutes),
+        journey: d.journey?.id,
         line: d.line.designation,
         destination: d.destination,
       };
@@ -154,6 +155,28 @@ export function watchDestination({ home, work, stationName, now }) {
   return nextDestination(places, now.getHours() < 12 ? 'work' : 'home', stationName, now).station;
 }
 
+const stockholmClock = new Intl.DateTimeFormat('sv-SE', {
+  hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm',
+});
+
+export function reminderText(train, label) {
+  const { lead, wait, bridge } = departureMessage(train);
+  const goal = `${stockholmClock.format(train.time)}-tåget ${tripPhrase(label)}`;
+  return `${lead.replace('\n', ' ')} ${wait} ${bridge} ${goal}`;
+}
+
+const URGENCY = { calm: 0, hurry: 1, rush: 2 };
+
+// Ett steg i en påminnelse: notis varje gång läget blir allvarligare, klart när det är dags att gå.
+// Blir tåget försenat går läget tillbaka, så att du får en ny notis när det skärps igen.
+export function reminderStep({ journey, status, label }, board) {
+  const train = board.find((candidate) => candidate.journey === journey);
+  if (!train) return { status, done: true, text: 'Hittar inte ditt tåg längre. Kolla läget i appen.' };
+  if (train.status === 'missed') return { status, done: true };
+  const text = URGENCY[train.status] > URGENCY[status] ? reminderText(train, label) : null;
+  return { status: train.status, done: Boolean(text) && train.status === 'rush', text };
+}
+
 const WATCH_VERDICTS = { calm: '🟢 Gott om tid', hurry: '🟡 Raska på', rush: '🔴 Spring' };
 
 // Kort svar för klockan: färg och besked först, sedan tid och rutt.
@@ -161,14 +184,11 @@ export function watchSummary({ start, home, plan, board }) {
   if (start.station.name === home) return `🏠 Du är redan vid ${home}`;
   const next = board.find((train) => train.status !== 'missed');
   if (!next) return `Inga tåg du hinner med just nu\n${start.station.name} → ${home}`;
-  const clock = new Intl.DateTimeFormat('sv-SE', {
-    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm',
-  });
   const walk = Math.max(1, Math.round(start.walkMinutes));
   return [
     WATCH_VERDICTS[next.status],
-    `${clock.format(next.time)} linje ${next.line} mot ${next.destination}`,
-    `Gå senast ${clock.format(next.leaveBy)}, ${start.estimated ? 'ca ' : ''}${walk} min gång`,
+    `${stockholmClock.format(next.time)} linje ${next.line} mot ${next.destination}`,
+    `Gå senast ${stockholmClock.format(next.leaveBy)}, ${start.estimated ? 'ca ' : ''}${walk} min gång`,
     `${start.station.name} → ${home}${plan.transfer ? `, byt vid ${plan.transfer}` : ''}`,
   ].join('\n');
 }

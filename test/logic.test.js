@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -154,6 +154,42 @@ test('resans mål i löpande text', () => {
   assert.equal(tripPhrase('Hem'), 'hem');
   assert.equal(tripPhrase('Jobbet'), 'till jobbet');
   assert.equal(tripPhrase('Gymmet'), 'till Gymmet');
+});
+
+test('påminnelse: notis när läget skärps, klar när det är dags att gå', () => {
+  const time = new Date('2026-11-04T21:50:00');
+  const train = (status, slackMinutes) => ({ journey: 7, status, slackMinutes, time });
+  const reminder = (status) => ({ journey: 7, status, label: 'Jobbet' });
+  const calm = reminderStep(reminder('calm'), [train('calm', 8)]);
+  assert.deepEqual([calm.text, calm.done], [null, false], 'ingen notis när inget ändrats');
+  const hurry = reminderStep(reminder('calm'), [train('hurry', 4.5)]);
+  assert.match(hurry.text, /4 min .*21:50-tåget till jobbet$/);
+  assert.equal(hurry.done, false);
+  assert.equal(hurry.status, 'hurry');
+  const rush = reminderStep(reminder('hurry'), [train('rush', 1.5)]);
+  assert.match(rush.text, /nu .*21:50-tåget till jobbet$/);
+  assert.equal(rush.done, true);
+  const skip = reminderStep(reminder('calm'), [train('rush', 1)]);
+  assert.equal(skip.done, true, 'grönt direkt till rött ger en notis');
+});
+
+test('påminnelse: försening, missat och försvunnet tåg', () => {
+  const time = new Date('2026-11-04T21:50:00');
+  const train = (status) => ({ journey: 7, status, slackMinutes: 9, time });
+  const reminder = (status) => ({ journey: 7, status, label: 'Hem' });
+  const delayed = reminderStep(reminder('hurry'), [train('calm')]);
+  assert.deepEqual([delayed.status, delayed.text, delayed.done], ['calm', null, false]);
+  assert.deepEqual(reminderStep(reminder('hurry'), [train('missed')]), { status: 'hurry', done: true });
+  const gone = reminderStep(reminder('calm'), [{ ...train('calm'), journey: 8 }]);
+  assert.equal(gone.done, true);
+  assert.match(gone.text, /Hittar inte/);
+});
+
+test('påminnelse: texten är en hel mening', () => {
+  const time = new Date('2026-11-04T21:50:00');
+  const text = reminderText({ status: 'hurry', slackMinutes: 3.2, time }, 'Hem');
+  assert.doesNotMatch(text, /\n/);
+  assert.match(text, /3 min .* 21:50-tåget hem$/);
 });
 
 test('knappar: bara när det finns något att välja', () => {

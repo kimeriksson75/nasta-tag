@@ -2,9 +2,14 @@
   "name": "nasta-tag",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "TZ=Europe/Stockholm node server.mjs",
     "test": "node --test test/logic.test.js"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
   }
 }
