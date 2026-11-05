@@ -193,14 +193,19 @@ function renderMessage(text, retry = false) {
   $('train').textContent = '';
   $('line').textContent = '';
   $('advice').textContent = '';
-  $('later').replaceChildren();
+  renderLater([]);
   $('retry').hidden = !retry;
 }
 
 function laterRow(train) {
   const row = document.createElement('li');
-  row.textContent = `${clock.format(train.time)}  ${train.line} ${train.destination}`;
+  row.textContent = `${clock.format(train.time)}  Linje ${train.line} mot ${train.destination}`;
   return row;
+}
+
+function renderLater(trains) {
+  $('upcoming').hidden = !trains.length;
+  $('later').replaceChildren(...trains.map(laterRow));
 }
 
 function renderDestinations() {
@@ -265,7 +270,7 @@ function render() {
   $('advice').textContent = message.bridge;
   $('train').textContent = `${clock.format(next.time)}-tåget ${tripPhrase(destination.label)}`;
   $('line').textContent = `Linje ${next.line} mot ${next.destination}`;
-  $('later').replaceChildren(...later.slice(0, LATER_COUNT).map(laterRow));
+  renderLater(later.slice(0, LATER_COUNT));
 }
 
 function fillStationSelect(select, selected) {
