@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, bearingDegrees, buildBoard, classify, departureMessage, destinationChoices, distanceText, isAvailable, nearestStations, nextDestination, walkSteps, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, bearingDegrees, buildBoard, classify, departureMessage, destinationChoices, distanceText, isAvailable, nearestStations, nextDestination, routeBearing, walkSteps, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -201,6 +201,15 @@ test('riktning och avstånd till stationen', () => {
   near(bearingDegrees(from, { lat: 59.3, lon: 17.9 }), 270);
   assert.equal(distanceText(347), '350 m');
   assert.equal(distanceText(1240), '1,2 km');
+});
+
+test('kartan vrids efter gångvägen en bit framåt', () => {
+  const position = { lat: 59.3, lon: 18 };
+  const east = [[18, 59.3], [18.0001, 59.3], [18.002, 59.3]];
+  assert.ok(Math.abs(routeBearing(position, east) - 90) < 1);
+  const north = [[18, 59.3], [18, 59.31]];
+  assert.ok(routeBearing(position, north) < 1);
+  assert.ok(Math.abs(routeBearing(position, [[18, 59.3], [17.99999, 59.3]]) - 270) < 1);
 });
 
 test('gångvägen blir korta rader på svenska', () => {

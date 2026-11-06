@@ -1,9 +1,9 @@
 import {
   addressSuggestions, bearingDegrees, buildBoard, departureMessage, destinationChoices, distanceMeters,
-  distanceText, walkSteps,
+  distanceText, routeBearing, walkSteps,
   nearestStations, nextDestination, planTrip, tripPhrase,
 } from './logic.js';
-import { drawRoute, moveMe, openMap, themeMap } from './map.js';
+import { drawRoute, followMe, openMap, themeMap } from './map.js';
 import { abortAfter, fetchDepartures, fetchWalkRoute, findStart } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
@@ -40,6 +40,7 @@ const state = {
   reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until }
   reminderProblem: null,
   movingReminder: false,
+  walkRoute: null, // gångvägens punkter medan gångvyn är öppen
   heading: null, // kompassriktning, null tills telefonen har svarat
   compassOffered: typeof window.DeviceOrientationEvent?.requestPermission === 'function',
   arrowAngle: 0,
@@ -97,7 +98,7 @@ async function refreshDepartures() {
 async function onPosition({ coords }) {
   const position = { lat: coords.latitude, lon: coords.longitude };
   state.position = position;
-  if ($('walk').open) moveMe(position);
+  followOnMap();
   if (state.problem?.gps) state.problem = null;
   $('start-picker').hidden = true;
   if (state.walkedFrom && distanceMeters(state.walkedFrom, position) < MOVED_METERS) return;
@@ -279,6 +280,7 @@ function onOrientation(event) {
   if (heading === null || Number.isNaN(heading)) return;
   state.heading = heading;
   renderCompass();
+  followOnMap();
 }
 
 function listenToCompass() {
@@ -314,7 +316,7 @@ function renderCompass() {
   $('compass-text').textContent = distance;
   $('walk-distance').textContent = `${distance} · ${minutes(start.walkMinutes)} gång`;
   $('compass-hint').hidden = !compassOffered;
-  for (const arrow of document.querySelectorAll('.arrow')) arrow.hidden = heading === null;
+  $('compass-arrow').hidden = heading === null;
   if (heading === null) return;
   // Kortaste vägen runt, så att pilen inte snurrar ett varv när den passerar norr.
   const target = bearingDegrees(position, start.station) - heading;
@@ -334,6 +336,14 @@ function stepRow({ text, distance }) {
 
 let mapReady = null;
 
+// Uppåt på kartan är dit du tittar. Utan kompass är det dit gångvägen leder.
+function followOnMap() {
+  const { position, start, heading, walkRoute } = state;
+  if (!$('walk').open) return;
+  const along = walkRoute ? routeBearing(position, walkRoute) : bearingDegrees(position, start.station);
+  followMe(position, heading ?? along);
+}
+
 async function loadWalkRoute() {
   const { position, start } = state;
   const { station } = start;
@@ -342,16 +352,18 @@ async function loadWalkRoute() {
     if (state.start?.station !== station || !$('walk').open) return;
     $('walk-steps').replaceChildren(...walkSteps(route.steps, station.name).map(stepRow));
     $('walk-status').textContent = '';
+    state.walkRoute = route.coordinates;
     await mapReady;
     drawRoute(route.coordinates, station);
+    followOnMap();
   } catch {
     $('walk-status').textContent = 'Hittar ingen gångväg just nu. Prova Kartor.';
   }
 }
 
 async function openWalkView() {
-  const { position, start } = state;
-  const { station } = start;
+  const { station } = state.start;
+  state.walkRoute = null;
   $('walk-title').textContent = `Till ${station.name}`;
   $('walk-maps').href = `https://maps.apple.com/?daddr=${station.lat},${station.lon}&dirflg=w`;
   $('walk-steps').replaceChildren();
@@ -361,7 +373,7 @@ async function openWalkView() {
   // Vägbeskrivningen väntar inte på kartan, den ska synas även om kartan inte går att ladda.
   $('walk-map').hidden = false;
   mapReady = openMap($('walk-map'), document.documentElement.dataset.status)
-    .then(() => moveMe(position))
+    .then(followOnMap)
     .catch(() => { $('walk-map').hidden = true; });
   loadWalkRoute();
 }

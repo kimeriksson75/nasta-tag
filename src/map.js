@@ -7,6 +7,11 @@ const THEMES = {
   hurry: { land: '#f2b632', park: '#e9ad2b', water: '#d9a02b', building: '#eaaf2e', road: '#f9dc8f', label: '#3d3214', route: '#14171c', halo: '#f2b632' },
   rush: { land: '#d92d2d', park: '#cf2a2a', water: '#b52323', building: '#cf3030', road: '#ea7272', label: '#ffe5e5', route: '#ffffff', halo: '#d92d2d' },
 };
+const ZOOM = 17;
+const PITCH = 55;
+const ME_LOWER = 0.35; // lägger dig under mitten, så att kartan visar mer av vägen framåt
+const MIN_TURN = 2;
+const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg>';
 const EMPTY = { type: 'FeatureCollection', features: [] };
 const PAINTS = [
   ['background', 'background-color', 'land'],
@@ -21,13 +26,12 @@ const PAINTS = [
   ['station', 'circle-stroke-color', 'halo'],
   ['station-name', 'text-color', 'route'],
   ['station-name', 'text-halo-color', 'halo'],
-  ['me', 'circle-color', 'halo'],
-  ['me', 'circle-stroke-color', 'route'],
 ];
 
 let map = null; // sätts först när kartan är klar att rita på
 let ready = null;
-let centred = false;
+let me = null;
+let placed = false;
 
 function loadLibrary() {
   if (window.maplibregl) return Promise.resolve();
@@ -54,7 +58,6 @@ function style(theme) {
       tiles: { type: 'vector', url: TILES },
       route: { type: 'geojson', data: EMPTY },
       station: { type: 'geojson', data: EMPTY },
-      me: { type: 'geojson', data: EMPTY },
     },
     layers: [
       { id: 'background', type: 'background', paint: { 'background-color': colors.land } },
@@ -115,14 +118,6 @@ function style(theme) {
         },
         paint: { 'text-color': colors.route, 'text-halo-color': colors.halo, 'text-halo-width': 2 },
       },
-      {
-        id: 'me',
-        type: 'circle',
-        source: 'me',
-        paint: {
-          'circle-radius': 8, 'circle-color': colors.halo, 'circle-stroke-color': colors.route, 'circle-stroke-width': 4,
-        },
-      },
     ],
   };
 }
@@ -138,17 +133,26 @@ async function createMap(container, theme) {
     style: style(theme),
     center: [18.0686, 59.3293],
     zoom: 14,
+    dragPan: false,
     dragRotate: false,
-    pitchWithRotate: false,
+    keyboard: false,
+    touchPitch: false,
     attributionControl: { compact: false },
   });
+  // Du stannar i bild: det enda man kan göra med fingrarna är att zooma runt sig själv.
   created.touchZoomRotate.disableRotation();
+  created.touchZoomRotate.enable({ around: 'center' });
+  created.scrollZoom.enable({ around: 'center' });
   await new Promise((resolve) => { created.once('load', resolve); });
+  const element = document.createElement('div');
+  element.id = 'walk-me';
+  element.innerHTML = ARROW;
+  me = new window.maplibregl.Marker({ element }).setLngLat(created.getCenter()).addTo(created);
   map = created;
 }
 
 export async function openMap(container, theme) {
-  centred = false;
+  placed = false;
   ready ??= createMap(container, theme).catch((error) => {
     ready = null;
     throw error;
@@ -163,8 +167,22 @@ export function themeMap(theme) {
   for (const [layer, property, color] of PAINTS) map.setPaintProperty(layer, property, THEMES[theme][color]);
 }
 
-export function moveMe(position) {
-  map?.getSource('me')?.setData(point(position));
+// Kartan följer användaren i första person: det du har framför dig är uppåt på skärmen.
+export function followMe(position, bearing) {
+  if (!map) return;
+  const center = [position.lon, position.lat];
+  me.setLngLat(center);
+  const view = { center, bearing, pitch: PITCH };
+  if (!placed) {
+    placed = true;
+    map.jumpTo({ ...view, zoom: ZOOM, padding: { top: map.getContainer().clientHeight * ME_LOWER } });
+    return;
+  }
+  const turned = Math.abs(((bearing - map.getBearing() + 540) % 360) - 180);
+  const moved = map.getCenter().distanceTo(new window.maplibregl.LngLat(...center));
+  // Kompassen darrar hela tiden, och en ny rörelse mitt i en nypning skulle avbryta den.
+  if ((turned < MIN_TURN && moved < 1) || map.isZooming()) return;
+  map.easeTo({ ...view, duration: 250, easing: (t) => t });
 }
 
 export function drawRoute(coordinates, station) {
@@ -173,11 +191,4 @@ export function drawRoute(coordinates, station) {
     type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates },
   });
   map.getSource('station').setData(point(station, { name: station.name }));
-  if (centred) return;
-  centred = true;
-  const bounds = coordinates.reduce(
-    (box, coordinate) => box.extend(coordinate),
-    new window.maplibregl.LngLatBounds(coordinates[0], coordinates[0]),
-  );
-  map.fitBounds(bounds, { padding: { top: 40, right: 40, bottom: 48, left: 40 }, maxZoom: 17, duration: 0 });
 }

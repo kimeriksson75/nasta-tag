@@ -25,6 +25,15 @@ export function bearingDegrees(a, b) {
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
+// Riktningen gångvägen tar härifrån, sedd en bit framåt så att små krökar inte vrider kartan.
+export function routeBearing(position, coordinates, aheadMeters = 30) {
+  const points = coordinates.map(([lon, lat]) => ({ lat, lon }));
+  const distances = points.map((point) => distanceMeters(position, point));
+  const nearest = distances.indexOf(Math.min(...distances));
+  const ahead = points.slice(nearest).find((point) => distanceMeters(position, point) >= aheadMeters);
+  return bearingDegrees(position, ahead ?? points.at(-1));
+}
+
 export function distanceText(meters) {
   if (meters < 1000) return `${Math.round(meters / 10) * 10} m`;
   return `${(meters / 1000).toFixed(1).replace('.', ',')} km`;
