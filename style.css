@@ -28,6 +28,9 @@ p { margin: 0; }
 header { display: flex; align-items: center; gap: 12px; min-height: 44px; }
 #route { color: var(--ink); font-size: 15px; font-weight: 600; }
 #route:empty { display: none; }
+#compass { display: inline-flex; align-items: center; gap: 8px; justify-self: start; min-height: 44px; color: var(--ink); font-size: 15px; font-weight: 600; text-decoration: none; }
+#compass-arrow { display: inline-flex; flex: none; transition: transform .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { #compass-arrow { transition: none; } }
 #open-settings { flex: none; margin-left: auto; display: grid; place-items: center; width: 44px; padding: 0; border-color: transparent; }
 button, input, select { font: inherit; }
 button {

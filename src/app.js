@@ -1,5 +1,6 @@
 import {
-  addressSuggestions, buildBoard, departureMessage, destinationChoices, distanceMeters,
+  addressSuggestions, bearingDegrees, buildBoard, departureMessage, destinationChoices, distanceMeters,
+  distanceText,
   nearestStations, nextDestination, planTrip, tripPhrase,
 } from './logic.js';
 import { abortAfter, fetchDepartures, findStart } from './trip.js';
@@ -10,6 +11,7 @@ const PLACES_KEY = 'nasta-tag.places';
 const REMINDER_KEY = 'nasta-tag.reminder';
 const API_URL = location.hostname === 'medgesej.se' ? 'https://nasta-tag-production.up.railway.app' : '';
 const PUSH_KEY = 'BNkk_La9F8B2DPFc6wgGUCp_8uRT3ZvUzQQiuVHnyHsfEHQKBbKOiC2AqtGWFMJQ9cw1xRIHLbFpldAwRmri0dQ';
+const NEAR_STATION_METERS = 30;
 const CAN_NOTIFY = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const SUGGESTED_LABELS = ['Hem', 'Jobbet'];
 const REFRESH_MS = 30000;
@@ -37,6 +39,9 @@ const state = {
   reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until }
   reminderProblem: null,
   movingReminder: false,
+  heading: null, // kompassriktning, null tills telefonen har svarat
+  compassOffered: typeof window.DeviceOrientationEvent?.requestPermission === 'function',
+  arrowAngle: 0,
   draft: null, // destinationen som redigeras i inställningarna
   position: null,
   walkedFrom: null,
@@ -256,6 +261,50 @@ function renderDestinations() {
   }));
 }
 
+function onOrientation(event) {
+  const heading = event.webkitCompassHeading ?? (event.absolute ? 360 - event.alpha : null);
+  if (heading === null || Number.isNaN(heading)) return;
+  state.heading = heading;
+  renderCompass();
+}
+
+function listenToCompass() {
+  state.compassOffered = false;
+  addEventListener('deviceorientation', onOrientation);
+  addEventListener('deviceorientationabsolute', onOrientation);
+}
+
+// iPhone kräver ett tryck första gången. Har du redan sagt ja går det utan.
+async function askForCompass(fromTap) {
+  try {
+    if (await DeviceOrientationEvent.requestPermission() === 'granted') listenToCompass();
+    else if (fromTap) state.compassOffered = false;
+  } catch {
+    if (fromTap) state.compassOffered = false;
+  }
+  renderCompass();
+}
+
+function renderCompass() {
+  const { start, position, compassOffered, heading } = state;
+  const link = $('compass');
+  const station = start?.station;
+  const distance = position && station ? distanceMeters(position, station) : 0;
+  link.hidden = !$('route').textContent || !start?.walkMinutes || distance < NEAR_STATION_METERS;
+  if (link.hidden) return;
+  link.href = `https://maps.apple.com/?daddr=${station.lat},${station.lon}&dirflg=w`;
+  $('compass-text').textContent = compassOffered
+    ? `Visa riktning · ${distanceText(distance)}`
+    : distanceText(distance);
+  const arrow = $('compass-arrow');
+  arrow.hidden = heading === null;
+  if (heading === null) return;
+  // Kortaste vägen runt, så att pilen inte snurrar ett varv när den passerar norr.
+  const target = bearingDegrees(position, station) - heading;
+  state.arrowAngle += ((target - state.arrowAngle + 540) % 360 + 360) % 360 - 180;
+  arrow.style.transform = `rotate(${state.arrowAngle}deg)`;
+}
+
 function routeText(start, plan, destination) {
   if (!start || !destination || start.station.name === destination.station) return '';
   const walk = start.walkMinutes > 0 && `${start.estimated ? 'ca ' : ''}${minutes(start.walkMinutes)} gång`;
@@ -268,6 +317,7 @@ function render() {
   const destination = activePlace();
   renderDestinations();
   $('route').textContent = routeText(start, plan, destination);
+  renderCompass();
   $('updated').textContent = state.fetchedAt ? `Uppdaterad ${clock.format(state.fetchedAt)}` : '';
 
   if (!destination) return renderMessage('Börja med att lägga till en destination.');
@@ -482,6 +532,11 @@ $('nav-action').addEventListener('click', () => {
 });
 $('add-place').addEventListener('click', () => showPlaceForm());
 $('remind').addEventListener('click', toggleReminder);
+$('compass').addEventListener('click', (event) => {
+  if (!state.compassOffered) return;
+  event.preventDefault();
+  askForCompass(true);
+});
 $('delete-place').addEventListener('click', deleteDraft);
 $('place-form').addEventListener('submit', (event) => {
   event.preventDefault();
@@ -500,6 +555,7 @@ $('retry').addEventListener('click', () => {
   if (state.start) refreshDepartures(); else startLocating();
 });
 
+if (state.compassOffered) askForCompass(false); else listenToCompass();
 state.metro = await (await fetch('data/metro.json')).json();
 fillStationSelect($('start-station'), '');
 $('start-station').prepend(new Option('Välj station', '', true, true));

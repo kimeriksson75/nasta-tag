@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, buildBoard, classify, departureMessage, destinationChoices, isAvailable, nearestStations, nextDestination, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, bearingDegrees, buildBoard, classify, departureMessage, destinationChoices, distanceText, isAvailable, nearestStations, nextDestination, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -190,6 +190,17 @@ test('påminnelse: texten är en hel mening', () => {
   const text = reminderText({ status: 'hurry', slackMinutes: 3.2, time }, 'Hem');
   assert.doesNotMatch(text, /\n/);
   assert.match(text, /3 min .* 21:50-tåget hem$/);
+});
+
+test('riktning och avstånd till stationen', () => {
+  const from = { lat: 59.3, lon: 18.0 };
+  const near = (value, expected) => assert.ok(Math.abs(value - expected) < 1, `${value} borde vara ${expected}`);
+  near(bearingDegrees(from, { lat: 59.4, lon: 18.0 }), 0);
+  near(bearingDegrees(from, { lat: 59.3, lon: 18.1 }), 90);
+  near(bearingDegrees(from, { lat: 59.2, lon: 18.0 }), 180);
+  near(bearingDegrees(from, { lat: 59.3, lon: 17.9 }), 270);
+  assert.equal(distanceText(347), '350 m');
+  assert.equal(distanceText(1240), '1,2 km');
 });
 
 test('knappar: bara när det finns något att välja', () => {

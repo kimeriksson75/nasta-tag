@@ -15,6 +15,21 @@ export function distanceMeters(a, b) {
   return 2 * 6371000 * Math.asin(Math.sqrt(h));
 }
 
+// Riktning från a till b i grader medurs från norr.
+export function bearingDegrees(a, b) {
+  const rad = (deg) => (deg * Math.PI) / 180;
+  const dLon = rad(b.lon - a.lon);
+  const y = Math.sin(dLon) * Math.cos(rad(b.lat));
+  const x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat))
+    - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(dLon);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+export function distanceText(meters) {
+  if (meters < 1000) return `${Math.round(meters / 10) * 10} m`;
+  return `${(meters / 1000).toFixed(1).replace('.', ',')} km`;
+}
+
 export function nearestStations(stations, position, count = 1) {
   return [...stations]
     .sort((a, b) => distanceMeters(position, a) - distanceMeters(position, b))
