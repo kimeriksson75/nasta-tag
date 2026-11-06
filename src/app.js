@@ -36,6 +36,7 @@ const state = {
   next: null, // tåget som visas stort
   reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until }
   reminderProblem: null,
+  movingReminder: false,
   draft: null, // destinationen som redigeras i inställningarna
   position: null,
   walkedFrom: null,
@@ -84,6 +85,7 @@ async function refreshDepartures() {
     if (!state.departures) state.problem = { text: 'Kunde inte hämta avgångar från SL.', retry: true };
   }
   render();
+  followReminder();
 }
 
 async function onPosition({ coords }) {
@@ -151,12 +153,9 @@ async function post(path, body) {
   return res.text();
 }
 
-async function startReminder() {
+async function armReminder() {
   const { next, start } = state;
   const destination = activePlace();
-  if (await Notification.requestPermission() !== 'granted') {
-    throw new Error('Tillåt notiser för appen i Inställningar');
-  }
   const id = await post('/api/remind', {
     subscription: await pushSubscription(),
     journey: next.journey,
@@ -166,7 +165,35 @@ async function startReminder() {
     destination: destination.station,
     label: destination.label,
   });
-  saveReminder({ id, until: next.time.getTime() + 60000 });
+  return {
+    id, until: next.time.getTime() + 60000, from: start.station.name, destination: destination.station,
+  };
+}
+
+async function startReminder() {
+  if (await Notification.requestPermission() !== 'granted') {
+    throw new Error('Tillåt notiser för appen i Inställningar');
+  }
+  saveReminder(await armReminder());
+}
+
+// Har du bytt station eller mål gäller påminnelsen fel tåg, så den flyttar med.
+// Är det redan dags att gå finns inget kvar att påminna om.
+async function followReminder() {
+  const { reminder, next, start } = state;
+  if (!reminder || !next || state.movingReminder) return;
+  if (reminder.from === start.station.name && reminder.destination === activePlace().station) return;
+  state.movingReminder = true;
+  try {
+    const moved = next.status === 'rush' ? null : await armReminder();
+    await post('/api/remind/cancel', { id: reminder.id }).catch(() => {});
+    saveReminder(moved);
+    renderReminder();
+  } catch {
+    // Den gamla påminnelsen ligger kvar, och nästa uppdatering försöker igen.
+  } finally {
+    state.movingReminder = false;
+  }
 }
 
 async function toggleReminder() {
