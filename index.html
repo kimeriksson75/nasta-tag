@@ -41,7 +41,7 @@
   <footer>
     <button id="compass" type="button" hidden>
       <span id="compass-text"></span>
-      <span id="compass-arrow" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
+      <span class="arrow" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
       <span id="compass-hint" hidden>Visa riktning</span>
     </button>
     <p id="route"></p>
@@ -56,7 +56,10 @@
     <div class="walk-top">
       <button id="walk-back" type="button">‹ Tillbaka</button>
       <h2 id="walk-title"></h2>
-      <p id="walk-distance"></p>
+      <p class="walk-now">
+        <span id="walk-distance"></span>
+        <span class="arrow" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
+      </p>
     </div>
     <div id="walk-map"></div>
     <div class="walk-bottom">

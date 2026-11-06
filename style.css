@@ -33,8 +33,8 @@ header { display: flex; align-items: center; gap: 12px; min-height: 44px; }
 #compass-text { font-size: 44px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 #compass-hint { color: var(--muted); font-size: 15px; font-weight: 600; }
 #compass svg { width: 52px; height: 52px; }
-#compass-arrow { display: inline-flex; flex: none; transform: rotate(var(--arrow, 0deg)); transition: transform .2s ease-out; }
-@media (prefers-reduced-motion: reduce) { #compass-arrow { transition: none; } }
+.arrow { display: inline-flex; flex: none; transform: rotate(var(--arrow, 0deg)); transition: transform .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .arrow { transition: none; } }
 #open-settings { flex: none; margin-left: auto; display: grid; place-items: center; width: 44px; padding: 0; border-color: transparent; }
 button, input, select { font: inherit; }
 button {
@@ -90,7 +90,8 @@ dialog {
 .walk-top { padding: max(12px, env(safe-area-inset-top)) 20px 12px; }
 #walk-back { min-height: 44px; margin-left: -8px; padding: 0 8px; border: 0; font-size: 17px; }
 #walk h2 { margin: 4px 0 0; font-size: 26px; line-height: 1.2; font-weight: 800; }
-#walk-distance { margin: 4px 0 0; font-size: 19px; font-weight: 600; }
+.walk-now { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 19px; font-weight: 600; }
+.walk-now svg { width: 32px; height: 32px; }
 #walk-map { flex: 1; min-height: 0; }
 #walk-me { color: var(--ink); pointer-events: none; }
 #walk-me svg { display: block; width: 130px; height: 130px; }

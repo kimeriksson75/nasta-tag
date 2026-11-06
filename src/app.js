@@ -316,7 +316,7 @@ function renderCompass() {
   $('compass-text').textContent = distance;
   $('walk-distance').textContent = `${distance} · ${minutes(start.walkMinutes)} gång`;
   $('compass-hint').hidden = !compassOffered;
-  $('compass-arrow').hidden = heading === null;
+  for (const arrow of document.querySelectorAll('.arrow')) arrow.hidden = heading === null;
   if (heading === null) return;
   // Kortaste vägen runt, så att pilen inte snurrar ett varv när den passerar norr.
   const target = bearingDegrees(position, start.station) - heading;
@@ -606,8 +606,9 @@ $('nav-action').addEventListener('click', () => {
 $('add-place').addEventListener('click', () => showPlaceForm());
 $('remind').addEventListener('click', toggleReminder);
 $('compass').addEventListener('click', () => {
+  // Första trycket tar fram pilen, nästa öppnar gångvyn.
   if (state.compassOffered) askForCompass(true);
-  openWalkView();
+  else openWalkView();
 });
 $('walk-back').addEventListener('click', () => $('walk').close());
 $('delete-place').addEventListener('click', deleteDraft);
