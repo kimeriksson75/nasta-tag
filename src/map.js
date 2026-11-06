@@ -10,15 +10,8 @@ const THEMES = {
 const ZOOM = 17;
 const PITCH = 30;
 const MIN_TURN = 2;
-// Du är pricken. Konen visar åt vilket håll du tittar och syns bara när kompassen svarar.
-const ME = `<svg viewBox="0 0 120 120" aria-hidden="true">
-  <defs><linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
-    <stop offset="0" stop-color="currentColor" stop-opacity=".65"/>
-    <stop offset="1" stop-color="currentColor" stop-opacity="0"/>
-  </linearGradient></defs>
-  <path class="beam" d="M60 60 L28 8 A61 61 0 0 1 92 8 Z" fill="url(#beam)"/>
-  <circle class="dot" cx="60" cy="60" r="10"/>
-</svg>`;
+// Du är pilen. Den pekar alltid uppåt, det är kartan som vrids.
+const ME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg>';
 const EMPTY = { type: 'FeatureCollection', features: [] };
 const PAINTS = [
   ['background', 'background-color', 'land'],
@@ -177,9 +170,8 @@ export function themeMap(theme) {
 }
 
 // Kartan följer användaren i första person: det du har framför dig är uppåt på skärmen.
-export function followMe(position, bearing, looking) {
+export function followMe(position, bearing) {
   if (!map) return;
-  me.getElement().classList.toggle('looking', looking);
   const center = [position.lon, position.lat];
   me.setLngLat(center);
   const view = { center, bearing, pitch: PITCH };
