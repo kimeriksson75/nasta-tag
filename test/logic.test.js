@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { addressSuggestions, bearingDegrees, buildBoard, classify, departureMessage, destinationChoices, distanceText, isAvailable, nearestStations, nextDestination, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
+import { addressSuggestions, bearingDegrees, buildBoard, classify, departureMessage, destinationChoices, distanceText, isAvailable, nearestStations, nextDestination, walkSteps, reminderStep, reminderText, tripPhrase, watchDestination, watchSummary, planTrip, trainReaches } from '../src/logic.js';
 
 const { routes, stations } = JSON.parse(await readFile(new URL('../data/metro.json', import.meta.url)));
 const now = new Date('2026-11-04T10:00:00');
@@ -201,6 +201,23 @@ test('riktning och avstånd till stationen', () => {
   near(bearingDegrees(from, { lat: 59.3, lon: 17.9 }), 270);
   assert.equal(distanceText(347), '350 m');
   assert.equal(distanceText(1240), '1,2 km');
+});
+
+test('gångvägen blir korta rader på svenska', () => {
+  const step = (type, modifier, name, distance) => ({ maneuver: { type, modifier }, name, distance });
+  const rows = walkSteps([
+    step('depart', undefined, '', 2.5),
+    step('turn', 'left', 'Karmstolsvägen', 51),
+    step('continue', 'straight', 'Karmstolsvägen', 20),
+    step('turn', 'right', '', 120.2),
+    step('arrive', 'left', '', 0),
+  ], 'Gubbängen');
+  assert.deepEqual(rows, [
+    { text: 'Börja gå', distance: '0 m' },
+    { text: 'Sväng vänster in på Karmstolsvägen', distance: '70 m' },
+    { text: 'Sväng höger', distance: '120 m' },
+    { text: 'Framme vid Gubbängen', distance: '' },
+  ]);
 });
 
 test('knappar: bara när det finns något att välja', () => {

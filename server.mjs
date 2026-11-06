@@ -28,7 +28,8 @@ const TYPES = {
 };
 const PUBLIC_FILES = new Set([
   '/index.html', '/sw.js', '/style.css', '/manifest.webmanifest', '/icon.svg', '/icon-180.png', '/icon-512.png',
-  '/src/app.js', '/src/logic.js', '/src/trip.js', '/data/metro.json',
+  '/src/app.js', '/src/logic.js', '/src/map.js', '/src/trip.js', '/data/metro.json',
+  '/vendor/maplibre-gl.js', '/vendor/maplibre-gl.css',
 ]);
 
 const metro = JSON.parse(await readFile(join(ROOT, 'data/metro.json')));

@@ -30,6 +30,42 @@ export function distanceText(meters) {
   return `${(meters / 1000).toFixed(1).replace('.', ',')} km`;
 }
 
+const TURNS = {
+  left: 'Sväng vänster',
+  right: 'Sväng höger',
+  'slight left': 'Håll vänster',
+  'slight right': 'Håll höger',
+  'sharp left': 'Sväng skarpt vänster',
+  'sharp right': 'Sväng skarpt höger',
+  uturn: 'Vänd om',
+  straight: 'Gå rakt fram',
+};
+
+function stepText({ maneuver, name }) {
+  if (maneuver.type === 'depart') return name ? `Börja gå på ${name}` : 'Börja gå';
+  const turn = TURNS[maneuver.modifier] ?? 'Fortsätt';
+  return name ? `${turn} in på ${name}` : turn;
+}
+
+// Gör om gångvägens steg till korta rader. Rakt fram på samma gata är inget att berätta,
+// så de stegen läggs ihop med raden före.
+export function walkSteps(steps, stationName) {
+  const rows = [];
+  for (const step of steps) {
+    if (step.maneuver.type === 'arrive') continue;
+    const last = rows.at(-1);
+    if (last && step.maneuver.modifier === 'straight') {
+      last.meters += step.distance;
+    } else {
+      rows.push({ text: stepText(step), meters: step.distance });
+    }
+  }
+  return [
+    ...rows.filter((row) => row.meters >= 1).map(({ text, meters }) => ({ text, distance: distanceText(meters) })),
+    { text: `Framme vid ${stationName}`, distance: '' },
+  ];
+}
+
 export function nearestStations(stations, position, count = 1) {
   return [...stations]
     .sort((a, b) => distanceMeters(position, a) - distanceMeters(position, b))

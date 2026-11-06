@@ -1,9 +1,10 @@
 import {
   addressSuggestions, bearingDegrees, buildBoard, departureMessage, destinationChoices, distanceMeters,
-  distanceText,
+  distanceText, walkSteps,
   nearestStations, nextDestination, planTrip, tripPhrase,
 } from './logic.js';
-import { abortAfter, fetchDepartures, findStart } from './trip.js';
+import { drawRoute, moveMe, openMap, themeMap } from './map.js';
+import { abortAfter, fetchDepartures, fetchWalkRoute, findStart } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const OLD_HOME_KEY = 'nasta-tag.home';
@@ -96,6 +97,7 @@ async function refreshDepartures() {
 async function onPosition({ coords }) {
   const position = { lat: coords.latitude, lon: coords.longitude };
   state.position = position;
+  if ($('walk').open) moveMe(position);
   if (state.problem?.gps) state.problem = null;
   $('start-picker').hidden = true;
   if (state.walkedFrom && distanceMeters(state.walkedFrom, position) < MOVED_METERS) return;
@@ -104,6 +106,10 @@ async function onPosition({ coords }) {
   const changed = start.station !== state.start?.station;
   state.start = start;
   if (changed) state.departures = null;
+  if ($('walk').open) {
+    $('walk-title').textContent = `Till ${start.station.name}`;
+    loadWalkRoute();
+  }
   await refreshDepartures();
 }
 
@@ -125,6 +131,13 @@ function startLocating() {
 
 function minutes(value) {
   return `${Math.max(1, Math.round(value))} min`;
+}
+
+function setStatus(status) {
+  const root = document.documentElement;
+  if (root.dataset.status === status) return;
+  root.dataset.status = status;
+  themeMap(status);
 }
 
 function saveReminder(reminder) {
@@ -219,7 +232,7 @@ async function toggleReminder() {
 function renderMessage(text, retry = false) {
   state.next = null;
   renderReminder();
-  document.documentElement.dataset.status = 'idle';
+  setStatus('idle');
   $('verdict').textContent = text;
   $('time').textContent = '';
   $('train').textContent = '';
@@ -285,24 +298,72 @@ async function askForCompass(fromTap) {
   renderCompass();
 }
 
+// Gångvägens längd när den finns, annars fågelvägen.
+function stationDistance() {
+  const { start, position } = state;
+  return start.walkMeters ?? distanceMeters(position, start.station);
+}
+
 function renderCompass() {
   const { start, position, compassOffered, heading } = state;
-  const link = $('compass');
-  const station = start?.station;
-  const distance = position && station ? distanceMeters(position, station) : 0;
-  link.hidden = !$('route').textContent || !start?.walkMinutes || distance < NEAR_STATION_METERS;
-  if (link.hidden) return;
-  link.href = `https://maps.apple.com/?daddr=${station.lat},${station.lon}&dirflg=w`;
-  $('compass-text').textContent = compassOffered
-    ? `Visa riktning · ${distanceText(distance)}`
-    : distanceText(distance);
-  const arrow = $('compass-arrow');
-  arrow.hidden = heading === null;
+  const button = $('compass');
+  const near = !position || !start || distanceMeters(position, start.station) < NEAR_STATION_METERS;
+  button.hidden = !$('route').textContent || !start?.walkMinutes || near;
+  if (button.hidden) return;
+  const distance = distanceText(stationDistance());
+  $('compass-text').textContent = distance;
+  $('walk-distance').textContent = `${distance} · ${minutes(start.walkMinutes)} gång`;
+  $('compass-hint').hidden = !compassOffered;
+  for (const arrow of document.querySelectorAll('.arrow')) arrow.hidden = heading === null;
   if (heading === null) return;
   // Kortaste vägen runt, så att pilen inte snurrar ett varv när den passerar norr.
-  const target = bearingDegrees(position, station) - heading;
+  const target = bearingDegrees(position, start.station) - heading;
   state.arrowAngle += ((target - state.arrowAngle + 540) % 360 + 360) % 360 - 180;
-  arrow.style.transform = `rotate(${state.arrowAngle}deg)`;
+  document.documentElement.style.setProperty('--arrow', `${state.arrowAngle}deg`);
+}
+
+function stepRow({ text, distance }) {
+  const row = document.createElement('li');
+  const what = document.createElement('span');
+  what.textContent = text;
+  const far = document.createElement('span');
+  far.textContent = distance;
+  row.append(what, far);
+  return row;
+}
+
+let mapReady = null;
+
+async function loadWalkRoute() {
+  const { position, start } = state;
+  const { station } = start;
+  try {
+    const route = await fetchWalkRoute(position, station);
+    if (state.start?.station !== station || !$('walk').open) return;
+    $('walk-steps').replaceChildren(...walkSteps(route.steps, station.name).map(stepRow));
+    $('walk-status').textContent = '';
+    await mapReady;
+    drawRoute(route.coordinates, station);
+  } catch {
+    $('walk-status').textContent = 'Hittar ingen gångväg just nu. Prova Kartor.';
+  }
+}
+
+async function openWalkView() {
+  const { position, start } = state;
+  const { station } = start;
+  $('walk-title').textContent = `Till ${station.name}`;
+  $('walk-maps').href = `https://maps.apple.com/?daddr=${station.lat},${station.lon}&dirflg=w`;
+  $('walk-steps').replaceChildren();
+  $('walk-status').textContent = '';
+  $('walk').showModal();
+  renderCompass();
+  // Vägbeskrivningen väntar inte på kartan, den ska synas även om kartan inte går att ladda.
+  $('walk-map').hidden = false;
+  mapReady = openMap($('walk-map'), document.documentElement.dataset.status)
+    .then(() => moveMe(position))
+    .catch(() => { $('walk-map').hidden = true; });
+  loadWalkRoute();
 }
 
 function routeText(start, plan, destination) {
@@ -340,7 +401,7 @@ function render() {
   state.next = next;
   renderReminder();
   const message = departureMessage(next);
-  document.documentElement.dataset.status = next.status;
+  setStatus(next.status);
   $('retry').hidden = true;
   $('verdict').textContent = message.lead;
   $('time').textContent = message.wait;
@@ -532,11 +593,11 @@ $('nav-action').addEventListener('click', () => {
 });
 $('add-place').addEventListener('click', () => showPlaceForm());
 $('remind').addEventListener('click', toggleReminder);
-$('compass').addEventListener('click', (event) => {
-  if (!state.compassOffered) return;
-  event.preventDefault();
-  askForCompass(true);
+$('compass').addEventListener('click', () => {
+  if (state.compassOffered) askForCompass(true);
+  openWalkView();
 });
+$('walk-back').addEventListener('click', () => $('walk').close());
 $('delete-place').addEventListener('click', deleteDraft);
 $('place-form').addEventListener('submit', (event) => {
   event.preventDefault();

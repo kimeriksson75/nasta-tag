@@ -23,19 +23,34 @@ export async function fetchDepartures(siteId) {
   }
 }
 
-async function fetchWalkMinutes(position, station) {
+async function fetchWalk(position, station, query) {
   const path = `${position.lon},${position.lat};${station.lon},${station.lat}`;
-  const res = await fetch(`${WALK_URL}/${path}?overview=false`, { signal: abortAfter(6000) });
+  const res = await fetch(`${WALK_URL}/${path}?${query}`, { signal: abortAfter(6000) });
   if (!res.ok) throw new Error(`Gångvägen svarade ${res.status}`);
-  return (await res.json()).routes[0].duration / 60;
+  return (await res.json()).routes[0];
+}
+
+export async function fetchWalkRoute(position, station) {
+  const route = await fetchWalk(position, station, 'overview=full&geometries=geojson&steps=true');
+  return {
+    coordinates: route.geometry.coordinates,
+    meters: route.distance,
+    minutes: route.duration / 60,
+    steps: route.legs[0].steps,
+  };
 }
 
 export async function findStart(stations, position) {
   const candidates = nearestStations(stations, position, WALK_CANDIDATES);
-  const walks = await Promise.allSettled(candidates.map((s) => fetchWalkMinutes(position, s)));
+  const walks = await Promise.allSettled(candidates.map((s) => fetchWalk(position, s, 'overview=false')));
   const measured = candidates
-    .map((station, i) => ({ station, walkMinutes: walks[i].value, estimated: false }))
-    .filter((c) => c.walkMinutes !== undefined)
+    .map((station, i) => ({
+      station,
+      walkMinutes: walks[i].value?.duration / 60,
+      walkMeters: walks[i].value?.distance,
+      estimated: false,
+    }))
+    .filter((c) => c.walkMinutes !== undefined && !Number.isNaN(c.walkMinutes))
     .sort((a, b) => a.walkMinutes - b.walkMinutes);
   if (measured.length) return measured[0];
   return { station: candidates[0], walkMinutes: estimateWalkMinutes(position, candidates[0]), estimated: true };

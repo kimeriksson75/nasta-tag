@@ -39,10 +39,11 @@
   </main>
 
   <footer>
-    <a id="compass" hidden>
-      <span id="compass-arrow" hidden><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
+    <button id="compass" type="button" hidden>
       <span id="compass-text"></span>
-    </a>
+      <span class="arrow" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
+      <span id="compass-hint" hidden>Visa riktning</span>
+    </button>
     <p id="route"></p>
     <label id="start-picker" hidden>Jag utgår från
       <select id="start-station"></select>
@@ -50,6 +51,23 @@
     <p id="updated"></p>
     <p>Data: SL via Trafiklab · Karta © OpenStreetMap</p>
   </footer>
+
+  <dialog id="walk" aria-labelledby="walk-title">
+    <div class="walk-top">
+      <button id="walk-back" type="button">‹ Tillbaka</button>
+      <h2 id="walk-title"></h2>
+      <p class="walk-now">
+        <span id="walk-distance"></span>
+        <span class="arrow" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg></span>
+      </p>
+    </div>
+    <div id="walk-map"></div>
+    <div class="walk-bottom">
+      <p id="walk-status" role="status"></p>
+      <ol id="walk-steps"></ol>
+      <a id="walk-maps">Öppna i Kartor</a>
+    </div>
+  </dialog>
 
   <dialog id="settings" aria-labelledby="settings-title">
     <div class="nav">
