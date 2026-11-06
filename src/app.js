@@ -341,7 +341,7 @@ function followOnMap() {
   const { position, start, heading, walkRoute } = state;
   if (!$('walk').open) return;
   const along = walkRoute ? routeBearing(position, walkRoute) : bearingDegrees(position, start.station);
-  followMe(position, heading ?? along);
+  followMe(position, heading ?? along, heading !== null);
 }
 
 async function loadWalkRoute() {

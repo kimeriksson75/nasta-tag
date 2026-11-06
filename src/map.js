@@ -8,10 +8,17 @@ const THEMES = {
   rush: { land: '#d92d2d', park: '#cf2a2a', water: '#b52323', building: '#cf3030', road: '#ea7272', label: '#ffe5e5', route: '#ffffff', halo: '#d92d2d' },
 };
 const ZOOM = 17;
-const PITCH = 55;
-const ME_LOWER = 0.35; // lägger dig under mitten, så att kartan visar mer av vägen framåt
+const PITCH = 30;
 const MIN_TURN = 2;
-const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.5 21 12 17l7.5 4z"/></svg>';
+// Du är pricken. Konen visar åt vilket håll du tittar och syns bara när kompassen svarar.
+const ME = `<svg viewBox="0 0 120 120" aria-hidden="true">
+  <defs><linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="currentColor" stop-opacity=".65"/>
+    <stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+  </linearGradient></defs>
+  <path class="beam" d="M60 60 L28 8 A61 61 0 0 1 92 8 Z" fill="url(#beam)"/>
+  <circle class="dot" cx="60" cy="60" r="10"/>
+</svg>`;
 const EMPTY = { type: 'FeatureCollection', features: [] };
 const PAINTS = [
   ['background', 'background-color', 'land'],
@@ -146,8 +153,10 @@ async function createMap(container, theme) {
   await new Promise((resolve) => { created.once('load', resolve); });
   const element = document.createElement('div');
   element.id = 'walk-me';
-  element.innerHTML = ARROW;
-  me = new window.maplibregl.Marker({ element }).setLngLat(created.getCenter()).addTo(created);
+  element.innerHTML = ME;
+  me = new window.maplibregl.Marker({ element, pitchAlignment: 'map', rotationAlignment: 'viewport' })
+    .setLngLat(created.getCenter())
+    .addTo(created);
   map = created;
 }
 
@@ -168,14 +177,15 @@ export function themeMap(theme) {
 }
 
 // Kartan följer användaren i första person: det du har framför dig är uppåt på skärmen.
-export function followMe(position, bearing) {
+export function followMe(position, bearing, looking) {
   if (!map) return;
+  me.getElement().classList.toggle('looking', looking);
   const center = [position.lon, position.lat];
   me.setLngLat(center);
   const view = { center, bearing, pitch: PITCH };
   if (!placed) {
     placed = true;
-    map.jumpTo({ ...view, zoom: ZOOM, padding: { top: map.getContainer().clientHeight * ME_LOWER } });
+    map.jumpTo({ ...view, zoom: ZOOM });
     return;
   }
   const turned = Math.abs(((bearing - map.getBearing() + 540) % 360) - 180);
