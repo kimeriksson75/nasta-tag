@@ -1,9 +1,7 @@
-// Hämtar avgångar och gångtid. Används av både webbappen och klocktjänsten.
-import { estimateWalkMinutes, nearestStations } from './logic.js';
-
-const SL_URL = 'https://transport.integration.sl.se/v1';
+// Hämtar resor från SL och gångvägen till första hållplatsen. Används av både webbappen och servern.
+const TRIPS_URL = 'https://journeyplanner.integration.sl.se/v2/trips';
 const WALK_URL = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
-const WALK_CANDIDATES = 3; // fågelvägen ljuger vid vatten, så jämför gångvägen till flera
+const MAX_TRIPS = 3; // mer än så svarar SL inte med
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -13,10 +11,29 @@ export function abortAfter(ms, controller = new AbortController()) {
   return controller.signal;
 }
 
-export async function fetchDepartures(siteId) {
+const place = ({ lat, lon }) => `${lon.toFixed(5)}:${lat.toFixed(5)}:WGS84[dd.ddddd]`;
+const stockholmParts = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Europe/Stockholm', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+});
+
+// Resor härifrån till destinationen med alla trafikslag, med uppdaterade tider.
+// Med `departAt` börjar listan vid den tiden i stället för nu.
+export async function fetchTrips(from, to, departAt = null) {
+  const params = new URLSearchParams({
+    type_origin: 'coord',
+    name_origin: place(from),
+    type_destination: 'coord',
+    name_destination: place(to),
+    calc_number_of_trips: String(MAX_TRIPS),
+  });
+  if (departAt) {
+    const part = Object.fromEntries(stockholmParts.formatToParts(departAt).map(({ type, value }) => [type, value]));
+    params.set('itd_date', `${part.year}${part.month}${part.day}`);
+    params.set('itd_time', `${part.hour}${part.minute}`);
+  }
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${SL_URL}/sites/${siteId}/departures?transport=METRO`);
-    if (res.ok) return (await res.json()).departures;
+    const res = await fetch(`${TRIPS_URL}?${params}`, { signal: abortAfter(15000) });
+    if (res.ok) return (await res.json()).journeys ?? [];
     // SL:s öppna API svarar ibland 429 på enstaka anrop; nästa brukar gå igenom.
     if (res.status !== 429 || attempt === 3) throw new Error(`SL svarade ${res.status}`);
     await sleep(1500 * (attempt + 1));
@@ -38,20 +55,4 @@ export async function fetchWalkRoute(position, station) {
     minutes: route.duration / 60,
     steps: route.legs[0].steps,
   };
-}
-
-export async function findStart(stations, position) {
-  const candidates = nearestStations(stations, position, WALK_CANDIDATES);
-  const walks = await Promise.allSettled(candidates.map((s) => fetchWalk(position, s, 'overview=false')));
-  const measured = candidates
-    .map((station, i) => ({
-      station,
-      walkMinutes: walks[i].value?.duration / 60,
-      walkMeters: walks[i].value?.distance,
-      estimated: false,
-    }))
-    .filter((c) => c.walkMinutes !== undefined && !Number.isNaN(c.walkMinutes))
-    .sort((a, b) => a.walkMinutes - b.walkMinutes);
-  if (measured.length) return measured[0];
-  return { station: candidates[0], walkMinutes: estimateWalkMinutes(position, candidates[0]), estimated: true };
 }

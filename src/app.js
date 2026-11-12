@@ -1,10 +1,9 @@
 import {
-  addressSuggestions, bearingDegrees, buildBoard, departureMessage, destinationChoices, distanceMeters,
-  distanceText, routeBearing, walkSteps,
-  nearestStations, nextDestination, planTrip, tripPhrase,
+  addressSuggestions, bearingDegrees, buildTrips, departureMessage, destinationChoices, distanceMeters,
+  distanceText, lineText, nextDestination, pickTrips, placeAt, routeBearing, routeText, tripName, walkSteps,
 } from './logic.js';
 import { drawRoute, followMe, openMap, themeMap } from './map.js';
-import { abortAfter, fetchDepartures, fetchWalkRoute, findStart } from './trip.js';
+import { abortAfter, fetchTrips, fetchWalkRoute } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const OLD_HOME_KEY = 'nasta-tag.home';
@@ -12,7 +11,7 @@ const PLACES_KEY = 'nasta-tag.places';
 const REMINDER_KEY = 'nasta-tag.reminder';
 const API_URL = location.hostname === 'medgesej.se' ? 'https://nasta-tag-production.up.railway.app' : '';
 const PUSH_KEY = 'BNkk_La9F8B2DPFc6wgGUCp_8uRT3ZvUzQQiuVHnyHsfEHQKBbKOiC2AqtGWFMJQ9cw1xRIHLbFpldAwRmri0dQ';
-const NEAR_STATION_METERS = 30;
+const NEAR_STOP_METERS = 30;
 const CAN_NOTIFY = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const SUGGESTED_LABELS = ['Hem', 'Jobbet'];
 const REFRESH_MS = 30000;
@@ -33,13 +32,15 @@ function loadPlaces() {
 }
 
 const state = {
-  metro: null,
-  ...loadPlaces(), // places: [{ id, label, address, lat, lon, station, weekdaysOnly }], activeId
+  metro: null, // tunnelbanans stationer, för äldre sparade destinationer och för att välja start utan plats
+  ...loadPlaces(), // places: [{ id, label, address, lat, lon, weekdaysOnly }], activeId
   chosenId: null, // destinationen du själv valt, gäller tills du är framme
-  next: null, // tåget som visas stort
-  reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until }
+  hereId: null, // destinationen du står vid, om någon
+  next: null, // resan som visas stort
+  reminder: JSON.parse(localStorage.getItem(REMINDER_KEY)), // { id, until, stop, destination }
   reminderProblem: null,
   movingReminder: false,
+  walkStop: null, // hållplatsen gångvyn visar vägen till
   walkRoute: null, // gångvägens punkter medan gångvyn är öppen
   heading: null, // kompassriktning, null tills telefonen har svarat
   compassOffered: typeof window.DeviceOrientationEvent?.requestPermission === 'function',
@@ -47,9 +48,8 @@ const state = {
   draft: null, // destinationen som redigeras i inställningarna
   position: null,
   walkedFrom: null,
-  start: null, // { station, walkMinutes, estimated }
-  plan: null,
-  departures: null,
+  journeys: null, // resorna från SL till destinationen i journeysFor
+  journeysFor: null,
   fetchedAt: null,
   problem: null, // { text, retry }
 };
@@ -65,31 +65,35 @@ function stationByName(name) {
   return state.metro.stations.find((s) => s.name === name);
 }
 
-async function refreshDepartures() {
-  if (!state.start || !state.places.length) return;
-  const { station } = state.start;
-  const destination = nextDestination(
-    state.places, state.activeId, station.name, new Date(), state.chosenId,
-  );
+// Hem ger Jobbet och tvärtom när du är framme. Ett eget val gäller tills du är framme.
+function chooseDestination() {
+  state.hereId = state.position ? placeAt(state.places, state.position) : null;
+  const destination = nextDestination(state.places, state.activeId, state.hereId, new Date(), state.chosenId);
   if (destination.id !== state.chosenId) state.chosenId = null;
   if (destination.id !== state.activeId) {
     state.activeId = destination.id;
     savePlaces();
   }
-  state.plan = planTrip(state.metro.routes, station.name, destination.station);
-  if (station.name === destination.station) {
-    state.departures = [];
-    render();
-    return;
-  }
+  return destination;
+}
+
+let tripsAsked = 0;
+async function refreshTrips() {
+  if (!state.position || !state.places.length) return;
+  const destination = chooseDestination();
+  if (state.hereId === destination.id) return render();
+  const asked = ++tripsAsked;
   try {
-    const departures = await fetchDepartures(station.siteId);
-    if (state.start?.station !== station) return;
-    state.departures = departures;
+    const journeys = await fetchTrips(state.position, destination);
+    if (asked !== tripsAsked) return; // ett nyare svar är på väg
+    state.journeys = journeys;
+    state.journeysFor = destination.id;
     state.fetchedAt = new Date();
     state.problem = null;
   } catch {
-    if (!state.departures) state.problem = { text: 'Kunde inte hämta avgångar från SL.', retry: true };
+    if (asked === tripsAsked && state.journeysFor !== destination.id) {
+      state.problem = { text: 'Kunde inte hämta resor från SL.', retry: true };
+    }
   }
   render();
   followReminder();
@@ -103,15 +107,7 @@ async function onPosition({ coords }) {
   $('start-picker').hidden = true;
   if (state.walkedFrom && distanceMeters(state.walkedFrom, position) < MOVED_METERS) return;
   state.walkedFrom = position;
-  const start = await findStart(state.metro.stations, position);
-  const changed = start.station !== state.start?.station;
-  state.start = start;
-  if (changed) state.departures = null;
-  if ($('walk').open) {
-    $('walk-title').textContent = `Till ${start.station.name}`;
-    loadWalkRoute();
-  }
-  await refreshDepartures();
+  await refreshTrips();
 }
 
 function onPositionError() {
@@ -173,19 +169,19 @@ async function post(path, body) {
 }
 
 async function armReminder() {
-  const { next, start } = state;
+  const { next, position } = state;
   const destination = activePlace();
   const id = await post('/api/remind', {
     subscription: await pushSubscription(),
-    journey: next.journey,
+    key: next.key,
+    time: next.time.toISOString(),
     status: next.status,
-    walkMinutes: start.walkMinutes,
-    from: start.station.name,
-    destination: destination.station,
+    from: position,
+    to: { lat: destination.lat, lon: destination.lon },
     label: destination.label,
   });
   return {
-    id, until: next.time.getTime() + 60000, from: start.station.name, destination: destination.station,
+    id, until: next.time.getTime() + 60000, stop: next.stop.name, destination: destination.id,
   };
 }
 
@@ -196,12 +192,12 @@ async function startReminder() {
   saveReminder(await armReminder());
 }
 
-// Har du bytt station eller mål gäller påminnelsen fel tåg, så den flyttar med.
+// Har du bytt hållplats eller mål gäller påminnelsen fel avgång, så den flyttar med.
 // Är det redan dags att gå finns inget kvar att påminna om.
 async function followReminder() {
-  const { reminder, next, start } = state;
+  const { reminder, next } = state;
   if (!reminder || !next || state.movingReminder) return;
-  if (reminder.from === start.station.name && reminder.destination === activePlace().station) return;
+  if (reminder.stop === next.stop.name && reminder.destination === activePlace().id) return;
   state.movingReminder = true;
   try {
     const moved = next.status === 'rush' ? null : await armReminder();
@@ -243,9 +239,9 @@ function renderMessage(text, retry = false) {
   $('retry').hidden = !retry;
 }
 
-function laterRow(train) {
+function laterRow(trip) {
   const row = document.createElement('li');
-  row.textContent = `${clock.format(train.time)}  Linje ${train.line} mot ${train.destination}`;
+  row.textContent = `${clock.format(trip.time)}  ${lineText(trip)}`;
   return row;
 }
 
@@ -256,7 +252,7 @@ function renderLater(trains) {
 
 function renderDestinations() {
   const nav = $('destinations');
-  const choices = destinationChoices(state.places, state.activeId, state.start?.station.name);
+  const choices = state.position ? destinationChoices(state.places, state.activeId, state.hereId) : [];
   nav.hidden = !choices.length;
   const key = JSON.stringify([choices.map((p) => [p.id, p.label]), state.activeId]);
   if (nav.dataset.key === key) return;
@@ -301,25 +297,25 @@ async function askForCompass(fromTap) {
 }
 
 // Gångvägens längd när den finns, annars fågelvägen.
-function stationDistance() {
-  const { start, position } = state;
-  return start.walkMeters ?? distanceMeters(position, start.station);
+function stopDistance() {
+  const { next, position } = state;
+  return next.walkMeters || distanceMeters(position, next.stop);
 }
 
 function renderCompass() {
-  const { start, position, compassOffered, heading } = state;
+  const { next, position, compassOffered, heading } = state;
   const button = $('compass');
-  const near = !position || !start || distanceMeters(position, start.station) < NEAR_STATION_METERS;
-  button.hidden = !$('route').textContent || !start?.walkMinutes || near;
+  const near = !position || !next || distanceMeters(position, next.stop) < NEAR_STOP_METERS;
+  button.hidden = near || !(next.walkMinutes > 0);
   if (button.hidden) return;
-  const distance = distanceText(stationDistance());
+  const distance = distanceText(stopDistance());
   $('compass-text').textContent = distance;
-  $('walk-distance').textContent = `${distance} · ${minutes(start.walkMinutes)} gång`;
+  $('walk-distance').textContent = `${distance} · ${minutes(next.walkMinutes)} gång`;
   $('compass-hint').hidden = !compassOffered;
   for (const arrow of document.querySelectorAll('.arrow')) arrow.hidden = heading === null;
   if (heading === null) return;
   // Kortaste vägen runt, så att pilen inte snurrar ett varv när den passerar norr.
-  const target = bearingDegrees(position, start.station) - heading;
+  const target = bearingDegrees(position, next.stop) - heading;
   state.arrowAngle += ((target - state.arrowAngle + 540) % 360 + 360) % 360 - 180;
   document.documentElement.style.setProperty('--arrow', `${state.arrowAngle}deg`);
 }
@@ -338,36 +334,42 @@ let mapReady = null;
 
 // Uppåt på kartan är dit du tittar. Utan kompass är det dit gångvägen leder.
 function followOnMap() {
-  const { position, start, heading, walkRoute } = state;
-  if (!$('walk').open) return;
-  const along = walkRoute ? routeBearing(position, walkRoute) : bearingDegrees(position, start.station);
+  const { position, walkStop, heading, walkRoute } = state;
+  if (!$('walk').open || !walkStop) return;
+  const along = walkRoute ? routeBearing(position, walkRoute) : bearingDegrees(position, walkStop);
   followMe(position, heading ?? along);
 }
 
 async function loadWalkRoute() {
-  const { position, start } = state;
-  const { station } = start;
+  const { position, walkStop: stop } = state;
   try {
-    const route = await fetchWalkRoute(position, station);
-    if (state.start?.station !== station || !$('walk').open) return;
-    $('walk-steps').replaceChildren(...walkSteps(route.steps, station.name).map(stepRow));
+    const route = await fetchWalkRoute(position, stop);
+    if (state.walkStop !== stop || !$('walk').open) return;
+    $('walk-steps').replaceChildren(...walkSteps(route.steps, stop.name).map(stepRow));
     $('walk-status').textContent = '';
     state.walkRoute = route.coordinates;
     await mapReady;
-    drawRoute(route.coordinates, station);
+    drawRoute(route.coordinates, stop);
     followOnMap();
   } catch {
     $('walk-status').textContent = 'Hittar ingen gångväg just nu. Prova Kartor.';
   }
 }
 
-async function openWalkView() {
-  const { station } = state.start;
+// Byter resan hållplats medan gångvyn är öppen följer vyn med.
+function showWalkStop(stop) {
+  if (state.walkStop?.name === stop.name) return;
+  state.walkStop = stop;
   state.walkRoute = null;
-  $('walk-title').textContent = `Till ${station.name}`;
-  $('walk-maps').href = `https://maps.apple.com/?daddr=${station.lat},${station.lon}&dirflg=w`;
+  $('walk-title').textContent = `Till ${stop.name}`;
+  $('walk-maps').href = `https://maps.apple.com/?daddr=${stop.lat},${stop.lon}&dirflg=w`;
   $('walk-steps').replaceChildren();
   $('walk-status').textContent = '';
+  loadWalkRoute();
+}
+
+function openWalkView() {
+  state.walkStop = null;
   $('walk').showModal();
   renderCompass();
   // Vägbeskrivningen väntar inte på kartan, den ska synas även om kartan inte går att ladda.
@@ -375,42 +377,40 @@ async function openWalkView() {
   mapReady = openMap($('walk-map'), document.documentElement.dataset.status)
     .then(followOnMap)
     .catch(() => { $('walk-map').hidden = true; });
-  loadWalkRoute();
+  showWalkStop(state.next.stop);
 }
 
-function routeText(start, plan, destination) {
-  if (!start || !destination || start.station.name === destination.station) return '';
-  const walk = start.walkMinutes > 0 && `${start.estimated ? 'ca ' : ''}${minutes(start.walkMinutes)} gång`;
-  const transfer = plan?.transfer && `byte ${plan.transfer}`;
-  return [walk, start.station.name, transfer, destination.label].filter(Boolean).join(' → ');
-}
-
+let lastAllMissed = 0;
 function render() {
-  const { start, plan } = state;
   const destination = activePlace();
   renderDestinations();
-  $('route').textContent = routeText(start, plan, destination);
-  renderCompass();
   $('updated').textContent = state.fetchedAt ? `Uppdaterad ${clock.format(state.fetchedAt)}` : '';
+  const show = (text, retry) => {
+    $('route').textContent = '';
+    renderMessage(text, retry);
+    renderCompass();
+  };
 
-  if (!destination) return renderMessage('Börja med att lägga till en destination.');
-  if (state.problem) return renderMessage(state.problem.text, state.problem.retry);
-  if (!start) return renderMessage('Letar efter din plats …');
-  if (start.station.name === destination.station) return renderMessage(`Du är redan vid ${destination.label}.`);
-  if (!state.departures) return renderMessage('Hämtar avgångar …');
+  if (!destination) return show('Börja med att lägga till en destination.');
+  if (state.problem) return show(state.problem.text, state.problem.retry);
+  if (!state.position) return show('Letar efter din plats …');
+  if (state.hereId === destination.id) return show(`Du är redan vid ${destination.label}.`);
+  if (!state.journeys || state.journeysFor !== destination.id) return show('Hämtar resor …');
 
-  const board = buildBoard({
-    departures: state.departures,
-    routes: state.metro.routes,
-    from: start.station.name,
-    target: plan.target,
-    now: new Date(),
-    walkMinutes: start.walkMinutes,
-  });
-  const [next, ...later] = board.filter((t) => t.status !== 'missed');
-  if (!next) return renderMessage('Inga tåg du hinner med inom den närmaste timmen.');
+  const { next, later } = pickTrips(buildTrips(state.journeys, new Date()));
+  if (!next) {
+    // SL ger bara tre resor åt gången. Har alla gått frågar vi efter nya, högst var tionde sekund.
+    if (Date.now() - lastAllMissed > 10000) {
+      lastAllMissed = Date.now();
+      refreshTrips();
+    }
+    return show('Hittar ingen resa du hinner med just nu.');
+  }
 
   state.next = next;
+  $('route').textContent = routeText(next, destination.label);
+  renderCompass();
+  if ($('walk').open) showWalkStop(next.stop);
   renderReminder();
   const message = departureMessage(next);
   setStatus(next.status);
@@ -418,8 +418,8 @@ function render() {
   $('verdict').textContent = message.lead;
   $('time').textContent = message.wait;
   $('advice').textContent = message.bridge;
-  $('train').textContent = `${clock.format(next.time)}-tåget ${tripPhrase(destination.label)}`;
-  $('line').textContent = `Linje ${next.line} mot ${next.destination}`;
+  $('train').textContent = tripName(next, destination.label);
+  $('line').textContent = lineText(next);
   renderLater(later.slice(0, LATER_COUNT));
 }
 
@@ -430,14 +430,13 @@ function fillStationSelect(select, selected) {
 
 function applyPlaces() {
   savePlaces();
-  state.departures = null;
+  state.journeys = null;
   render();
-  if (state.start) refreshDepartures(); else startLocating();
+  if (state.position) refreshTrips(); else startLocating();
 }
 
 function chooseLocation(location) {
-  const station = nearestStations(state.metro.stations, location)[0].name;
-  state.draft = { ...state.draft, ...location, station };
+  state.draft = { ...state.draft, ...location };
   $('address').value = '';
   $('results').replaceChildren();
   $('search-status').textContent = '';
@@ -448,9 +447,6 @@ function suggestionItem(place) {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = place.address;
-  const station = document.createElement('small');
-  station.textContent = `Närmaste station: ${nearestStations(state.metro.stations, place)[0].name}`;
-  button.append(station);
   button.addEventListener('click', () => chooseLocation(place));
   const item = document.createElement('li');
   item.append(button);
@@ -507,9 +503,7 @@ function renderDraft() {
   const { draft } = state;
   $('saved-address').textContent = draft.address ?? '';
   $('saved-row').hidden = !draft.address;
-  $('station-choice').hidden = !draft.station;
-  if (draft.station) fillStationSelect($('place-station'), draft.station);
-  $('nav-action').disabled = !draft.station || !$('place-label').value.trim();
+  $('nav-action').disabled = !Number.isFinite(draft.lat) || !$('place-label').value.trim();
 }
 
 function placeRow(place) {
@@ -517,7 +511,7 @@ function placeRow(place) {
   button.type = 'button';
   button.textContent = place.label;
   const details = document.createElement('small');
-  details.textContent = [place.address, place.station, place.weekdaysOnly && 'Vardagar'].filter(Boolean).join(' · ');
+  details.textContent = [place.address, place.weekdaysOnly && 'Vardagar'].filter(Boolean).join(' · ');
   button.append(details);
   button.addEventListener('click', () => showPlaceForm(place));
   const item = document.createElement('li');
@@ -588,14 +582,28 @@ function openSettings() {
   if (!state.places.length) $('address').focus();
 }
 
+// Utan plats från telefonen räknar appen resan från stationen du väljer.
 function pickStartManually() {
   const station = stationByName($('start-station').value);
   if (!station) return;
-  state.start = { station, walkMinutes: 0, estimated: false };
-  state.departures = null;
+  state.position = { lat: station.lat, lon: station.lon };
+  state.walkedFrom = state.position;
   state.problem = null;
   render();
-  refreshDepartures();
+  refreshTrips();
+}
+
+// Äldre destinationer sparades som tunnelbanestation. Resorna behöver en plats, så stationen får vara den.
+function migratePlaces() {
+  let changed = false;
+  state.places = state.places.map((place) => {
+    if (Number.isFinite(place.lat)) return place;
+    const station = stationByName(place.station);
+    if (!station) return place;
+    changed = true;
+    return { ...place, address: place.address ?? station.name, lat: station.lat, lon: station.lon };
+  });
+  if (changed) savePlaces();
 }
 
 $('open-settings').addEventListener('click', openSettings);
@@ -619,22 +627,20 @@ $('place-form').addEventListener('submit', (event) => {
 $('place-label').addEventListener('input', renderDraft);
 $('address').addEventListener('input', onAddressInput);
 $('use-location').addEventListener('click', useCurrentLocation);
-$('place-station').addEventListener('change', () => {
-  state.draft.station = $('place-station').value;
-});
 $('start-station').addEventListener('change', pickStartManually);
 $('retry').addEventListener('click', () => {
   state.problem = null;
   render();
-  if (state.start) refreshDepartures(); else startLocating();
+  if (state.position) refreshTrips(); else startLocating();
 });
 
 if (state.compassOffered) askForCompass(false); else listenToCompass();
 state.metro = await (await fetch('data/metro.json')).json();
+migratePlaces();
 fillStationSelect($('start-station'), '');
 $('start-station').prepend(new Option('Välj station', '', true, true));
 render();
 if (state.places.length) startLocating(); else openSettings();
 setInterval(render, 1000);
-setInterval(() => { if (!document.hidden) refreshDepartures(); }, REFRESH_MS);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshDepartures(); });
+setInterval(() => { if (!document.hidden) refreshTrips(); }, REFRESH_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshTrips(); });

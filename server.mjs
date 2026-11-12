@@ -1,17 +1,18 @@
 // Webbappen plus /api/next, som ger klockans genväg ett färdigt textsvar, och /api/remind
-// för notiser. Position och stationer används bara för svaret och sparas eller loggas inte.
-// Påminnelser ligger bara i minnet och försvinner när tåget har gått.
+// för notiser. Position och stationer används bara för svaret och loggas inte.
+// Påminnelser, med var resan börjar och slutar, ligger bara i minnet och försvinner när avgången har gått.
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import webpush from 'web-push';
-import { buildBoard, planTrip, reminderStep, watchDestination, watchSummary } from './src/logic.js';
-import { fetchDepartures, findStart } from './src/trip.js';
+import { buildTrips, reminderStep, watchDestination, watchSummary } from './src/logic.js';
+import { fetchTrips } from './src/trip.js';
 
 const ROOT = import.meta.dirname;
 const PORT = process.env.PORT ?? 5180;
 const MAX_BODY_BYTES = 2048;
+const STOCKHOLM = { south: 58.6, north: 60.4, west: 17.2, east: 19.6 }; // ungefär SL:s område
 const MAX_REMINDERS = 100;
 const REMINDER_TTL_MS = 2 * 60 * 60 * 1000;
 const REMINDER_CHECK_MS = 20000;
@@ -48,10 +49,13 @@ async function readJson(req) {
   return JSON.parse(body);
 }
 
-const stationNamed = (name) => metro.stations.find((s) => s.name.toLowerCase() === name.toLowerCase())?.name;
+const stationNamed = (name) => metro.stations.find((s) => s.name.toLowerCase() === name.toLowerCase());
 
 // Genvägar skickar tal som text, ibland med decimalkomma.
 const coordinate = (value) => Number(String(value).trim().replace(',', '.'));
+
+const inStockholm = (point) => Number.isFinite(point?.lat) && Number.isFinite(point?.lon)
+  && point.lat > STOCKHOLM.south && point.lat < STOCKHOLM.north && point.lon > STOCKHOLM.west && point.lon < STOCKHOLM.east;
 
 async function nextTrain(req, res) {
   let input;
@@ -70,22 +74,13 @@ async function nextTrain(req, res) {
   if (workName && !work) return text(res, 400, `Okänd jobbstation: ${workName}`);
 
   try {
-    const start = await findStart(metro.stations, position);
     const now = new Date();
-    const destination = watchDestination({ home, work, stationName: start.station.name, now });
-    const plan = planTrip(metro.routes, start.station.name, destination);
-    const departures = start.station.name === destination ? [] : await fetchDepartures(start.station.siteId);
-    const board = buildBoard({
-      departures,
-      routes: metro.routes,
-      from: start.station.name,
-      target: plan.target,
-      now,
-      walkMinutes: start.walkMinutes,
-    });
-    text(res, 200, watchSummary({ start, home: destination, plan, board }));
+    const { place, hereId } = watchDestination({ home, work, position, now });
+    const atPlace = hereId === place.id;
+    const trips = atPlace ? [] : buildTrips(await fetchTrips(position, place), now);
+    text(res, 200, watchSummary({ place, atPlace, trips }));
   } catch {
-    text(res, 502, 'Kunde inte hämta avgångar från SL.');
+    text(res, 502, 'Kunde inte hämta resor från SL.');
   }
 }
 
@@ -102,19 +97,21 @@ async function remind(req, res) {
   } catch {
     return text(res, 400, 'Kunde inte läsa frågan.');
   }
-  const { subscription, journey, status, walkMinutes } = input;
-  const from = stationNamed(String(input.from ?? ''));
-  const destination = stationNamed(String(input.destination ?? ''));
+  const { subscription, status, from, to } = input;
+  const key = String(input.key ?? '').slice(0, 120);
+  const time = new Date(input.time);
   const label = String(input.label ?? '').slice(0, 24);
   const valid = PUSH_HOSTS.test(subscription?.endpoint) && subscription.keys?.p256dh && subscription.keys?.auth
-    && from && destination && from !== destination && label && Number.isFinite(journey)
-    && ['calm', 'hurry'].includes(status) && walkMinutes >= 0 && walkMinutes <= 180;
+    && inStockholm(from) && inStockholm(to) && key && label && Number.isFinite(time.getTime())
+    && ['calm', 'hurry'].includes(status);
   if (!valid) return text(res, 400, 'Kunde inte läsa frågan.');
   if (reminders.size >= MAX_REMINDERS) return text(res, 503, 'Försök igen om en stund.');
   const id = randomUUID();
-  const { target } = planTrip(metro.routes, from, destination);
   reminders.set(id, {
-    subscription, journey, status, walkMinutes, from, target, label, expires: Date.now() + REMINDER_TTL_MS,
+    subscription, key, time, status, label,
+    from: { lat: from.lat, lon: from.lon },
+    to: { lat: to.lat, lon: to.lon },
+    expires: Date.now() + REMINDER_TTL_MS,
   });
   text(res, 201, id);
 }
@@ -129,12 +126,14 @@ async function cancelReminder(req, res) {
 }
 
 async function checkReminder(id, reminder) {
-  const { from, target, walkMinutes, subscription } = reminder;
+  const { from, to, time, key, subscription } = reminder;
   if (Date.now() > reminder.expires) return reminders.delete(id);
-  const station = metro.stations.find((s) => s.name === from);
-  const departures = await fetchDepartures(station.siteId);
-  const board = buildBoard({ departures, routes: metro.routes, from, target, now: new Date(), walkMinutes });
-  const step = reminderStep(reminder, board);
+  // Frågar från strax före avgången, så att den kommer först även när det går många andra.
+  // Tidtabellens tid står i nyckeln och räknas också, om avgången skulle gå tidigare än tänkt.
+  const planned = new Date(key.split('|')[1]);
+  const earliest = Math.min(time, Number.isFinite(planned.getTime()) ? planned : time);
+  const trips = buildTrips(await fetchTrips(from, to, new Date(earliest - 120000)), new Date());
+  const step = reminderStep(reminder, trips);
   reminder.status = step.status;
   if (step.done) reminders.delete(id);
   if (!step.text) return;

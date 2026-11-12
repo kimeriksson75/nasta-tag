@@ -3,9 +3,7 @@
 export const RUSH_LIMIT_MIN = 2; // under så här mycket marginal: spring
 export const HURRY_LIMIT_MIN = 5; // under så här mycket marginal: raska på
 
-const WALK_METERS_PER_MIN = 80;
-const DETOUR_FACTOR = 1.3; // gångvägen är längre än fågelvägen
-const GONE_STATES = new Set(['CANCELLED', 'PASSED', 'NOTCALLED', 'REPLACED']);
+export const AT_PLACE_METERS = 400; // så här nära en destination räknas du som framme
 
 export function distanceMeters(a, b) {
   const rad = (deg) => (deg * Math.PI) / 180;
@@ -81,43 +79,95 @@ export function nearestStations(stations, position, count = 1) {
     .slice(0, count);
 }
 
-export function estimateWalkMinutes(from, to) {
-  return (distanceMeters(from, to) * DETOUR_FACTOR) / WALK_METERS_PER_MIN;
+// Trafikslag i SL:s reseplanerare: hur linjen skrivs och vad avgången kallas i löpande text.
+const MODES = {
+  0: { line: 'Pendeltåg', noun: 'pendeltåget' },
+  2: { line: 'Linje', noun: 'tåget' },
+  4: { line: 'Spårvagn', noun: 'spårvagnen' },
+  5: { line: 'Buss', noun: 'bussen' },
+  9: { line: 'Båt', noun: 'båten' },
+};
+const OTHER_MODE = { line: 'Linje', noun: 'avgången' };
+const WALK_CLASSES = new Set([99, 100]);
+
+const isWalk = (leg) => WALK_CLASSES.has(leg.transportation?.product?.class);
+const legTime = (point, kind) => new Date(point[`${kind}TimeEstimated`] ?? point[`${kind}TimePlanned`]);
+const stopName = (point) => point.parent?.disassembledName ?? point.disassembledName ?? point.name?.replace(/, Stockholm$/, '');
+const cancelled = (leg) => (leg.realtimeStatus ?? []).some((status) => status.includes('CANCELLED'));
+
+// En resa från SL:s reseplanerare, kortad till det appen behöver. Du ska gå när första
+// delen börjar, och första fordonet är det som visas stort. Inställda resor och resor
+// utan fordon räknas inte.
+export function parseJourney(journey) {
+  const { legs } = journey;
+  const ride = legs.findIndex((leg) => !isWalk(leg));
+  if (ride < 0 || legs.some(cancelled)) return null;
+  const board = legs[ride];
+  const { transportation, origin } = board;
+  const [lat, lon] = origin.parent?.coord ?? origin.coord;
+  const leaveAt = legTime(legs[0].origin, 'departure');
+  const time = legTime(origin, 'departure');
+  const mode = transportation.product.class;
+  return {
+    key: `${transportation.id}|${origin.departureTimePlanned}`,
+    leaveAt,
+    time,
+    arrival: legTime(legs.at(-1).destination, 'arrival'),
+    mode,
+    line: transportation.disassembledName ?? transportation.number ?? '',
+    towards: transportation.destination?.name ?? '',
+    stop: { name: stopName(origin), lat, lon },
+    walkMinutes: (time - leaveAt) / 60000,
+    walkMeters: legs.slice(0, ride).reduce((sum, leg) => sum + (leg.distance ?? 0), 0),
+    transfers: legs.slice(ride + 1).filter((leg) => !isWalk(leg)).map((leg) => stopName(leg.origin)),
+  };
 }
 
-// Ett tåg från `from` mot slutstationen `destination` passerar `target` om
-// target ligger efter from och senast vid destination på någon sträcka.
-export function trainReaches(routes, from, destination, target) {
-  return routes.some(({ stations }) => {
-    const start = stations.indexOf(from);
-    const end = stations.indexOf(destination);
-    const stop = stations.indexOf(target);
-    if (start < 0 || end < 0 || stop < 0 || start === stop) return false;
-    return start < end ? start < stop && stop <= end : end <= stop && stop < start;
-  });
+// Resorna med marginal och färg. Samma avgång kan komma flera gånger, den räknas en gång.
+export function buildTrips(journeys, now) {
+  const seen = new Set();
+  return journeys
+    .map(parseJourney)
+    .filter((trip) => trip && !seen.has(trip.key) && seen.add(trip.key))
+    .map((trip) => {
+      const slackMinutes = (trip.leaveAt - now) / 60000;
+      return { ...trip, slackMinutes, status: classify(slackMinutes) };
+    })
+    .sort((a, b) => a.leaveAt - b.leaveAt);
 }
 
-function stopsBetween(routes, a, b) {
-  const counts = routes
-    .filter(({ stations }) => stations.includes(a) && stations.includes(b))
-    .map(({ stations }) => Math.abs(stations.indexOf(a) - stations.indexOf(b)));
-  return counts.length ? Math.min(...counts) : Infinity;
+// Snabbast fram vinner bland resorna du hinner med. Kommer två fram samtidigt
+// väljs den du kan gå senare till, och de andra visas som fler avgångar.
+export function pickTrips(trips) {
+  const open = trips.filter((trip) => trip.status !== 'missed');
+  const next = open.reduce((best, trip) => (
+    !best || trip.arrival < best.arrival || (+trip.arrival === +best.arrival && trip.leaveAt > best.leaveAt) ? trip : best
+  ), null);
+  return { next, later: open.filter((trip) => trip !== next) };
 }
 
-// Alla linjefärger möts vid T-Centralen, så ett byte räcker alltid.
-export function planTrip(routes, from, home) {
-  if (stopsBetween(routes, from, home) < Infinity) return { target: home, transfer: null };
-  const names = [...new Set(routes.flatMap((r) => r.stations))];
-  let best = null;
-  let bestStops = Infinity;
-  for (const name of names) {
-    const stops = stopsBetween(routes, from, name) + stopsBetween(routes, name, home);
-    if (stops < bestStops) {
-      best = name;
-      bestStops = stops;
-    }
-  }
-  return { target: best, transfer: best };
+export function lineText({ mode, line, towards }) {
+  return `${(MODES[mode] ?? OTHER_MODE).line} ${line} mot ${towards}`;
+}
+
+export function tripName(trip, label) {
+  return `${stockholmClock.format(trip.time)}-${(MODES[trip.mode] ?? OTHER_MODE).noun} ${tripPhrase(label)}`;
+}
+
+export function routeText(trip, label) {
+  const walk = trip.walkMinutes >= 0.5 && `${Math.round(trip.walkMinutes)} min gång`;
+  const transfers = trip.transfers.map((stop) => `byte ${stop}`);
+  return [walk, trip.stop.name, ...transfers, label].filter(Boolean).join(' → ');
+}
+
+// Destinationen du står vid, om du är nära någon.
+export function placeAt(places, position, meters = AT_PLACE_METERS) {
+  const near = places
+    .filter((place) => Number.isFinite(place.lat))
+    .map((place) => ({ place, distance: distanceMeters(position, place) }))
+    .filter(({ distance }) => distance < meters)
+    .sort((a, b) => a.distance - b.distance);
+  return near[0]?.place.id ?? null;
 }
 
 export function classify(slackMinutes) {
@@ -125,34 +175,6 @@ export function classify(slackMinutes) {
   if (slackMinutes < RUSH_LIMIT_MIN) return 'rush';
   if (slackMinutes < HURRY_LIMIT_MIN) return 'hurry';
   return 'calm';
-}
-
-function isRunning(departure) {
-  if (GONE_STATES.has(departure.state)) return false;
-  return !departure.deviations?.some((d) => d.consequence === 'CANCELLED');
-}
-
-// Tåg mot målet, sorterade på tid, med marginal efter gångtiden.
-export function buildBoard({ departures, routes, from, target, now, walkMinutes }) {
-  return departures
-    .filter((d) => isRunning(d) && trainReaches(routes, from, d.destination, target))
-    .map((d) => {
-      const time = new Date(d.expected ?? d.scheduled);
-      const minutesLeft = (time - now) / 60000;
-      const slackMinutes = minutesLeft - walkMinutes;
-      return {
-        time,
-        minutesLeft,
-        slackMinutes,
-        leaveBy: new Date(time.getTime() - walkMinutes * 60000),
-        status: classify(slackMinutes),
-        journey: d.journey?.id,
-        line: d.line.designation,
-        destination: d.destination,
-      };
-    })
-    .filter((train) => train.minutesLeft > -0.5)
-    .sort((a, b) => a.time - b.time);
 }
 
 const LEADS = {
@@ -179,9 +201,8 @@ export const tripPhrase = (label) => TRIP_PHRASES[label] ?? `till ${label}`;
 
 // Knappar behövs bara när det finns ett val: inte för platsen du är på,
 // och inte för den enda andra destinationen om appen redan valt den.
-export function destinationChoices(places, activeId, stationName) {
-  if (!stationName) return [];
-  const choices = places.filter((place) => place.station !== stationName);
+export function destinationChoices(places, activeId, hereId) {
+  const choices = places.filter((place) => place.id !== hereId);
   return choices.length === 1 && choices[0].id === activeId ? [] : choices;
 }
 
@@ -209,29 +230,29 @@ export function addressSuggestions(locations) {
 
 // Genvägen minns inget mellan körningarna, så under en resa får klockan avgöra:
 // på förmiddagen är du på väg till jobbet, annars hem.
-export function watchDestination({ home, work, stationName, now }) {
-  const places = [{ id: 'home', station: home }];
-  if (work) places.push({ id: 'work', station: work, weekdaysOnly: true });
-  return nextDestination(places, now.getHours() < 12 ? 'work' : 'home', stationName, now).station;
+export function watchDestination({ home, work, position, now }) {
+  const places = [{ id: 'home', label: 'Hem', ...home }];
+  if (work) places.push({ id: 'work', label: 'Jobbet', weekdaysOnly: true, ...work });
+  const hereId = placeAt(places, position);
+  return { place: nextDestination(places, now.getHours() < 12 ? 'work' : 'home', hereId, now), hereId };
 }
 
 const stockholmClock = new Intl.DateTimeFormat('sv-SE', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm',
 });
 
-export function reminderText(train, label) {
-  const { lead, wait, bridge } = departureMessage(train);
-  const goal = `${stockholmClock.format(train.time)}-tåget ${tripPhrase(label)}`;
-  return `${lead.replace('\n', ' ')} ${wait} ${bridge} ${goal}`;
+export function reminderText(trip, label) {
+  const { lead, wait, bridge } = departureMessage(trip);
+  return `${lead.replace('\n', ' ')} ${wait} ${bridge} ${tripName(trip, label)}`;
 }
 
 const URGENCY = { calm: 0, hurry: 1, rush: 2 };
 
 // Ett steg i en påminnelse: notis varje gång läget blir allvarligare, klart när det är dags att gå.
 // Blir tåget försenat går läget tillbaka, så att du får en ny notis när det skärps igen.
-export function reminderStep({ journey, status, label }, board) {
-  const train = board.find((candidate) => candidate.journey === journey);
-  if (!train) return { status, done: true, text: 'Hittar inte ditt tåg längre. Kolla läget i appen.' };
+export function reminderStep({ key, status, label }, trips) {
+  const train = trips.find((candidate) => candidate.key === key);
+  if (!train) return { status, done: true, text: 'Hittar inte din avgång längre. Kolla läget i appen.' };
   if (train.status === 'missed') return { status, done: true };
   const text = URGENCY[train.status] > URGENCY[status] ? reminderText(train, label) : null;
   return { status: train.status, done: Boolean(text) && train.status === 'rush', text };
@@ -240,16 +261,15 @@ export function reminderStep({ journey, status, label }, board) {
 const WATCH_VERDICTS = { calm: '🟢 Gott om tid', hurry: '🟡 Raska på', rush: '🔴 Spring' };
 
 // Kort svar för klockan: färg och besked först, sedan tid och rutt.
-export function watchSummary({ start, home, plan, board }) {
-  if (start.station.name === home) return `🏠 Du är redan vid ${home}`;
-  const next = board.find((train) => train.status !== 'missed');
-  if (!next) return `Inga tåg du hinner med just nu\n${start.station.name} → ${home}`;
-  const walk = Math.max(1, Math.round(start.walkMinutes));
+export function watchSummary({ place, atPlace, trips }) {
+  if (atPlace) return `🏠 Du är redan vid ${place.label}`;
+  const { next } = pickTrips(trips);
+  if (!next) return `Hittar ingen resa du hinner med just nu\n${place.label}`;
   return [
     WATCH_VERDICTS[next.status],
-    `${stockholmClock.format(next.time)} linje ${next.line} mot ${next.destination}`,
-    `Gå senast ${stockholmClock.format(next.leaveBy)}, ${start.estimated ? 'ca ' : ''}${walk} min gång`,
-    `${start.station.name} → ${home}${plan.transfer ? `, byt vid ${plan.transfer}` : ''}`,
+    `${stockholmClock.format(next.time)} ${lineText(next)} från ${next.stop.name}`,
+    `Gå senast ${stockholmClock.format(next.leaveAt)}, ${Math.max(1, Math.round(next.walkMinutes))} min gång`,
+    routeText(next, place.label),
   ].join('\n');
 }
 
@@ -260,14 +280,14 @@ export function isAvailable(place, now) {
 
 // När du är framme blir nästa destination aktiv, så Hem ger Jobbet och tvärtom.
 // Annars ligger valet kvar, så att Jobbet inte hoppar tillbaka till Hem under resan.
-// `chosenId` är det du själv valt, det gäller tills du är framme.
-export function nextDestination(places, activeId, stationName, now, chosenId = null) {
+// `hereId` är destinationen du står vid, `chosenId` det du själv valt, som gäller tills du är framme.
+export function nextDestination(places, activeId, hereId, now, chosenId = null) {
   const active = places.find((place) => place.id === activeId) ?? places[0];
   const open = (place) => isAvailable(place, now);
-  if (active.station !== stationName && (open(active) || active.id === chosenId)) return active;
+  if (active.id !== hereId && (open(active) || active.id === chosenId)) return active;
   const index = places.indexOf(active);
   const others = [...places.slice(index + 1), ...places.slice(0, index)];
-  return others.find((place) => place.station !== stationName && open(place))
-    ?? [active, ...others].find((place) => place.station === stationName && open(place))
+  return others.find((place) => place.id !== hereId && open(place))
+    ?? [active, ...others].find((place) => place.id === hereId && open(place))
     ?? active;
 }
