@@ -80,7 +80,9 @@ struct LockScreenView: View {
                 .multilineTextAlignment(.trailing)
             }
             HStack(spacing: 8) {
-                if let minutes = state.snoozeMinutes, state.status != .missed {
+                if state.snoozed == true {
+                    Button(intent: SnoozeTripIntent()) { Pill(text: "Ångra snooze") }
+                } else if let minutes = state.snoozeMinutes, state.status != .missed {
                     Button(intent: SnoozeTripIntent()) { Pill(text: "Snooze \(minutes) min") }
                 }
                 Button(intent: StopFollowingIntent()) { Pill(text: "Sluta följa") }

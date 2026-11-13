@@ -54,7 +54,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.distanceFilter = 10
         manager.headingFilter = 2
-        TripActions.snooze = { [weak self] in self?.snoozeFollowed() }
+        TripActions.snooze = { [weak self] in self?.toggleSnoozeFollowed() }
         TripActions.stopFollowing = { [weak self] in self?.unfollow() }
     }
 
@@ -134,12 +134,12 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func chooseDestination() {
         hereId = position.flatMap { placeAt(places, position: $0) }
         guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
-        if next.id != activeId { activeId = next.id; snoozed = [] }
+        if next.id != activeId { activeId = next.id; snoozed = nil }
         if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
     func choose(_ place: Place) {
-        snoozed = []
+        snoozed = nil
         chosenId = place.id
         activeId = place.id
         refreshSoon()
@@ -152,13 +152,13 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     private var trips: [Trip] { buildTrips(journeys ?? [], now: now) }
     private var picked: (next: Trip?, later: [Trip]) {
-        pickTrips(trips.filter { trip in snoozed.last.map { trip.leaveAt > $0.leaveAt } ?? true })
+        pickTrips(trips.filter { trip in snoozed.map { trip.leaveAt > $0.leaveAt } ?? true })
     }
 
     // MARK: Snooze
 
-    /// Avgångar du har snoozat, den senaste sist. Allt som går före den sista hoppas över.
-    private(set) var snoozed: [Trip] = []
+    /// Avgången du har snoozat. Bara en åt gången: Snooze-knappen slår av och på.
+    private(set) var snoozed: Trip?
 
     /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
     var snoozeTarget: Trip? { next.flatMap(target(after:)) }
@@ -175,29 +175,29 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         return max(1, Int((later.leaveAt.timeIntervalSince(trip.leaveAt) / 60).rounded()))
     }
 
-    func snooze() {
-        guard let next, snoozeTarget != nil else { return }
-        snoozed.append(next)
+    /// Snoozar avgången du har nu, eller ångrar snoozen om du redan har en.
+    func toggleSnooze() {
+        if snoozed != nil {
+            snoozed = nil
+        } else {
+            guard let next, snoozeTarget != nil else { return }
+            snoozed = next
+        }
         retargetFollowing()
     }
 
-    /// Snooze från låsskärmen hoppar över resan som syns där, även om appen hunnit välja en annan.
-    func snoozeFollowed() {
+    /// Från låsskärmen gäller knappen resan som syns där, även om appen hunnit välja en annan.
+    func toggleSnoozeFollowed() {
+        if snoozed != nil { return toggleSnooze() }
         let followed = following?.content.state.key
         guard let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
-        snoozed.append(trip)
-        retargetFollowing()
-    }
-
-    func undoSnooze() {
-        guard !snoozed.isEmpty else { return }
-        snoozed.removeLast()
+        snoozed = trip
         retargetFollowing()
     }
 
     /// En snooze glöms när avgången du hoppade över har gått, då finns inget att ångra.
     private func forgetOldSnoozes() {
-        snoozed.removeAll { $0.time < now }
+        if let snoozed, snoozed.time < now { self.snoozed = nil }
     }
 
     /// Följer du en resa på låsskärmen följer låsskärmen med till den nya.
@@ -302,7 +302,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
-                                    snoozeMinutes: snoozeMinutes(for: trip))
+                                    snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil)
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.

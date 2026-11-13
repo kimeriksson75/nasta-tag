@@ -9,7 +9,7 @@ enum TripActions {
     static var stopFollowing: (() -> Void)?
 }
 
-/// Hoppa över avgången du följer och ta nästa.
+/// Hoppa över avgången du följer och ta nästa, eller ångra det.
 struct SnoozeTripIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Snooze"
     static let isDiscoverable = false
