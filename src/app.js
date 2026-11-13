@@ -3,7 +3,7 @@ import {
   distanceText, lineText, nextDestination, pickTrips, placeAt, routeBearing, routeText, tripName, walkSteps,
 } from './logic.js';
 import { drawRoute, followMe, openMap, themeMap } from './map.js';
-import { abortAfter, fetchTrips, fetchWalkRoute } from './trip.js';
+import { abortAfter, fetchUpcomingTrips, fetchWalkRoute } from './trip.js';
 
 const ADDRESS_URL = 'https://journeyplanner.integration.sl.se/v2/stop-finder';
 const OLD_HOME_KEY = 'nasta-tag.home';
@@ -84,7 +84,7 @@ async function refreshTrips() {
   if (state.hereId === destination.id) return render();
   const asked = ++tripsAsked;
   try {
-    const journeys = await fetchTrips(state.position, destination);
+    const journeys = await fetchUpcomingTrips(state.position, destination);
     if (asked !== tripsAsked) return; // ett nyare svar är på väg
     state.journeys = journeys;
     state.journeysFor = destination.id;

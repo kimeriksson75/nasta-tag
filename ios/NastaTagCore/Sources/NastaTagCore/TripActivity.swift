@@ -11,18 +11,22 @@ public struct TripAttributes: ActivityAttributes {
         public var line: String
         public var towards: String
         public var station: String
-        public var journey: Int?
+        /// Avgången som följs: fordonet och dess planerade tid.
+        public var key: String
+        /// Trafikslaget, så att låsskärmen kan säga bussen, tåget eller båten.
+        public var mode: Int
         /// Hela minuter tills du ska gå. Appen uppdaterar dem varje minut medan du följer tåget.
         public var minutes: Int
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
-                    journey: Int?, minutes: Int) {
+                    key: String, mode: Int, minutes: Int) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
             self.line = line
             self.towards = towards
             self.station = station
-            self.journey = journey
+            self.key = key
+            self.mode = mode
             self.minutes = minutes
         }
     }

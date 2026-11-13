@@ -1,0 +1,6052 @@
+{
+  "systemMessages": [
+    
+  ],
+  "journeys": [
+    {
+      "tripDuration": 984,
+      "tripRtDuration": 936,
+      "rating": 0,
+      "isAdditional": false,
+      "interchanges": 0,
+      "legs": [
+        {
+          "infos": [
+            
+          ],
+          "distance": 110,
+          "duration": 120,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 0,
+              "cumDuration": 0,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "ORIGIN",
+              "name": "",
+              "toCoordsIndex": 1,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 19,
+              "cumDuration": 16,
+              "distance": 19,
+              "duration": 16,
+              "fromCoordsIndex": 1,
+              "manoeuvre": "KEEP",
+              "name": "Fußgängerampel",
+              "properties": {
+                "OUTDOOR_TYPE": "TRAFFICLIGHT"
+              },
+              "skyDirection": 180,
+              "toCoordsIndex": 6,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.33247,
+                18.064366
+              ],
+              "cumDistance": 100,
+              "cumDuration": 89,
+              "distance": 81,
+              "duration": 73,
+              "fromCoordsIndex": 6,
+              "manoeuvre": "TURN",
+              "name": "Klarabergsgatan",
+              "properties": {
+                "INDOOR_TYPE": "BUILDING_WAY"
+              },
+              "skyDirection": 199,
+              "toCoordsIndex": 12,
+              "turnDirection": "SLIGHT_RIGHT"
+            },
+            {
+              "coord": [
+                59.332222,
+                18.063063
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 9,
+              "duration": 8,
+              "fromCoordsIndex": 12,
+              "manoeuvre": "TURN",
+              "name": "Drottninggatan",
+              "skyDirection": 238,
+              "toCoordsIndex": 13,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.33214,
+                18.063144
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 129,
+              "duration": 0,
+              "fromCoordsIndex": 13,
+              "manoeuvre": "ENTER",
+              "name": "Einstieg U-Bahn",
+              "toCoordsIndex": 13,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "coord:2010929:3747368:MRCV:Stockholm, Sergelgången 31:0",
+            "name": "Stockholm, Sergelgången 31",
+            "disassembledName": "Sergelgången 31",
+            "type": "address",
+            "coord": [
+              59.332635,
+              18.064483
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "departureTimeBaseTimetable": "2026-11-13T13:25:12Z",
+            "departureTimePlanned": "2026-11-13T13:25:12Z",
+            "departureTimeEstimated": "2026-11-13T13:26:12Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "destination": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:27:12Z",
+            "arrivalTimePlanned": "2026-11-13T13:27:12Z",
+            "arrivalTimeEstimated": "2026-11-13T13:28:12Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.332635,
+              18.064483
+            ],
+            [
+              59.33263,
+              18.064474
+            ],
+            [
+              59.33258,
+              18.064447
+            ],
+            [
+              59.332566,
+              18.064429
+            ],
+            [
+              59.332534,
+              18.064411
+            ],
+            [
+              59.332511,
+              18.064393
+            ],
+            [
+              59.33247,
+              18.064366
+            ],
+            [
+              59.332484,
+              18.064303
+            ],
+            [
+              59.332493,
+              18.064186
+            ],
+            [
+              59.332488,
+              18.064096
+            ],
+            [
+              59.332332,
+              18.063414
+            ],
+            [
+              59.332296,
+              18.063243
+            ],
+            [
+              59.332222,
+              18.063063
+            ],
+            [
+              59.33214,
+              18.063144
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 180,
+          "footPathInfo": [
+            {
+              "duration": 180,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 30,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.331517,
+                      18.061231
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "T-Centralen",
+                      "areaType": 1,
+                      "georef": "424124422:133:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.332163,
+                      18.063225
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "9",
+                      "areaGid": "9023001001051003",
+                      "areaName": "Sergels torg Drottninggatan Gamla stan",
+                      "areaType": 32,
+                      "georef": "1000440003:10:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:27:12Z",
+            "departureTimePlanned": "2026-11-13T13:27:12Z",
+            "departureTimeEstimated": "2026-11-13T13:28:12Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:30:12Z",
+            "arrivalTimePlanned": "2026-11-13T13:30:12Z",
+            "arrivalTimeEstimated": "2026-11-13T13:31:12Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "id": "18001051|9|1",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.332163,
+                18.063225
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "9",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:27:12Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "4",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:30:12Z"
+            }
+          ],
+          "coords": [
+            [
+              59.332142,
+              18.063148
+            ],
+            [
+              59.331521,
+              18.061229
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 336,
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:30:12Z",
+            "departureTimePlanned": "2026-11-13T13:30:12Z",
+            "departureTimeEstimated": "2026-11-13T13:31:12Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "occupancy": "FEW_SEATS",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:36:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:36:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:36:48Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "transportation": {
+            "id": "tfs:02017: :R:y01",
+            "name": "Tunnelbana tunnelbanans gröna linje 17",
+            "number": "tunnelbanans gröna linje 17",
+            "product": {
+              "id": 8,
+              "class": 2,
+              "name": "Tunnelbana",
+              "iconId": 1
+            },
+            "operator": {
+              "id": "1",
+              "name": "Storstockholms Lokaltrafik"
+            },
+            "destination": {
+              "id": "18001951",
+              "name": "Skarpnäck",
+              "type": "stop"
+            },
+            "properties": {
+              "tripCode": 1074,
+              "timetablePeriod": "Current",
+              "lineDisplay": "LINE",
+              "globalId": "9011001001700000",
+              "RealtimeTripId": "9015001001712672",
+              "shortTrain": false,
+              "AVMSTripID": "9015001001712672"
+            },
+            "isSamtrafik": false,
+            "disassembledName": "17"
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "4",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:30:12Z",
+              "departureTimeEstimated": "2026-11-13T13:31:12Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001022",
+              "name": "Gamla stan, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.323364,
+                18.067052
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001021000",
+                "name": "Gamla stan, Stockholm",
+                "disassembledName": "Gamla stan",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001021"
+                },
+                "coord": [
+                  59.323286,
+                  18.067169
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:32:06Z",
+              "departureTimeEstimated": "2026-11-13T13:33:06Z",
+              "arrivalTimePlanned": "2026-11-13T13:31:36Z",
+              "arrivalTimeEstimated": "2026-11-13T13:32:12Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001012",
+              "name": "Slussen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.31962,
+                18.072235
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001011000",
+                "name": "Slussen, Stockholm",
+                "disassembledName": "Slussen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001011"
+                },
+                "coord": [
+                  59.319533,
+                  18.071615
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:34:06Z",
+              "departureTimeEstimated": "2026-11-13T13:34:36Z",
+              "arrivalTimePlanned": "2026-11-13T13:33:24Z",
+              "arrivalTimeEstimated": "2026-11-13T13:34:00Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001512",
+              "name": "Medborgarplatsen, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.31488,
+                18.073412
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001511000",
+                "name": "Medborgarplatsen, Stockholm",
+                "disassembledName": "Medborgarplatsen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001511"
+                },
+                "coord": [
+                  59.31488,
+                  18.073439
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "departureTimePlanned": "2026-11-13T13:35:30Z",
+              "departureTimeEstimated": "2026-11-13T13:36:06Z",
+              "arrivalTimePlanned": "2026-11-13T13:35:00Z",
+              "arrivalTimeEstimated": "2026-11-13T13:35:12Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:36:36Z",
+              "arrivalTimeEstimated": "2026-11-13T13:36:48Z"
+            }
+          ],
+          "properties": {
+            "tripId": "9015001001712672"
+          },
+          "coords": [
+            [
+              59.331558,
+              18.061319
+            ],
+            [
+              59.331512,
+              18.061223
+            ],
+            [
+              59.331426,
+              18.061051
+            ],
+            [
+              59.331337,
+              18.060881
+            ],
+            [
+              59.331263,
+              18.060744
+            ],
+            [
+              59.331172,
+              18.060589
+            ],
+            [
+              59.331119,
+              18.060505
+            ],
+            [
+              59.331061,
+              18.060423
+            ],
+            [
+              59.330984,
+              18.060322
+            ],
+            [
+              59.330876,
+              18.060192
+            ],
+            [
+              59.330831,
+              18.06014
+            ],
+            [
+              59.330739,
+              18.060043
+            ],
+            [
+              59.330657,
+              18.059966
+            ],
+            [
+              59.330597,
+              18.059916
+            ],
+            [
+              59.330536,
+              18.059871
+            ],
+            [
+              59.330474,
+              18.059831
+            ],
+            [
+              59.330402,
+              18.059791
+            ],
+            [
+              59.33034,
+              18.059762
+            ],
+            [
+              59.330278,
+              18.059739
+            ],
+            [
+              59.330222,
+              18.059725
+            ],
+            [
+              59.330127,
+              18.059711
+            ],
+            [
+              59.330058,
+              18.059707
+            ],
+            [
+              59.329999,
+              18.059707
+            ],
+            [
+              59.329901,
+              18.059714
+            ],
+            [
+              59.329829,
+              18.059725
+            ],
+            [
+              59.329756,
+              18.059742
+            ],
+            [
+              59.329682,
+              18.059764
+            ],
+            [
+              59.32961,
+              18.059791
+            ],
+            [
+              59.329533,
+              18.059827
+            ],
+            [
+              59.329463,
+              18.059866
+            ],
+            [
+              59.32932,
+              18.059958
+            ],
+            [
+              59.32914,
+              18.06009
+            ],
+            [
+              59.329012,
+              18.060195
+            ],
+            [
+              59.328894,
+              18.060302
+            ],
+            [
+              59.328692,
+              18.060502
+            ],
+            [
+              59.328593,
+              18.060604
+            ],
+            [
+              59.3285,
+              18.060706
+            ],
+            [
+              59.328328,
+              18.060907
+            ],
+            [
+              59.328177,
+              18.061092
+            ],
+            [
+              59.328091,
+              18.061205
+            ],
+            [
+              59.328014,
+              18.06131
+            ],
+            [
+              59.327802,
+              18.061614
+            ],
+            [
+              59.327617,
+              18.061889
+            ],
+            [
+              59.327021,
+              18.062792
+            ],
+            [
+              59.326908,
+              18.062971
+            ],
+            [
+              59.326835,
+              18.063092
+            ],
+            [
+              59.326745,
+              18.063252
+            ],
+            [
+              59.326624,
+              18.063473
+            ],
+            [
+              59.326336,
+              18.064012
+            ],
+            [
+              59.326237,
+              18.064191
+            ],
+            [
+              59.326137,
+              18.064367
+            ],
+            [
+              59.326041,
+              18.064524
+            ],
+            [
+              59.325995,
+              18.064593
+            ],
+            [
+              59.325926,
+              18.064693
+            ],
+            [
+              59.325803,
+              18.064861
+            ],
+            [
+              59.325669,
+              18.065034
+            ],
+            [
+              59.325561,
+              18.065166
+            ],
+            [
+              59.325504,
+              18.065233
+            ],
+            [
+              59.325412,
+              18.065334
+            ],
+            [
+              59.325319,
+              18.06543
+            ],
+            [
+              59.325217,
+              18.065533
+            ],
+            [
+              59.325065,
+              18.065677
+            ],
+            [
+              59.324893,
+              18.065831
+            ],
+            [
+              59.324699,
+              18.065995
+            ],
+            [
+              59.324539,
+              18.066118
+            ],
+            [
+              59.324391,
+              18.066219
+            ],
+            [
+              59.324016,
+              18.066459
+            ],
+            [
+              59.323919,
+              18.066528
+            ],
+            [
+              59.323844,
+              18.066586
+            ],
+            [
+              59.323754,
+              18.066662
+            ],
+            [
+              59.323609,
+              18.066796
+            ],
+            [
+              59.323471,
+              18.066936
+            ],
+            [
+              59.323364,
+              18.06705
+            ],
+            [
+              59.323199,
+              18.067229
+            ],
+            [
+              59.322995,
+              18.067455
+            ],
+            [
+              59.322846,
+              18.067624
+            ],
+            [
+              59.322691,
+              18.067809
+            ],
+            [
+              59.322612,
+              18.06791
+            ],
+            [
+              59.322543,
+              18.068003
+            ],
+            [
+              59.322363,
+              18.068263
+            ],
+            [
+              59.322245,
+              18.068442
+            ],
+            [
+              59.322147,
+              18.0686
+            ],
+            [
+              59.321992,
+              18.068856
+            ],
+            [
+              59.321516,
+              18.069656
+            ],
+            [
+              59.321397,
+              18.069851
+            ],
+            [
+              59.321252,
+              18.070084
+            ],
+            [
+              59.321123,
+              18.07028
+            ],
+            [
+              59.320587,
+              18.071072
+            ],
+            [
+              59.32047,
+              18.071237
+            ],
+            [
+              59.320345,
+              18.071406
+            ],
+            [
+              59.320172,
+              18.071633
+            ],
+            [
+              59.319961,
+              18.071898
+            ],
+            [
+              59.319871,
+              18.071999
+            ],
+            [
+              59.319804,
+              18.072067
+            ],
+            [
+              59.319721,
+              18.072145
+            ],
+            [
+              59.319621,
+              18.07223
+            ],
+            [
+              59.319501,
+              18.072324
+            ],
+            [
+              59.319413,
+              18.072386
+            ],
+            [
+              59.319331,
+              18.072437
+            ],
+            [
+              59.319227,
+              18.072494
+            ],
+            [
+              59.319098,
+              18.072555
+            ],
+            [
+              59.319019,
+              18.072588
+            ],
+            [
+              59.318932,
+              18.07262
+            ],
+            [
+              59.318794,
+              18.072658
+            ],
+            [
+              59.318684,
+              18.072682
+            ],
+            [
+              59.318575,
+              18.072701
+            ],
+            [
+              59.318489,
+              18.072712
+            ],
+            [
+              59.318384,
+              18.072719
+            ],
+            [
+              59.318315,
+              18.072719
+            ],
+            [
+              59.318235,
+              18.072711
+            ],
+            [
+              59.318056,
+              18.072674
+            ],
+            [
+              59.317927,
+              18.072672
+            ],
+            [
+              59.3178,
+              18.072658
+            ],
+            [
+              59.317618,
+              18.072677
+            ],
+            [
+              59.317544,
+              18.072688
+            ],
+            [
+              59.317491,
+              18.072698
+            ],
+            [
+              59.317417,
+              18.072719
+            ],
+            [
+              59.317263,
+              18.072774
+            ],
+            [
+              59.316761,
+              18.07299
+            ],
+            [
+              59.316471,
+              18.073101
+            ],
+            [
+              59.316075,
+              18.073241
+            ],
+            [
+              59.315929,
+              18.073288
+            ],
+            [
+              59.315835,
+              18.073316
+            ],
+            [
+              59.315743,
+              18.073339
+            ],
+            [
+              59.315634,
+              18.073361
+            ],
+            [
+              59.315514,
+              18.073379
+            ],
+            [
+              59.315385,
+              18.073395
+            ],
+            [
+              59.315213,
+              18.073408
+            ],
+            [
+              59.315064,
+              18.073412
+            ],
+            [
+              59.314884,
+              18.073414
+            ],
+            [
+              59.314627,
+              18.073415
+            ],
+            [
+              59.314521,
+              18.073419
+            ],
+            [
+              59.314438,
+              18.073425
+            ],
+            [
+              59.314318,
+              18.073439
+            ],
+            [
+              59.314191,
+              18.073462
+            ],
+            [
+              59.314064,
+              18.073491
+            ],
+            [
+              59.313943,
+              18.073527
+            ],
+            [
+              59.313815,
+              18.073574
+            ],
+            [
+              59.313714,
+              18.073616
+            ],
+            [
+              59.313487,
+              18.073718
+            ],
+            [
+              59.312459,
+              18.07419
+            ],
+            [
+              59.312245,
+              18.074284
+            ],
+            [
+              59.311828,
+              18.074461
+            ],
+            [
+              59.311622,
+              18.074553
+            ],
+            [
+              59.311001,
+              18.074852
+            ],
+            [
+              59.30965,
+              18.075492
+            ],
+            [
+              59.30848,
+              18.076072
+            ]
+          ],
+          "realtimeStatus": [
+            "MONITORED"
+          ],
+          "isRealtimeControlled": true
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 120,
+          "footPathInfo": [
+            {
+              "duration": 120,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 20,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.309823,
+                      18.075343
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "5",
+                      "areaGid": "9023001001521003",
+                      "areaName": "Allhelgonagatan Götgatan",
+                      "areaType": 32,
+                      "georef": "1000724572:69:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.308484,
+                      18.076071
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "Skanstull",
+                      "areaType": 1,
+                      "georef": "1000048751:226:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:36:36Z",
+            "departureTimePlanned": "2026-11-13T13:36:36Z",
+            "departureTimeEstimated": "2026-11-13T13:36:48Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "destination": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:38:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:38:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:38:48Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:36:36Z"
+            },
+            {
+              "id": "18001521|5|1",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.309823,
+                18.075343
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "5",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:38:36Z"
+            }
+          ],
+          "coords": [
+            [
+              59.308483,
+              18.07608
+            ],
+            [
+              59.309828,
+              18.07537
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "distance": 333,
+          "duration": 180,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 155,
+              "cumDuration": 0,
+              "distance": 155,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "LEAVE",
+              "name": "Ausstieg U-Bahn tunnelbanans gröna linje 17",
+              "toCoordsIndex": 0,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 202,
+              "cumDuration": 43,
+              "distance": 47,
+              "duration": 43,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "KEEP",
+              "name": "Götgatan",
+              "skyDirection": 180,
+              "toCoordsIndex": 2,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30942,
+                18.075586
+              ],
+              "cumDistance": 206,
+              "cumDuration": 46,
+              "distance": 4,
+              "duration": 3,
+              "fromCoordsIndex": 2,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 164,
+              "toCoordsIndex": 3,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309406,
+                18.075523
+              ],
+              "cumDistance": 229,
+              "cumDuration": 66,
+              "distance": 22,
+              "duration": 20,
+              "fromCoordsIndex": 3,
+              "manoeuvre": "TURN",
+              "name": "Götgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 254,
+              "toCoordsIndex": 4,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.309209,
+                18.075613
+              ],
+              "cumDistance": 246,
+              "cumDuration": 81,
+              "distance": 16,
+              "duration": 15,
+              "fromCoordsIndex": 4,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 165,
+              "toCoordsIndex": 5,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309172,
+                18.075334
+              ],
+              "cumDistance": 276,
+              "cumDuration": 109,
+              "distance": 30,
+              "duration": 27,
+              "fromCoordsIndex": 5,
+              "manoeuvre": "CONTINUE",
+              "name": "Außenrampe",
+              "properties": {
+                "OUTDOOR_TYPE": "OUTDOOR_RAMP"
+              },
+              "skyDirection": 255,
+              "toCoordsIndex": 7,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30908,
+                18.074912
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 57,
+              "duration": 51,
+              "fromCoordsIndex": 7,
+              "manoeuvre": "TURN",
+              "name": "Dalslandsgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 168,
+              "toCoordsIndex": 11,
+              "turnDirection": "SHARP_RIGHT"
+            },
+            {
+              "coord": [
+                59.308998,
+                18.073996
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 11,
+              "manoeuvre": "DESTINATION",
+              "name": "Dalslandsgatan",
+              "toCoordsIndex": 12,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:38:36Z",
+            "departureTimePlanned": "2026-11-13T13:38:36Z",
+            "departureTimeEstimated": "2026-11-13T13:38:48Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "id": "coord:2011988:3752524:MRCV:Stockholm, Dalslandsgatan 3:0",
+            "name": "Stockholm, Dalslandsgatan 3",
+            "disassembledName": "Dalslandsgatan 3",
+            "type": "address",
+            "coord": [
+              59.309002,
+              18.073996
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "arrivalTimeBaseTimetable": "2026-11-13T13:41:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:41:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:41:48Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.309832,
+              18.075361
+            ],
+            [
+              59.309795,
+              18.075388
+            ],
+            [
+              59.30942,
+              18.075586
+            ],
+            [
+              59.309406,
+              18.075523
+            ],
+            [
+              59.309209,
+              18.075613
+            ],
+            [
+              59.309172,
+              18.075334
+            ],
+            [
+              59.309122,
+              18.074894
+            ],
+            [
+              59.30908,
+              18.074912
+            ],
+            [
+              59.309071,
+              18.074849
+            ],
+            [
+              59.309112,
+              18.074831
+            ],
+            [
+              59.309099,
+              18.074723
+            ],
+            [
+              59.308998,
+              18.073996
+            ],
+            [
+              59.309002,
+              18.073996
+            ]
+          ]
+        }
+      ],
+      "daysOfService": {
+        "rvb": "0000000000000000000000000000100000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "tripDuration": 984,
+      "tripRtDuration": 942,
+      "rating": 0,
+      "isAdditional": false,
+      "interchanges": 0,
+      "legs": [
+        {
+          "infos": [
+            
+          ],
+          "distance": 110,
+          "duration": 120,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 0,
+              "cumDuration": 0,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "ORIGIN",
+              "name": "",
+              "toCoordsIndex": 1,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 19,
+              "cumDuration": 16,
+              "distance": 19,
+              "duration": 16,
+              "fromCoordsIndex": 1,
+              "manoeuvre": "KEEP",
+              "name": "Fußgängerampel",
+              "properties": {
+                "OUTDOOR_TYPE": "TRAFFICLIGHT"
+              },
+              "skyDirection": 180,
+              "toCoordsIndex": 6,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.33247,
+                18.064366
+              ],
+              "cumDistance": 100,
+              "cumDuration": 89,
+              "distance": 81,
+              "duration": 73,
+              "fromCoordsIndex": 6,
+              "manoeuvre": "TURN",
+              "name": "Klarabergsgatan",
+              "properties": {
+                "INDOOR_TYPE": "BUILDING_WAY"
+              },
+              "skyDirection": 199,
+              "toCoordsIndex": 12,
+              "turnDirection": "SLIGHT_RIGHT"
+            },
+            {
+              "coord": [
+                59.332222,
+                18.063063
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 9,
+              "duration": 8,
+              "fromCoordsIndex": 12,
+              "manoeuvre": "TURN",
+              "name": "Drottninggatan",
+              "skyDirection": 238,
+              "toCoordsIndex": 13,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.33214,
+                18.063144
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 129,
+              "duration": 0,
+              "fromCoordsIndex": 13,
+              "manoeuvre": "ENTER",
+              "name": "Einstieg U-Bahn",
+              "toCoordsIndex": 13,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "coord:2010929:3747368:MRCV:Stockholm, Sergelgången 31:0",
+            "name": "Stockholm, Sergelgången 31",
+            "disassembledName": "Sergelgången 31",
+            "type": "address",
+            "coord": [
+              59.332635,
+              18.064483
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "departureTimeBaseTimetable": "2026-11-13T13:27:42Z",
+            "departureTimePlanned": "2026-11-13T13:27:42Z",
+            "departureTimeEstimated": "2026-11-13T13:29:36Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "destination": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:29:42Z",
+            "arrivalTimePlanned": "2026-11-13T13:29:42Z",
+            "arrivalTimeEstimated": "2026-11-13T13:31:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.332635,
+              18.064483
+            ],
+            [
+              59.33263,
+              18.064474
+            ],
+            [
+              59.33258,
+              18.064447
+            ],
+            [
+              59.332566,
+              18.064429
+            ],
+            [
+              59.332534,
+              18.064411
+            ],
+            [
+              59.332511,
+              18.064393
+            ],
+            [
+              59.33247,
+              18.064366
+            ],
+            [
+              59.332484,
+              18.064303
+            ],
+            [
+              59.332493,
+              18.064186
+            ],
+            [
+              59.332488,
+              18.064096
+            ],
+            [
+              59.332332,
+              18.063414
+            ],
+            [
+              59.332296,
+              18.063243
+            ],
+            [
+              59.332222,
+              18.063063
+            ],
+            [
+              59.33214,
+              18.063144
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 180,
+          "footPathInfo": [
+            {
+              "duration": 180,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 30,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.331517,
+                      18.061231
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "T-Centralen",
+                      "areaType": 1,
+                      "georef": "424124422:133:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.332163,
+                      18.063225
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "9",
+                      "areaGid": "9023001001051003",
+                      "areaName": "Sergels torg Drottninggatan Gamla stan",
+                      "areaType": 32,
+                      "georef": "1000440003:10:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:29:42Z",
+            "departureTimePlanned": "2026-11-13T13:29:42Z",
+            "departureTimeEstimated": "2026-11-13T13:31:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:32:42Z",
+            "arrivalTimePlanned": "2026-11-13T13:32:42Z",
+            "arrivalTimeEstimated": "2026-11-13T13:34:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "id": "18001051|9|1",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.332163,
+                18.063225
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "9",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:29:42Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "4",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:32:42Z"
+            }
+          ],
+          "coords": [
+            [
+              59.332142,
+              18.063148
+            ],
+            [
+              59.331521,
+              18.061229
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 342,
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:32:42Z",
+            "departureTimePlanned": "2026-11-13T13:32:42Z",
+            "departureTimeEstimated": "2026-11-13T13:34:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "occupancy": "FEW_SEATS",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:39:06Z",
+            "arrivalTimePlanned": "2026-11-13T13:39:06Z",
+            "arrivalTimeEstimated": "2026-11-13T13:40:18Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "transportation": {
+            "id": "tfs:02019: :R:y01",
+            "name": "Tunnelbana tunnelbanans gröna linje 19",
+            "number": "tunnelbanans gröna linje 19",
+            "product": {
+              "id": 8,
+              "class": 2,
+              "name": "Tunnelbana",
+              "iconId": 1
+            },
+            "operator": {
+              "id": "1",
+              "name": "Storstockholms Lokaltrafik"
+            },
+            "destination": {
+              "id": "18001721",
+              "name": "Hagsätra",
+              "type": "stop"
+            },
+            "properties": {
+              "tripCode": 983,
+              "timetablePeriod": "Current",
+              "lineDisplay": "LINE",
+              "globalId": "9011001001900000",
+              "RealtimeTripId": "9015001001912661",
+              "shortTrain": false,
+              "AVMSTripID": "9015001001912661"
+            },
+            "isSamtrafik": false,
+            "disassembledName": "19"
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "4",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:32:42Z",
+              "departureTimeEstimated": "2026-11-13T13:34:36Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001022",
+              "name": "Gamla stan, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.323364,
+                18.067052
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001021000",
+                "name": "Gamla stan, Stockholm",
+                "disassembledName": "Gamla stan",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001021"
+                },
+                "coord": [
+                  59.323286,
+                  18.067169
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:34:36Z",
+              "departureTimeEstimated": "2026-11-13T13:36:30Z",
+              "arrivalTimePlanned": "2026-11-13T13:34:06Z",
+              "arrivalTimeEstimated": "2026-11-13T13:35:36Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001012",
+              "name": "Slussen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.31962,
+                18.072235
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001011000",
+                "name": "Slussen, Stockholm",
+                "disassembledName": "Slussen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001011"
+                },
+                "coord": [
+                  59.319533,
+                  18.071615
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:36:36Z",
+              "departureTimeEstimated": "2026-11-13T13:38:06Z",
+              "arrivalTimePlanned": "2026-11-13T13:35:54Z",
+              "arrivalTimeEstimated": "2026-11-13T13:37:24Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001512",
+              "name": "Medborgarplatsen, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.31488,
+                18.073412
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001511000",
+                "name": "Medborgarplatsen, Stockholm",
+                "disassembledName": "Medborgarplatsen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001511"
+                },
+                "coord": [
+                  59.31488,
+                  18.073439
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "departureTimePlanned": "2026-11-13T13:38:00Z",
+              "departureTimeEstimated": "2026-11-13T13:39:06Z",
+              "arrivalTimePlanned": "2026-11-13T13:37:30Z",
+              "arrivalTimeEstimated": "2026-11-13T13:38:42Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:39:06Z",
+              "arrivalTimeEstimated": "2026-11-13T13:40:18Z"
+            }
+          ],
+          "properties": {
+            "tripId": "9015001001912661"
+          },
+          "coords": [
+            [
+              59.331558,
+              18.061319
+            ],
+            [
+              59.331512,
+              18.061223
+            ],
+            [
+              59.331426,
+              18.061051
+            ],
+            [
+              59.331337,
+              18.060881
+            ],
+            [
+              59.331263,
+              18.060744
+            ],
+            [
+              59.331172,
+              18.060589
+            ],
+            [
+              59.331119,
+              18.060505
+            ],
+            [
+              59.331061,
+              18.060423
+            ],
+            [
+              59.330984,
+              18.060322
+            ],
+            [
+              59.330876,
+              18.060192
+            ],
+            [
+              59.330831,
+              18.06014
+            ],
+            [
+              59.330739,
+              18.060043
+            ],
+            [
+              59.330657,
+              18.059966
+            ],
+            [
+              59.330597,
+              18.059916
+            ],
+            [
+              59.330536,
+              18.059871
+            ],
+            [
+              59.330474,
+              18.059831
+            ],
+            [
+              59.330402,
+              18.059791
+            ],
+            [
+              59.33034,
+              18.059762
+            ],
+            [
+              59.330278,
+              18.059739
+            ],
+            [
+              59.330222,
+              18.059725
+            ],
+            [
+              59.330127,
+              18.059711
+            ],
+            [
+              59.330058,
+              18.059707
+            ],
+            [
+              59.329999,
+              18.059707
+            ],
+            [
+              59.329901,
+              18.059714
+            ],
+            [
+              59.329829,
+              18.059725
+            ],
+            [
+              59.329756,
+              18.059742
+            ],
+            [
+              59.329682,
+              18.059764
+            ],
+            [
+              59.32961,
+              18.059791
+            ],
+            [
+              59.329533,
+              18.059827
+            ],
+            [
+              59.329463,
+              18.059866
+            ],
+            [
+              59.32932,
+              18.059958
+            ],
+            [
+              59.32914,
+              18.06009
+            ],
+            [
+              59.329012,
+              18.060195
+            ],
+            [
+              59.328894,
+              18.060302
+            ],
+            [
+              59.328692,
+              18.060502
+            ],
+            [
+              59.328593,
+              18.060604
+            ],
+            [
+              59.3285,
+              18.060706
+            ],
+            [
+              59.328328,
+              18.060907
+            ],
+            [
+              59.328177,
+              18.061092
+            ],
+            [
+              59.328091,
+              18.061205
+            ],
+            [
+              59.328014,
+              18.06131
+            ],
+            [
+              59.327802,
+              18.061614
+            ],
+            [
+              59.327617,
+              18.061889
+            ],
+            [
+              59.327021,
+              18.062792
+            ],
+            [
+              59.326908,
+              18.062971
+            ],
+            [
+              59.326835,
+              18.063092
+            ],
+            [
+              59.326745,
+              18.063252
+            ],
+            [
+              59.326624,
+              18.063473
+            ],
+            [
+              59.326336,
+              18.064012
+            ],
+            [
+              59.326237,
+              18.064191
+            ],
+            [
+              59.326137,
+              18.064367
+            ],
+            [
+              59.326041,
+              18.064524
+            ],
+            [
+              59.325995,
+              18.064593
+            ],
+            [
+              59.325926,
+              18.064693
+            ],
+            [
+              59.325803,
+              18.064861
+            ],
+            [
+              59.325669,
+              18.065034
+            ],
+            [
+              59.325561,
+              18.065166
+            ],
+            [
+              59.325504,
+              18.065233
+            ],
+            [
+              59.325412,
+              18.065334
+            ],
+            [
+              59.325319,
+              18.06543
+            ],
+            [
+              59.325217,
+              18.065533
+            ],
+            [
+              59.325065,
+              18.065677
+            ],
+            [
+              59.324893,
+              18.065831
+            ],
+            [
+              59.324699,
+              18.065995
+            ],
+            [
+              59.324539,
+              18.066118
+            ],
+            [
+              59.324391,
+              18.066219
+            ],
+            [
+              59.324016,
+              18.066459
+            ],
+            [
+              59.323919,
+              18.066528
+            ],
+            [
+              59.323844,
+              18.066586
+            ],
+            [
+              59.323754,
+              18.066662
+            ],
+            [
+              59.323609,
+              18.066796
+            ],
+            [
+              59.323471,
+              18.066936
+            ],
+            [
+              59.323364,
+              18.06705
+            ],
+            [
+              59.323199,
+              18.067229
+            ],
+            [
+              59.322995,
+              18.067455
+            ],
+            [
+              59.322846,
+              18.067624
+            ],
+            [
+              59.322691,
+              18.067809
+            ],
+            [
+              59.322612,
+              18.06791
+            ],
+            [
+              59.322543,
+              18.068003
+            ],
+            [
+              59.322363,
+              18.068263
+            ],
+            [
+              59.322245,
+              18.068442
+            ],
+            [
+              59.322147,
+              18.0686
+            ],
+            [
+              59.321992,
+              18.068856
+            ],
+            [
+              59.321516,
+              18.069656
+            ],
+            [
+              59.321397,
+              18.069851
+            ],
+            [
+              59.321252,
+              18.070084
+            ],
+            [
+              59.321123,
+              18.07028
+            ],
+            [
+              59.320587,
+              18.071072
+            ],
+            [
+              59.32047,
+              18.071237
+            ],
+            [
+              59.320345,
+              18.071406
+            ],
+            [
+              59.320172,
+              18.071633
+            ],
+            [
+              59.319961,
+              18.071898
+            ],
+            [
+              59.319871,
+              18.071999
+            ],
+            [
+              59.319804,
+              18.072067
+            ],
+            [
+              59.319721,
+              18.072145
+            ],
+            [
+              59.319621,
+              18.07223
+            ],
+            [
+              59.319501,
+              18.072324
+            ],
+            [
+              59.319413,
+              18.072386
+            ],
+            [
+              59.319331,
+              18.072437
+            ],
+            [
+              59.319227,
+              18.072494
+            ],
+            [
+              59.319098,
+              18.072555
+            ],
+            [
+              59.319019,
+              18.072588
+            ],
+            [
+              59.318932,
+              18.07262
+            ],
+            [
+              59.318794,
+              18.072658
+            ],
+            [
+              59.318684,
+              18.072682
+            ],
+            [
+              59.318575,
+              18.072701
+            ],
+            [
+              59.318489,
+              18.072712
+            ],
+            [
+              59.318384,
+              18.072719
+            ],
+            [
+              59.318315,
+              18.072719
+            ],
+            [
+              59.318235,
+              18.072711
+            ],
+            [
+              59.318056,
+              18.072674
+            ],
+            [
+              59.317927,
+              18.072672
+            ],
+            [
+              59.3178,
+              18.072658
+            ],
+            [
+              59.317618,
+              18.072677
+            ],
+            [
+              59.317544,
+              18.072688
+            ],
+            [
+              59.317491,
+              18.072698
+            ],
+            [
+              59.317417,
+              18.072719
+            ],
+            [
+              59.317263,
+              18.072774
+            ],
+            [
+              59.316761,
+              18.07299
+            ],
+            [
+              59.316471,
+              18.073101
+            ],
+            [
+              59.316075,
+              18.073241
+            ],
+            [
+              59.315929,
+              18.073288
+            ],
+            [
+              59.315835,
+              18.073316
+            ],
+            [
+              59.315743,
+              18.073339
+            ],
+            [
+              59.315634,
+              18.073361
+            ],
+            [
+              59.315514,
+              18.073379
+            ],
+            [
+              59.315385,
+              18.073395
+            ],
+            [
+              59.315213,
+              18.073408
+            ],
+            [
+              59.315064,
+              18.073412
+            ],
+            [
+              59.314884,
+              18.073414
+            ],
+            [
+              59.314627,
+              18.073415
+            ],
+            [
+              59.314521,
+              18.073419
+            ],
+            [
+              59.314438,
+              18.073425
+            ],
+            [
+              59.314318,
+              18.073439
+            ],
+            [
+              59.314191,
+              18.073462
+            ],
+            [
+              59.314064,
+              18.073491
+            ],
+            [
+              59.313943,
+              18.073527
+            ],
+            [
+              59.313815,
+              18.073574
+            ],
+            [
+              59.313714,
+              18.073616
+            ],
+            [
+              59.313487,
+              18.073718
+            ],
+            [
+              59.312459,
+              18.07419
+            ],
+            [
+              59.312245,
+              18.074284
+            ],
+            [
+              59.311828,
+              18.074461
+            ],
+            [
+              59.311622,
+              18.074553
+            ],
+            [
+              59.311001,
+              18.074852
+            ],
+            [
+              59.30965,
+              18.075492
+            ],
+            [
+              59.30848,
+              18.076072
+            ]
+          ],
+          "realtimeStatus": [
+            "MONITORED"
+          ],
+          "isRealtimeControlled": true
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 120,
+          "footPathInfo": [
+            {
+              "duration": 120,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 20,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.309823,
+                      18.075343
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "5",
+                      "areaGid": "9023001001521003",
+                      "areaName": "Allhelgonagatan Götgatan",
+                      "areaType": 32,
+                      "georef": "1000724572:69:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.308484,
+                      18.076071
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "Skanstull",
+                      "areaType": 1,
+                      "georef": "1000048751:226:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:39:06Z",
+            "departureTimePlanned": "2026-11-13T13:39:06Z",
+            "departureTimeEstimated": "2026-11-13T13:40:18Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "destination": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:41:06Z",
+            "arrivalTimePlanned": "2026-11-13T13:41:06Z",
+            "arrivalTimeEstimated": "2026-11-13T13:42:18Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:39:06Z"
+            },
+            {
+              "id": "18001521|5|1",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.309823,
+                18.075343
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "5",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:41:06Z"
+            }
+          ],
+          "coords": [
+            [
+              59.308483,
+              18.07608
+            ],
+            [
+              59.309828,
+              18.07537
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "distance": 333,
+          "duration": 180,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 155,
+              "cumDuration": 0,
+              "distance": 155,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "LEAVE",
+              "name": "Ausstieg U-Bahn tunnelbanans gröna linje 19",
+              "toCoordsIndex": 0,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 202,
+              "cumDuration": 43,
+              "distance": 47,
+              "duration": 43,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "KEEP",
+              "name": "Götgatan",
+              "skyDirection": 180,
+              "toCoordsIndex": 2,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30942,
+                18.075586
+              ],
+              "cumDistance": 206,
+              "cumDuration": 46,
+              "distance": 4,
+              "duration": 3,
+              "fromCoordsIndex": 2,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 164,
+              "toCoordsIndex": 3,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309406,
+                18.075523
+              ],
+              "cumDistance": 229,
+              "cumDuration": 66,
+              "distance": 22,
+              "duration": 20,
+              "fromCoordsIndex": 3,
+              "manoeuvre": "TURN",
+              "name": "Götgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 254,
+              "toCoordsIndex": 4,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.309209,
+                18.075613
+              ],
+              "cumDistance": 246,
+              "cumDuration": 81,
+              "distance": 16,
+              "duration": 15,
+              "fromCoordsIndex": 4,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 165,
+              "toCoordsIndex": 5,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309172,
+                18.075334
+              ],
+              "cumDistance": 276,
+              "cumDuration": 109,
+              "distance": 30,
+              "duration": 27,
+              "fromCoordsIndex": 5,
+              "manoeuvre": "CONTINUE",
+              "name": "Außenrampe",
+              "properties": {
+                "OUTDOOR_TYPE": "OUTDOOR_RAMP"
+              },
+              "skyDirection": 255,
+              "toCoordsIndex": 7,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30908,
+                18.074912
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 57,
+              "duration": 51,
+              "fromCoordsIndex": 7,
+              "manoeuvre": "TURN",
+              "name": "Dalslandsgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 168,
+              "toCoordsIndex": 11,
+              "turnDirection": "SHARP_RIGHT"
+            },
+            {
+              "coord": [
+                59.308998,
+                18.073996
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 11,
+              "manoeuvre": "DESTINATION",
+              "name": "Dalslandsgatan",
+              "toCoordsIndex": 12,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:41:06Z",
+            "departureTimePlanned": "2026-11-13T13:41:06Z",
+            "departureTimeEstimated": "2026-11-13T13:42:18Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "id": "coord:2011988:3752524:MRCV:Stockholm, Dalslandsgatan 3:0",
+            "name": "Stockholm, Dalslandsgatan 3",
+            "disassembledName": "Dalslandsgatan 3",
+            "type": "address",
+            "coord": [
+              59.309002,
+              18.073996
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "arrivalTimeBaseTimetable": "2026-11-13T13:44:06Z",
+            "arrivalTimePlanned": "2026-11-13T13:44:06Z",
+            "arrivalTimeEstimated": "2026-11-13T13:45:18Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.309832,
+              18.075361
+            ],
+            [
+              59.309795,
+              18.075388
+            ],
+            [
+              59.30942,
+              18.075586
+            ],
+            [
+              59.309406,
+              18.075523
+            ],
+            [
+              59.309209,
+              18.075613
+            ],
+            [
+              59.309172,
+              18.075334
+            ],
+            [
+              59.309122,
+              18.074894
+            ],
+            [
+              59.30908,
+              18.074912
+            ],
+            [
+              59.309071,
+              18.074849
+            ],
+            [
+              59.309112,
+              18.074831
+            ],
+            [
+              59.309099,
+              18.074723
+            ],
+            [
+              59.308998,
+              18.073996
+            ],
+            [
+              59.309002,
+              18.073996
+            ]
+          ]
+        }
+      ],
+      "daysOfService": {
+        "rvb": "0000000000000000000000000000100000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "tripDuration": 984,
+      "tripRtDuration": 918,
+      "rating": 0,
+      "isAdditional": false,
+      "interchanges": 0,
+      "legs": [
+        {
+          "infos": [
+            
+          ],
+          "distance": 110,
+          "duration": 120,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 0,
+              "cumDuration": 0,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "ORIGIN",
+              "name": "",
+              "toCoordsIndex": 1,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.33263,
+                18.064474
+              ],
+              "cumDistance": 19,
+              "cumDuration": 16,
+              "distance": 19,
+              "duration": 16,
+              "fromCoordsIndex": 1,
+              "manoeuvre": "KEEP",
+              "name": "Fußgängerampel",
+              "properties": {
+                "OUTDOOR_TYPE": "TRAFFICLIGHT"
+              },
+              "skyDirection": 180,
+              "toCoordsIndex": 6,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.33247,
+                18.064366
+              ],
+              "cumDistance": 100,
+              "cumDuration": 89,
+              "distance": 81,
+              "duration": 73,
+              "fromCoordsIndex": 6,
+              "manoeuvre": "TURN",
+              "name": "Klarabergsgatan",
+              "properties": {
+                "INDOOR_TYPE": "BUILDING_WAY"
+              },
+              "skyDirection": 199,
+              "toCoordsIndex": 12,
+              "turnDirection": "SLIGHT_RIGHT"
+            },
+            {
+              "coord": [
+                59.332222,
+                18.063063
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 9,
+              "duration": 8,
+              "fromCoordsIndex": 12,
+              "manoeuvre": "TURN",
+              "name": "Drottninggatan",
+              "skyDirection": 238,
+              "toCoordsIndex": 13,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.33214,
+                18.063144
+              ],
+              "cumDistance": 110,
+              "cumDuration": 98,
+              "distance": 129,
+              "duration": 0,
+              "fromCoordsIndex": 13,
+              "manoeuvre": "ENTER",
+              "name": "Einstieg U-Bahn",
+              "toCoordsIndex": 13,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "coord:2010929:3747368:MRCV:Stockholm, Sergelgången 31:0",
+            "name": "Stockholm, Sergelgången 31",
+            "disassembledName": "Sergelgången 31",
+            "type": "address",
+            "coord": [
+              59.332635,
+              18.064483
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "departureTimeBaseTimetable": "2026-11-13T13:30:12Z",
+            "departureTimePlanned": "2026-11-13T13:30:12Z",
+            "departureTimeEstimated": "2026-11-13T13:31:36Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "destination": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:32:12Z",
+            "arrivalTimePlanned": "2026-11-13T13:32:12Z",
+            "arrivalTimeEstimated": "2026-11-13T13:33:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.332635,
+              18.064483
+            ],
+            [
+              59.33263,
+              18.064474
+            ],
+            [
+              59.33258,
+              18.064447
+            ],
+            [
+              59.332566,
+              18.064429
+            ],
+            [
+              59.332534,
+              18.064411
+            ],
+            [
+              59.332511,
+              18.064393
+            ],
+            [
+              59.33247,
+              18.064366
+            ],
+            [
+              59.332484,
+              18.064303
+            ],
+            [
+              59.332493,
+              18.064186
+            ],
+            [
+              59.332488,
+              18.064096
+            ],
+            [
+              59.332332,
+              18.063414
+            ],
+            [
+              59.332296,
+              18.063243
+            ],
+            [
+              59.332222,
+              18.063063
+            ],
+            [
+              59.33214,
+              18.063144
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 180,
+          "footPathInfo": [
+            {
+              "duration": 180,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 30,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.331517,
+                      18.061231
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "T-Centralen",
+                      "areaType": 1,
+                      "georef": "424124422:133:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.332163,
+                      18.063225
+                    ],
+                    "id": "9021001001051000",
+                    "isGlobalId": true,
+                    "name": "T-Centralen",
+                    "properties": {
+                      "area": "9",
+                      "areaGid": "9023001001051003",
+                      "areaName": "Sergels torg Drottninggatan Gamla stan",
+                      "areaType": 32,
+                      "georef": "1000440003:10:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "id": "18001051|9|1",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "T-Centralen",
+            "type": "platform",
+            "coord": [
+              59.332163,
+              18.063225
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:32:12Z",
+            "departureTimePlanned": "2026-11-13T13:32:12Z",
+            "departureTimeEstimated": "2026-11-13T13:33:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "9",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:35:12Z",
+            "arrivalTimePlanned": "2026-11-13T13:35:12Z",
+            "arrivalTimeEstimated": "2026-11-13T13:36:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "id": "18001051|9|1",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.332163,
+                18.063225
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "9",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:32:12Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "4",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:35:12Z"
+            }
+          ],
+          "coords": [
+            [
+              59.332142,
+              18.063148
+            ],
+            [
+              59.331521,
+              18.061229
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 318,
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001052",
+            "name": "T-Centralen, Stockholm",
+            "disassembledName": "4",
+            "type": "platform",
+            "coord": [
+              59.331517,
+              18.061231
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001051000",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "T-Centralen",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001051"
+              },
+              "coord": [
+                59.331659,
+                18.061698
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:35:12Z",
+            "departureTimePlanned": "2026-11-13T13:35:12Z",
+            "departureTimeEstimated": "2026-11-13T13:36:36Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "occupancy": "FEW_SEATS",
+              "platform": "4",
+              "stoppingPointPlanned": "4",
+              "platformName": "4"
+            }
+          },
+          "destination": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:41:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:41:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:41:54Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "transportation": {
+            "id": "tfs:02018: :R:y01",
+            "name": "Tunnelbana tunnelbanans gröna linje 18",
+            "number": "tunnelbanans gröna linje 18",
+            "product": {
+              "id": 8,
+              "class": 2,
+              "name": "Tunnelbana",
+              "iconId": 1
+            },
+            "operator": {
+              "id": "1",
+              "name": "Storstockholms Lokaltrafik"
+            },
+            "destination": {
+              "id": "18001881",
+              "name": "Farsta strand",
+              "type": "stop"
+            },
+            "properties": {
+              "tripCode": 1307,
+              "timetablePeriod": "Current",
+              "lineDisplay": "LINE",
+              "globalId": "9011001001800000",
+              "RealtimeTripId": "9015001001812669",
+              "shortTrain": false,
+              "AVMSTripID": "9015001001812669"
+            },
+            "isSamtrafik": false,
+            "disassembledName": "18"
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001052",
+              "name": "T-Centralen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.331517,
+                18.061231
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001051000",
+                "name": "T-Centralen, Stockholm",
+                "disassembledName": "T-Centralen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001051"
+                },
+                "coord": [
+                  59.331659,
+                  18.061698
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "4",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:35:12Z",
+              "departureTimeEstimated": "2026-11-13T13:36:36Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001022",
+              "name": "Gamla stan, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.323364,
+                18.067052
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001021000",
+                "name": "Gamla stan, Stockholm",
+                "disassembledName": "Gamla stan",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001021"
+                },
+                "coord": [
+                  59.323286,
+                  18.067169
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:37:06Z",
+              "departureTimeEstimated": "2026-11-13T13:38:30Z",
+              "arrivalTimePlanned": "2026-11-13T13:36:36Z",
+              "arrivalTimeEstimated": "2026-11-13T13:37:36Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001012",
+              "name": "Slussen, Stockholm",
+              "disassembledName": "4",
+              "type": "platform",
+              "coord": [
+                59.31962,
+                18.072235
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001011000",
+                "name": "Slussen, Stockholm",
+                "disassembledName": "Slussen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001011"
+                },
+                "coord": [
+                  59.319533,
+                  18.071615
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "4",
+                "platformName": "4"
+              },
+              "departureTimePlanned": "2026-11-13T13:39:06Z",
+              "departureTimeEstimated": "2026-11-13T13:40:00Z",
+              "arrivalTimePlanned": "2026-11-13T13:38:24Z",
+              "arrivalTimeEstimated": "2026-11-13T13:39:06Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001512",
+              "name": "Medborgarplatsen, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.31488,
+                18.073412
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001511000",
+                "name": "Medborgarplatsen, Stockholm",
+                "disassembledName": "Medborgarplatsen",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001511"
+                },
+                "coord": [
+                  59.31488,
+                  18.073439
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "occupancy": "FEW_SEATS",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "departureTimePlanned": "2026-11-13T13:40:30Z",
+              "departureTimeEstimated": "2026-11-13T13:41:12Z",
+              "arrivalTimePlanned": "2026-11-13T13:40:00Z",
+              "arrivalTimeEstimated": "2026-11-13T13:40:24Z"
+            },
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "2",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33",
+                "stoppingPointPlanned": "2",
+                "platformName": "2"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:41:36Z",
+              "arrivalTimeEstimated": "2026-11-13T13:41:54Z"
+            }
+          ],
+          "properties": {
+            "tripId": "9015001001812669"
+          },
+          "coords": [
+            [
+              59.331558,
+              18.061319
+            ],
+            [
+              59.331512,
+              18.061223
+            ],
+            [
+              59.331426,
+              18.061051
+            ],
+            [
+              59.331337,
+              18.060881
+            ],
+            [
+              59.331263,
+              18.060744
+            ],
+            [
+              59.331172,
+              18.060589
+            ],
+            [
+              59.331119,
+              18.060505
+            ],
+            [
+              59.331061,
+              18.060423
+            ],
+            [
+              59.330984,
+              18.060322
+            ],
+            [
+              59.330876,
+              18.060192
+            ],
+            [
+              59.330831,
+              18.06014
+            ],
+            [
+              59.330739,
+              18.060043
+            ],
+            [
+              59.330657,
+              18.059966
+            ],
+            [
+              59.330597,
+              18.059916
+            ],
+            [
+              59.330536,
+              18.059871
+            ],
+            [
+              59.330474,
+              18.059831
+            ],
+            [
+              59.330402,
+              18.059791
+            ],
+            [
+              59.33034,
+              18.059762
+            ],
+            [
+              59.330278,
+              18.059739
+            ],
+            [
+              59.330222,
+              18.059725
+            ],
+            [
+              59.330127,
+              18.059711
+            ],
+            [
+              59.330058,
+              18.059707
+            ],
+            [
+              59.329999,
+              18.059707
+            ],
+            [
+              59.329901,
+              18.059714
+            ],
+            [
+              59.329829,
+              18.059725
+            ],
+            [
+              59.329756,
+              18.059742
+            ],
+            [
+              59.329682,
+              18.059764
+            ],
+            [
+              59.32961,
+              18.059791
+            ],
+            [
+              59.329533,
+              18.059827
+            ],
+            [
+              59.329463,
+              18.059866
+            ],
+            [
+              59.32932,
+              18.059958
+            ],
+            [
+              59.32914,
+              18.06009
+            ],
+            [
+              59.329012,
+              18.060195
+            ],
+            [
+              59.328894,
+              18.060302
+            ],
+            [
+              59.328692,
+              18.060502
+            ],
+            [
+              59.328593,
+              18.060604
+            ],
+            [
+              59.3285,
+              18.060706
+            ],
+            [
+              59.328328,
+              18.060907
+            ],
+            [
+              59.328177,
+              18.061092
+            ],
+            [
+              59.328091,
+              18.061205
+            ],
+            [
+              59.328014,
+              18.06131
+            ],
+            [
+              59.327802,
+              18.061614
+            ],
+            [
+              59.327617,
+              18.061889
+            ],
+            [
+              59.327021,
+              18.062792
+            ],
+            [
+              59.326908,
+              18.062971
+            ],
+            [
+              59.326835,
+              18.063092
+            ],
+            [
+              59.326745,
+              18.063252
+            ],
+            [
+              59.326624,
+              18.063473
+            ],
+            [
+              59.326336,
+              18.064012
+            ],
+            [
+              59.326237,
+              18.064191
+            ],
+            [
+              59.326137,
+              18.064367
+            ],
+            [
+              59.326041,
+              18.064524
+            ],
+            [
+              59.325995,
+              18.064593
+            ],
+            [
+              59.325926,
+              18.064693
+            ],
+            [
+              59.325803,
+              18.064861
+            ],
+            [
+              59.325669,
+              18.065034
+            ],
+            [
+              59.325561,
+              18.065166
+            ],
+            [
+              59.325504,
+              18.065233
+            ],
+            [
+              59.325412,
+              18.065334
+            ],
+            [
+              59.325319,
+              18.06543
+            ],
+            [
+              59.325217,
+              18.065533
+            ],
+            [
+              59.325065,
+              18.065677
+            ],
+            [
+              59.324893,
+              18.065831
+            ],
+            [
+              59.324699,
+              18.065995
+            ],
+            [
+              59.324539,
+              18.066118
+            ],
+            [
+              59.324391,
+              18.066219
+            ],
+            [
+              59.324016,
+              18.066459
+            ],
+            [
+              59.323919,
+              18.066528
+            ],
+            [
+              59.323844,
+              18.066586
+            ],
+            [
+              59.323754,
+              18.066662
+            ],
+            [
+              59.323609,
+              18.066796
+            ],
+            [
+              59.323471,
+              18.066936
+            ],
+            [
+              59.323364,
+              18.06705
+            ],
+            [
+              59.323199,
+              18.067229
+            ],
+            [
+              59.322995,
+              18.067455
+            ],
+            [
+              59.322846,
+              18.067624
+            ],
+            [
+              59.322691,
+              18.067809
+            ],
+            [
+              59.322612,
+              18.06791
+            ],
+            [
+              59.322543,
+              18.068003
+            ],
+            [
+              59.322363,
+              18.068263
+            ],
+            [
+              59.322245,
+              18.068442
+            ],
+            [
+              59.322147,
+              18.0686
+            ],
+            [
+              59.321992,
+              18.068856
+            ],
+            [
+              59.321516,
+              18.069656
+            ],
+            [
+              59.321397,
+              18.069851
+            ],
+            [
+              59.321252,
+              18.070084
+            ],
+            [
+              59.321123,
+              18.07028
+            ],
+            [
+              59.320587,
+              18.071072
+            ],
+            [
+              59.32047,
+              18.071237
+            ],
+            [
+              59.320345,
+              18.071406
+            ],
+            [
+              59.320172,
+              18.071633
+            ],
+            [
+              59.319961,
+              18.071898
+            ],
+            [
+              59.319871,
+              18.071999
+            ],
+            [
+              59.319804,
+              18.072067
+            ],
+            [
+              59.319721,
+              18.072145
+            ],
+            [
+              59.319621,
+              18.07223
+            ],
+            [
+              59.319501,
+              18.072324
+            ],
+            [
+              59.319413,
+              18.072386
+            ],
+            [
+              59.319331,
+              18.072437
+            ],
+            [
+              59.319227,
+              18.072494
+            ],
+            [
+              59.319098,
+              18.072555
+            ],
+            [
+              59.319019,
+              18.072588
+            ],
+            [
+              59.318932,
+              18.07262
+            ],
+            [
+              59.318794,
+              18.072658
+            ],
+            [
+              59.318684,
+              18.072682
+            ],
+            [
+              59.318575,
+              18.072701
+            ],
+            [
+              59.318489,
+              18.072712
+            ],
+            [
+              59.318384,
+              18.072719
+            ],
+            [
+              59.318315,
+              18.072719
+            ],
+            [
+              59.318235,
+              18.072711
+            ],
+            [
+              59.318056,
+              18.072674
+            ],
+            [
+              59.317927,
+              18.072672
+            ],
+            [
+              59.3178,
+              18.072658
+            ],
+            [
+              59.317618,
+              18.072677
+            ],
+            [
+              59.317544,
+              18.072688
+            ],
+            [
+              59.317491,
+              18.072698
+            ],
+            [
+              59.317417,
+              18.072719
+            ],
+            [
+              59.317263,
+              18.072774
+            ],
+            [
+              59.316761,
+              18.07299
+            ],
+            [
+              59.316471,
+              18.073101
+            ],
+            [
+              59.316075,
+              18.073241
+            ],
+            [
+              59.315929,
+              18.073288
+            ],
+            [
+              59.315835,
+              18.073316
+            ],
+            [
+              59.315743,
+              18.073339
+            ],
+            [
+              59.315634,
+              18.073361
+            ],
+            [
+              59.315514,
+              18.073379
+            ],
+            [
+              59.315385,
+              18.073395
+            ],
+            [
+              59.315213,
+              18.073408
+            ],
+            [
+              59.315064,
+              18.073412
+            ],
+            [
+              59.314884,
+              18.073414
+            ],
+            [
+              59.314627,
+              18.073415
+            ],
+            [
+              59.314521,
+              18.073419
+            ],
+            [
+              59.314438,
+              18.073425
+            ],
+            [
+              59.314318,
+              18.073439
+            ],
+            [
+              59.314191,
+              18.073462
+            ],
+            [
+              59.314064,
+              18.073491
+            ],
+            [
+              59.313943,
+              18.073527
+            ],
+            [
+              59.313815,
+              18.073574
+            ],
+            [
+              59.313714,
+              18.073616
+            ],
+            [
+              59.313487,
+              18.073718
+            ],
+            [
+              59.312459,
+              18.07419
+            ],
+            [
+              59.312245,
+              18.074284
+            ],
+            [
+              59.311828,
+              18.074461
+            ],
+            [
+              59.311622,
+              18.074553
+            ],
+            [
+              59.311001,
+              18.074852
+            ],
+            [
+              59.30965,
+              18.075492
+            ],
+            [
+              59.30848,
+              18.076072
+            ]
+          ],
+          "realtimeStatus": [
+            "MONITORED"
+          ],
+          "isRealtimeControlled": true
+        },
+        {
+          "infos": [
+            
+          ],
+          "duration": 120,
+          "footPathInfo": [
+            {
+              "duration": 120,
+              "footPathElem": [
+                {
+                  "attributes": {
+                    "distance": 1,
+                    "duration": 20,
+                    "elevDoorWidth": 0,
+                    "elevLength": 0,
+                    "elevWidth": 0,
+                    "maxStepHeight": 0,
+                    "narrowestWidth": -1,
+                    "numberSteps": 0,
+                    "rampInclination": 0,
+                    "rampLength": 0,
+                    "rampWidth": 0
+                  },
+                  "description": "",
+                  "destination": {
+                    "coord": [
+                      59.309823,
+                      18.075343
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "5",
+                      "areaGid": "9023001001521003",
+                      "areaName": "Allhelgonagatan Götgatan",
+                      "areaType": 32,
+                      "georef": "1000724572:69:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "level": "LEVEL",
+                  "levelFrom": 0,
+                  "levelTo": 0,
+                  "openingHours": [
+                    
+                  ],
+                  "origin": {
+                    "coord": [
+                      59.308484,
+                      18.076071
+                    ],
+                    "id": "9021001001521000",
+                    "isGlobalId": true,
+                    "name": "Skanstull",
+                    "properties": {
+                      "area": "2",
+                      "areaGid": "",
+                      "areaName": "Skanstull",
+                      "areaType": 1,
+                      "georef": "1000048751:226:MRCV:100"
+                    },
+                    "type": "stop"
+                  },
+                  "type": "UNKNOWN"
+                }
+              ],
+              "position": "IDEST"
+            }
+          ],
+          "origin": {
+            "isGlobalId": true,
+            "id": "9025001000001522",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "2",
+            "type": "platform",
+            "coord": [
+              59.308484,
+              18.076071
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:41:36Z",
+            "departureTimePlanned": "2026-11-13T13:41:36Z",
+            "departureTimeEstimated": "2026-11-13T13:41:54Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "2",
+              "platform": "1",
+              "stoppingPointPlanned": "2",
+              "platformName": "2"
+            }
+          },
+          "destination": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "arrivalTimeBaseTimetable": "2026-11-13T13:43:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:43:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:43:54Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 99,
+              "name": "footpath",
+              "iconId": 99
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            {
+              "isGlobalId": true,
+              "id": "9025001000001522",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.308484,
+                18.076071
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "2",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "departureTimePlanned": "2026-11-13T13:41:36Z"
+            },
+            {
+              "id": "18001521|5|1",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "platform",
+              "coord": [
+                59.309823,
+                18.075343
+              ],
+              "niveau": 0,
+              "parent": {
+                "isGlobalId": true,
+                "id": "9021001001521000",
+                "name": "Skanstull, Stockholm",
+                "disassembledName": "Skanstull",
+                "type": "stop",
+                "parent": {
+                  "id": "placeID:33001080:1",
+                  "name": "Stockholm",
+                  "type": "locality"
+                },
+                "properties": {
+                  "stopId": "18001521"
+                },
+                "coord": [
+                  59.308498,
+                  18.076107
+                ],
+                "niveau": 0
+              },
+              "productClasses": [
+                2
+              ],
+              "properties": {
+                "AREA_NIVEAU_DIVA": "0",
+                "area": "5",
+                "platform": "1",
+                "zone": "tfs:33"
+              },
+              "arrivalTimePlanned": "2026-11-13T13:43:36Z"
+            }
+          ],
+          "coords": [
+            [
+              59.308483,
+              18.07608
+            ],
+            [
+              59.309828,
+              18.07537
+            ]
+          ]
+        },
+        {
+          "infos": [
+            
+          ],
+          "distance": 333,
+          "duration": 180,
+          "pathDescriptions": [
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 155,
+              "cumDuration": 0,
+              "distance": 155,
+              "duration": 0,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "LEAVE",
+              "name": "Ausstieg U-Bahn tunnelbanans gröna linje 18",
+              "toCoordsIndex": 0,
+              "turnDirection": "UNKNOWN"
+            },
+            {
+              "coord": [
+                59.309832,
+                18.075361
+              ],
+              "cumDistance": 202,
+              "cumDuration": 43,
+              "distance": 47,
+              "duration": 43,
+              "fromCoordsIndex": 0,
+              "manoeuvre": "KEEP",
+              "name": "Götgatan",
+              "skyDirection": 180,
+              "toCoordsIndex": 2,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30942,
+                18.075586
+              ],
+              "cumDistance": 206,
+              "cumDuration": 46,
+              "distance": 4,
+              "duration": 3,
+              "fromCoordsIndex": 2,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 164,
+              "toCoordsIndex": 3,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309406,
+                18.075523
+              ],
+              "cumDistance": 229,
+              "cumDuration": 66,
+              "distance": 22,
+              "duration": 20,
+              "fromCoordsIndex": 3,
+              "manoeuvre": "TURN",
+              "name": "Götgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 254,
+              "toCoordsIndex": 4,
+              "turnDirection": "LEFT"
+            },
+            {
+              "coord": [
+                59.309209,
+                18.075613
+              ],
+              "cumDistance": 246,
+              "cumDuration": 81,
+              "distance": 16,
+              "duration": 15,
+              "fromCoordsIndex": 4,
+              "manoeuvre": "TURN",
+              "name": "",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 165,
+              "toCoordsIndex": 5,
+              "turnDirection": "RIGHT"
+            },
+            {
+              "coord": [
+                59.309172,
+                18.075334
+              ],
+              "cumDistance": 276,
+              "cumDuration": 109,
+              "distance": 30,
+              "duration": 27,
+              "fromCoordsIndex": 5,
+              "manoeuvre": "CONTINUE",
+              "name": "Außenrampe",
+              "properties": {
+                "OUTDOOR_TYPE": "OUTDOOR_RAMP"
+              },
+              "skyDirection": 255,
+              "toCoordsIndex": 7,
+              "turnDirection": "STRAIGHT"
+            },
+            {
+              "coord": [
+                59.30908,
+                18.074912
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 57,
+              "duration": 51,
+              "fromCoordsIndex": 7,
+              "manoeuvre": "TURN",
+              "name": "Dalslandsgatan",
+              "properties": {
+                "OUTDOOR_TYPE": "HIKING_TRAIL"
+              },
+              "skyDirection": 168,
+              "toCoordsIndex": 11,
+              "turnDirection": "SHARP_RIGHT"
+            },
+            {
+              "coord": [
+                59.308998,
+                18.073996
+              ],
+              "cumDistance": 333,
+              "cumDuration": 160,
+              "distance": 0,
+              "duration": 0,
+              "fromCoordsIndex": 11,
+              "manoeuvre": "DESTINATION",
+              "name": "Dalslandsgatan",
+              "toCoordsIndex": 12,
+              "turnDirection": "UNKNOWN"
+            }
+          ],
+          "origin": {
+            "id": "18001521|5|1",
+            "name": "Skanstull, Stockholm",
+            "disassembledName": "Skanstull",
+            "type": "platform",
+            "coord": [
+              59.309823,
+              18.075343
+            ],
+            "niveau": 0,
+            "parent": {
+              "isGlobalId": true,
+              "id": "9021001001521000",
+              "name": "Skanstull, Stockholm",
+              "disassembledName": "Skanstull",
+              "type": "stop",
+              "parent": {
+                "id": "placeID:33001080:1",
+                "name": "Stockholm",
+                "type": "locality"
+              },
+              "properties": {
+                "stopId": "18001521"
+              },
+              "coord": [
+                59.308498,
+                18.076107
+              ],
+              "niveau": 0
+            },
+            "productClasses": [
+              2
+            ],
+            "departureTimeBaseTimetable": "2026-11-13T13:43:36Z",
+            "departureTimePlanned": "2026-11-13T13:43:36Z",
+            "departureTimeEstimated": "2026-11-13T13:43:54Z",
+            "properties": {
+              "AREA_NIVEAU_DIVA": "0",
+              "area": "5",
+              "platform": "1"
+            }
+          },
+          "destination": {
+            "id": "coord:2011988:3752524:MRCV:Stockholm, Dalslandsgatan 3:0",
+            "name": "Stockholm, Dalslandsgatan 3",
+            "disassembledName": "Dalslandsgatan 3",
+            "type": "address",
+            "coord": [
+              59.309002,
+              18.073996
+            ],
+            "parent": {
+              "id": "placeID:33001080:-1",
+              "name": "Stockholm",
+              "type": "locality"
+            },
+            "arrivalTimeBaseTimetable": "2026-11-13T13:46:36Z",
+            "arrivalTimePlanned": "2026-11-13T13:46:36Z",
+            "arrivalTimeEstimated": "2026-11-13T13:46:54Z",
+            "properties": {
+              "area": "0"
+            }
+          },
+          "transportation": {
+            "product": {
+              "class": 100,
+              "name": "footpath",
+              "iconId": 100
+            },
+            "properties": {
+              "tripCode": 0,
+              "lineDisplay": "LINE"
+            },
+            "isSamtrafik": false
+          },
+          "stopSequence": [
+            
+          ],
+          "coords": [
+            [
+              59.309832,
+              18.075361
+            ],
+            [
+              59.309795,
+              18.075388
+            ],
+            [
+              59.30942,
+              18.075586
+            ],
+            [
+              59.309406,
+              18.075523
+            ],
+            [
+              59.309209,
+              18.075613
+            ],
+            [
+              59.309172,
+              18.075334
+            ],
+            [
+              59.309122,
+              18.074894
+            ],
+            [
+              59.30908,
+              18.074912
+            ],
+            [
+              59.309071,
+              18.074849
+            ],
+            [
+              59.309112,
+              18.074831
+            ],
+            [
+              59.309099,
+              18.074723
+            ],
+            [
+              59.308998,
+              18.073996
+            ],
+            [
+              59.309002,
+              18.073996
+            ]
+          ]
+        }
+      ],
+      "daysOfService": {
+        "rvb": "0000000000000000000000000000100000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

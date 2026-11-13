@@ -1,4 +1,6 @@
 // Hämtar resor från SL och gångvägen till första hållplatsen. Används av både webbappen och servern.
+import { buildTrips } from './logic.js';
+
 const TRIPS_URL = 'https://journeyplanner.integration.sl.se/v2/trips';
 const WALK_URL = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
 const MAX_TRIPS = 3; // mer än så svarar SL inte med
@@ -45,6 +47,20 @@ async function fetchWalk(position, station, query) {
   const res = await fetch(`${WALK_URL}/${path}?${query}`, { signal: abortAfter(6000) });
   if (!res.ok) throw new Error(`Gångvägen svarade ${res.status}`);
   return (await res.json()).routes[0];
+}
+
+// Reseplaneraren låter gången till hållplatsen börja före den tid man frågar om, så när det är
+// nära och tätt mellan avgångarna kan alla svar redan ha gått. Då frågar vi vidare från den
+// senaste avgången tills det finns några att visa.
+export async function fetchUpcomingTrips(from, to, now = new Date(), wanted = 3) {
+  let all = await fetchTrips(from, to);
+  for (let round = 0; round < 2; round++) {
+    const trips = buildTrips(all, now);
+    if (!trips.length || trips.filter((trip) => trip.status !== 'missed').length >= wanted) break;
+    const latest = Math.max(...trips.map((trip) => +trip.time));
+    all = all.concat(await fetchTrips(from, to, new Date(latest + 60000)));
+  }
+  return all;
 }
 
 export async function fetchWalkRoute(position, station) {

@@ -14,69 +14,12 @@ public func classify(_ slackMinutes: Double) -> Status {
     return .calm
 }
 
-/// En avgång som SL:s öppna API skickar den.
-public struct Departure: Decodable, Sendable {
-    public struct Line: Decodable, Sendable { public var designation: String }
-    public struct Journey: Decodable, Sendable { public var id: Int }
-    public struct Deviation: Decodable, Sendable { public var consequence: String? }
-
-    public var destination: String
-    public var state: String?
-    public var scheduled: String
-    public var expected: String?
-    public var line: Line
-    public var journey: Journey?
-    public var deviations: [Deviation]?
-
-    var isRunning: Bool {
-        if let state, ["CANCELLED", "PASSED", "NOTCALLED", "REPLACED"].contains(state) { return false }
-        return !(deviations ?? []).contains { $0.consequence == "CANCELLED" }
-    }
-}
-
-/// SL skickar tider utan tidszon, i Stockholmstid.
-public func stockholmDate(_ text: String) -> Date? {
-    let parser = DateFormatter()
-    parser.locale = Locale(identifier: "en_US_POSIX")
-    parser.timeZone = TimeZone(identifier: "Europe/Stockholm")
-    parser.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-    return parser.date(from: text)
-}
-
-public struct Train: Hashable, Sendable, Identifiable {
-    public var time: Date
-    public var minutesLeft: Double
-    public var slackMinutes: Double
-    public var leaveBy: Date
-    public var status: Status
-    public var journey: Int?
-    public var line: String
-    public var destination: String
-    public var id: String { "\(journey ?? 0)-\(time.timeIntervalSince1970)" }
-}
-
-/// Tåg mot målet, sorterade på tid, med marginal efter gångtiden.
-public func buildBoard(departures: [Departure], metro: Metro, from: String, target: String, now: Date, walkMinutes: Double) -> [Train] {
-    departures
-        .filter { $0.isRunning && metro.trainReaches(from: from, destination: $0.destination, target: target) }
-        .compactMap { departure -> Train? in
-            guard let time = stockholmDate(departure.expected ?? departure.scheduled) else { return nil }
-            let minutesLeft = time.timeIntervalSince(now) / 60
-            let slack = minutesLeft - walkMinutes
-            return Train(time: time, minutesLeft: minutesLeft, slackMinutes: slack,
-                         leaveBy: time.addingTimeInterval(-walkMinutes * 60), status: classify(slack),
-                         journey: departure.journey?.id, line: departure.line.designation, destination: departure.destination)
-        }
-        .filter { $0.minutesLeft > -0.5 }
-        .sorted { $0.time < $1.time }
-}
-
 /// Rubriken säger bara hur läget är, aldrig något om tid, så den kan inte säga emot siffran under.
 private let headlines: [Status: [String]] = [
     .calm: ["Gott om tid.", "Ingen stress.", "Lugnt läge.", "Hinner en kaffe till."],
     .hurry: ["Snart dags.", "Skorna på.", "Börja runda av.", "Dags att röra på sig."],
     .rush: ["Spring!", "Ut genom dörren!", "Nu gäller det!", "Full fart!"],
-    .missed: ["Tåget har gått."],
+    .missed: ["Den har gått."],
 ]
 
 /// Samma meddelande överallt, i appen, på låsskärmen och i notisen:
@@ -105,18 +48,29 @@ public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> D
     }
 }
 
-public func departureMessage(_ train: Train) -> DepartureMessage {
-    departureMessage(status: train.status, minutes: minutesToLeave(train.slackMinutes), trainTime: train.time)
+public func departureMessage(_ trip: Trip) -> DepartureMessage {
+    departureMessage(status: trip.status, minutes: minutesToLeave(trip.slackMinutes), trainTime: trip.time)
 }
 
-/// "16:40-tåget hem"
-public func trainName(_ time: Date, _ label: String) -> String {
-    "\(time.formatted(date: .omitted, time: .shortened))-tåget \(tripPhrase(label))"
+/// "16:40-bussen hem"
+public func tripName(_ time: Date, mode: Int, _ label: String) -> String {
+    "\(stockholmClock(time))-\(Mode(mode).noun) \(tripPhrase(label))"
+}
+
+public func tripName(_ trip: Trip, _ label: String) -> String { tripName(trip.time, mode: trip.mode, label) }
+
+/// Klockslag i Stockholmstid, oavsett vilken tidszon telefonen står i.
+public func stockholmClock(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "sv_SE")
+    formatter.timeZone = TimeZone(identifier: "Europe/Stockholm")
+    formatter.dateFormat = "HH:mm"
+    return formatter.string(from: date)
 }
 
 /// Notisen när läget skärps: en hel mening av samma delar.
-public func alertBody(status: Status, minutes: Int, trainTime: Date, label: String) -> String {
-    let name = trainName(trainTime, label)
+public func alertBody(status: Status, minutes: Int, trainTime: Date, mode: Int, label: String) -> String {
+    let name = tripName(trainTime, mode: mode, label)
     return status == .rush ? "Gå nu så hinner du med \(name)." : "Gå om \(minutes) min för att hinna med \(name)."
 }
 

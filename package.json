@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "TZ=Europe/Stockholm node server.mjs",
-    "test": "node --test test/logic.test.js"
+    "test": "node --test test/logic.test.js test/trip.test.js"
   },
   "dependencies": {
     "web-push": "^3.6.7"

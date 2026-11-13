@@ -36,18 +36,12 @@ struct ContentView: View {
 
     // MARK: Överst: vart du ska
 
-    /// Platser du kan välja: alla utom den du står vid.
-    private var destinations: [Place] {
-        guard let here = model.start?.station.name else { return model.places }
-        return model.places.filter { $0.station != here }
-    }
-
     private var header: some View {
         HStack {
             if let destination = model.destination {
-                if destinations.count > 1 {
+                if model.destinations.count > 1 {
                     Menu {
-                        ForEach(destinations) { place in
+                        ForEach(model.destinations) { place in
                             Button { model.choose(place) } label: {
                                 if place.id == destination.id { Label(place.label, systemImage: "checkmark") } else { Text(place.label) }
                             }
@@ -88,8 +82,8 @@ struct ContentView: View {
                     Button("Lägg till plats") { showSettings = true }.buttonStyle(Outline(mood: mood))
                 }
             }
-        } else if let train = model.next, let destination = model.destination {
-            let message = departureMessage(train)
+        } else if let trip = model.next, let destination = model.destination {
+            let message = departureMessage(trip)
             VStack(alignment: .leading, spacing: 0) {
                 Text(message.headline).font(.title2.weight(.bold))
                 Text(message.wait)
@@ -100,8 +94,8 @@ struct ContentView: View {
                     .padding(.vertical, -6)
                 Text(message.caption).font(.title3)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(trainName(train.time, destination.label)).font(.title2.weight(.bold))
-                    Text(lineText(train)).font(.subheadline).foregroundStyle(mood.muted)
+                    Text(tripName(trip, destination.label)).font(.title2.weight(.bold))
+                    Text(lineText(trip)).font(.subheadline).foregroundStyle(mood.muted)
                 }
                 .padding(.top, 24)
                 if !model.later.isEmpty {
@@ -111,17 +105,14 @@ struct ContentView: View {
         }
     }
 
-    private func lineText(_ train: Train) -> String {
-        var parts = ["Linje \(train.line) mot \(train.destination)"]
-        if let start = model.start { parts.append(start.station.name) }
-        if let transfer = model.plan?.transfer { parts.append("byt vid \(transfer)") }
-        return parts.joined(separator: " · ")
+    private func lineText(_ trip: Trip) -> String {
+        ([trip.lineText, "från \(trip.stop.name)"] + trip.transfers.map { "byte \($0)" }).joined(separator: " · ")
     }
 
     private var later: some View {
         HStack(spacing: 12) {
             Text("Senare").fontWeight(.semibold)
-            Text(model.later.map { $0.time.formatted(date: .omitted, time: .shortened) }.joined(separator: " · "))
+            Text(model.later.map { stockholmClock($0.time) }.joined(separator: " · "))
                 .monospacedDigit()
                 .foregroundStyle(mood.muted)
         }
@@ -146,8 +137,8 @@ struct ContentView: View {
 
     /// En rad som öppnar kartan: pilen pekar mot stationen när telefonen har kompass.
     @ViewBuilder private var walkRow: some View {
-        if let start = model.start {
-            let minutes = "\(start.estimated ? "ca " : "")\(max(1, Int(start.walkMinutes.rounded()))) min"
+        if let trip = model.next {
+            let minutes = "\(max(1, Int(trip.walkMinutes.rounded()))) min"
             Button { showMap = true } label: {
                 HStack(spacing: 12) {
                     Group {
@@ -162,10 +153,10 @@ struct ContentView: View {
                     .font(.title2)
                     .frame(width: 32)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(model.stationDistance.map { "\(distanceText($0)) · \(minutes)" } ?? "Du är vid stationen")
+                        Text(model.stopDistance.map { "\(distanceText($0)) · \(minutes)" } ?? "Du är vid hållplatsen")
                             .font(.title3.weight(.bold))
                             .monospacedDigit()
-                        Text("till \(start.station.name)").font(.subheadline).foregroundStyle(mood.muted)
+                        Text("till \(trip.stop.name)").font(.subheadline).foregroundStyle(mood.muted)
                     }
                     Spacer()
                     Image(systemName: "chevron.right").font(.subheadline.weight(.bold)).foregroundStyle(mood.muted)
@@ -174,7 +165,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(model.stationDistance.map(distanceText) ?? "") till \(start.station.name), visa gångvägen på kartan")
+            .accessibilityLabel("\(model.stopDistance.map(distanceText) ?? "") till \(trip.stop.name), visa gångvägen på kartan")
             .overlay(alignment: .top) { Rectangle().fill(mood.ink.opacity(0.2)).frame(height: 1) }
         }
     }

@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import webpush from 'web-push';
 import { buildTrips, reminderStep, watchDestination, watchSummary } from './src/logic.js';
-import { fetchTrips } from './src/trip.js';
+import { fetchTrips, fetchUpcomingTrips } from './src/trip.js';
 
 const ROOT = import.meta.dirname;
 const PORT = process.env.PORT ?? 5180;
@@ -77,7 +77,7 @@ async function nextTrain(req, res) {
     const now = new Date();
     const { place, hereId } = watchDestination({ home, work, position, now });
     const atPlace = hereId === place.id;
-    const trips = atPlace ? [] : buildTrips(await fetchTrips(position, place), now);
+    const trips = atPlace ? [] : buildTrips(await fetchUpcomingTrips(position, place, now), now);
     text(res, 200, watchSummary({ place, atPlace, trips }));
   } catch {
     text(res, 502, 'Kunde inte hämta resor från SL.');

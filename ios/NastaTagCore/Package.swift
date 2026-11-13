@@ -9,6 +9,6 @@ let package = Package(
     products: [.library(name: "NastaTagCore", targets: ["NastaTagCore"])],
     targets: [
         .target(name: "NastaTagCore", resources: [.copy("metro.json")]),
-        .testTarget(name: "NastaTagCoreTests", dependencies: ["NastaTagCore"]),
+        .testTarget(name: "NastaTagCoreTests", dependencies: ["NastaTagCore"], resources: [.copy("trips.json")]),
     ]
 )

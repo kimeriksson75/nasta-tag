@@ -28,8 +28,8 @@ struct TripLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text(trainName(state.trainTime, context.attributes.label)).font(.subheadline.weight(.bold))
-                        Text("Linje \(state.line) mot \(state.towards)").font(.caption).foregroundStyle(.secondary)
+                        Text(tripName(state.trainTime, mode: state.mode, context.attributes.label)).font(.subheadline.weight(.bold))
+                        Text(state.line).font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(.trailing, 4)
                 }
@@ -68,11 +68,11 @@ struct LockScreenView: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(trainName(state.trainTime, label)).font(.headline)
-                Text("Linje \(state.line) mot \(state.towards)").font(.subheadline)
+                Text(tripName(state.trainTime, mode: state.mode, label)).font(.headline)
+                Text(state.line).font(.subheadline)
                 Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
                 if state.status == .calm || state.status == .hurry {
-                    Text("Gå senast \(state.leaveBy.formatted(date: .omitted, time: .shortened))")
+                    Text("Gå senast \(stockholmClock(state.leaveBy))")
                         .font(.subheadline).foregroundStyle(mood.muted)
                 }
             }

@@ -15,7 +15,7 @@ struct WalkMapView: View {
         let theme = MapTheme(mood)
         ZStack(alignment: .top) {
             WalkMap(theme: theme, position: model.position, heading: model.heading,
-                    route: model.walkRoute?.polyline.coordinates ?? [], station: model.start?.station)
+                    route: model.walkRoute?.polyline.coordinates ?? [], station: model.stop)
                 .overlay { Me().fill(theme.route).stroke(theme.halo, lineWidth: 2).frame(width: 36, height: 36) }
                 .ignoresSafeArea()
             header
@@ -28,12 +28,12 @@ struct WalkMapView: View {
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            if let meters = model.stationDistance {
+            if let meters = model.stopDistance {
                 Text(distanceText(meters))
                     .font(.system(size: 34, weight: .heavy))
                     .monospacedDigit()
             }
-            if let station = model.start?.station.name {
+            if let station = model.stop?.name {
                 Text(station).font(.headline).lineLimit(1)
             }
             Spacer()
@@ -147,7 +147,7 @@ private struct WalkMap: UIViewRepresentable {
     let position: Coordinate?
     let heading: Double?
     let route: [CLLocationCoordinate2D]
-    let station: Station?
+    let station: Stop?
 
     static let zoom = 17.0
     static let pitch = 30.0
@@ -182,7 +182,7 @@ private struct WalkMap: UIViewRepresentable {
         private var style: MLNStyle?
         private var painted: MapTheme?
         private var drawnRoute: [CLLocationCoordinate2D] = []
-        private var drawnStation: Station?
+        private var drawnStation: Stop?
         private var placed = false
 
         func mapView(_ mapView: MLNMapView, didFinishLoading style: MLNStyle) {

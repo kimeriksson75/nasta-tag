@@ -5,14 +5,7 @@ import NastaTagCore
 import Observation
 import SwiftUI
 
-/// Närmaste station och hur långt det är dit till fots.
-struct Start: Equatable {
-    var station: Station
-    var walkMinutes: Double
-    var walkMeters: Double?
-    var estimated: Bool
-}
-
+/// Appens tillstånd: var du är, vart du ska och resorna dit med alla trafikslag från SL:s reseplanerare.
 @MainActor
 @Observable
 final class AppModel: NSObject, CLLocationManagerDelegate {
@@ -24,8 +17,11 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     var position: Coordinate?
     var heading: Double?
-    var start: Start?
-    var departures: [Departure]?
+    /// Platsen du står vid, om du är nära någon.
+    private(set) var hereId: String?
+    private var journeys: [Journey]?
+    /// Resor som börjar vid den följda avgången, ifall den har fallit ur de vanliga resultaten.
+    private var followedJourneys: [Journey] = []
     var problem: String?
     var locationDenied = false
     var now = Date()
@@ -34,20 +30,24 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private var followedStatus: Status?
 
     private let manager = CLLocationManager()
-    private var walkedFrom: Coordinate?
     private var backgroundSession: CLBackgroundActivitySession?
     private var ticker: Timer?
     private var fetching = false
+    /// Varifrån och vart de senaste resorna hämtades.
+    private var fetchedFrom: Coordinate?
+    private var fetchedFor: String?
 
     private static let placesKey = "places"
     private static let activeKey = "activeId"
     private static let refreshSeconds: TimeInterval = 30
-    private static let movedMeters = 75.0 // gå så här långt innan stationen räknas om
-    private static let nearStationMeters = 30.0
+    private static let retrySeconds: TimeInterval = 10
+    private static let movedMeters = 40.0 // gå så här långt innan resorna räknas om
+    private static let nearStopMeters = 30.0
 
     override init() {
         let saved = UserDefaults.standard.data(forKey: Self.placesKey)
-        places = saved.flatMap { try? JSONDecoder().decode([Place].self, from: $0) } ?? []
+        let decoded = saved.flatMap { try? JSONDecoder().decode([Place].self, from: $0) } ?? []
+        places = migratePlaces(decoded, metro: Metro.stockholm)
         activeId = UserDefaults.standard.string(forKey: Self.activeKey)
         super.init()
         manager.delegate = self
@@ -77,6 +77,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         tick()
     }
 
+    /// Efter en ändring i inställningarna eller när appen kommer fram igen.
     func refreshSoon() {
         fetchedAt = nil
         tick()
@@ -85,8 +86,16 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func tick() {
         now = Date()
         chooseDestination()
-        if let fetchedAt, now.timeIntervalSince(fetchedAt) < Self.refreshSeconds { return updateFollowing() }
-        Task { await refreshDepartures() }
+        if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
+    }
+
+    private var needsRefresh: Bool {
+        guard let position, let destination else { return false }
+        guard let fetchedAt, let fetchedFrom, fetchedFor == destination.id else { return true }
+        if distanceMeters(fetchedFrom, position) >= Self.movedMeters { return true }
+        // Har alla resor gått behövs nya direkt, inte om en halv minut.
+        let wait = next == nil && journeys != nil ? Self.retrySeconds : Self.refreshSeconds
+        return now.timeIntervalSince(fetchedAt) >= wait
     }
 
     // MARK: Plats
@@ -109,183 +118,144 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     }
 
     private func onPosition(_ coordinate: Coordinate) {
+        let first = position == nil
         position = coordinate
-        if let walkedFrom, distanceMeters(walkedFrom, coordinate) < Self.movedMeters { return }
-        walkedFrom = coordinate
-        Task { await findStart(from: coordinate) }
+        if first { tick() }
     }
 
-    /// Fågelvägen ljuger vid vatten, så jämför gångvägen till de tre närmaste stationerna.
-    private func findStart(from position: Coordinate) async {
-        var best: Start?
-        for station in metro.nearestStations(to: position, count: 3) {
-            guard let walk = await walk(from: position, to: station) else { continue }
-            if best == nil || walk.walkMinutes < best!.walkMinutes { best = walk }
-        }
-        let station = metro.nearestStations(to: position)[0]
-        let found = best ?? Start(station: station, walkMinutes: estimateWalkMinutes(from: position, to: station.coordinate),
-                                  walkMeters: nil, estimated: true)
-        let changed = found.station != start?.station
-        start = found
-        chooseDestination()
-        if changed {
-            departures = nil
-            await refreshDepartures()
-        }
-    }
-
-    private func walk(from position: Coordinate, to station: Station) async -> Start? {
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: position.lat, longitude: position.lon)))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: station.lat, longitude: station.lon)))
-        request.transportType = .walking
-        guard let eta = try? await MKDirections(request: request).calculateETA() else { return nil }
-        return Start(station: station, walkMinutes: eta.expectedTravelTime / 60, walkMeters: eta.distance, estimated: false)
-    }
-
-    // MARK: Destination och tåg
+    // MARK: Destination
 
     var destination: Place? { places.first { $0.id == activeId } ?? places.first }
 
     /// Hem ger Jobbet och tvärtom när du är framme. Ett eget val gäller tills du är framme.
     private func chooseDestination() {
-        guard let start, let next = nextDestination(places, activeId: activeId, stationName: start.station.name,
-                                                    now: now, chosenId: chosenId) else { return }
+        hereId = position.flatMap { placeAt(places, position: $0) }
+        guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
         if next.id != activeId { activeId = next.id }
-        if let chosenId, places.first(where: { $0.id == chosenId })?.station == start.station.name { self.chosenId = nil }
+        if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
     func choose(_ place: Place) {
         chosenId = place.id
         activeId = place.id
+        refreshSoon()
     }
 
-    /// Knappar behövs bara när det finns ett val: inte för platsen du är på,
-    /// och inte för den enda andra destinationen om appen redan valt den.
-    var choices: [Place] {
-        guard let start else { return [] }
-        let choices = places.filter { $0.station != start.station.name }
-        return choices.count == 1 && choices[0].id == activeId ? [] : choices
-    }
+    /// Platser du kan välja: alla utom den du står vid.
+    var destinations: [Place] { places.filter { $0.id != hereId } }
 
-    var plan: (target: String, transfer: String?)? {
-        guard let start, let destination, start.station.name != destination.station else { return nil }
-        return metro.planTrip(from: start.station.name, to: destination.station)
-    }
+    // MARK: Resor
 
-    var board: [Train] {
-        guard let start, let plan, let departures else { return [] }
-        return buildBoard(departures: departures, metro: metro, from: start.station.name, target: plan.target,
-                          now: now, walkMinutes: start.walkMinutes)
-            .filter { $0.status != .missed }
-    }
+    private var trips: [Trip] { buildTrips(journeys ?? [], now: now) }
+    private var picked: (next: Trip?, later: [Trip]) { pickTrips(trips) }
 
-    var next: Train? { board.first }
-    var later: [Train] { Array(board.dropFirst().prefix(3)) }
+    var next: Trip? { picked.next }
+    var later: [Trip] { Array(picked.later.prefix(3)).sorted { $0.time < $1.time } }
 
-    /// Det som står i stället för tåget när något saknas.
+    /// Det som står i stället för resan när något saknas.
     var blocker: String? {
         if places.isEmpty { return "Lägg till ditt hem för att komma igång." }
-        if locationDenied { return "Appen behöver din plats för att hitta närmaste station." }
-        guard let start, let destination else { return "Letar efter närmaste station …" }
-        if start.station.name == destination.station { return "Du är redan vid \(destination.label)." }
+        if locationDenied { return "Appen behöver din plats för att hitta vägen." }
+        guard position != nil else { return "Letar efter var du är …" }
+        guard let destination else { return nil }
+        if destination.id == hereId { return "Du är redan vid \(destination.label)." }
         if let problem { return problem }
-        guard departures != nil else { return "Hämtar avgångar …" }
-        return next == nil ? "Inga tåg du hinner med just nu." : nil
+        guard journeys != nil, fetchedFor == destination.id else { return "Hämtar avgångar …" }
+        return next == nil ? "Inga avgångar du hinner med just nu." : nil
     }
 
-    var routeText: String? {
-        guard let start, let destination, let plan else { return nil }
-        let walk = "\(start.estimated ? "ca " : "")\(max(1, Int(start.walkMinutes.rounded()))) min gång"
-        return [walk, start.station.name, plan.transfer.map { "byt vid \($0)" }, destination.label]
-            .compactMap { $0 }.joined(separator: " → ")
-    }
-
-    /// Gångvägens längd när den finns, annars fågelvägen.
-    var stationDistance: Double? {
-        guard let start, let position else { return nil }
-        guard distanceMeters(position, start.station.coordinate) >= Self.nearStationMeters else { return nil }
-        return start.walkMeters ?? distanceMeters(position, start.station.coordinate)
-    }
-
-    /// Hur pilen ska vridas för att peka mot stationen, eller nil utan kompass.
-    var arrowAngle: Double? {
-        guard let start, let position, let heading else { return nil }
-        return bearingDegrees(position, start.station.coordinate) - heading
-    }
-
-    /// Gångvägen till stationen för kartan i appen. Hämtas om när du har gått en bit.
-    var walkRoute: MKRoute?
-    private var walkRouteFrom: Coordinate?
-    private var walkRouteTo: String?
-
-    func loadWalkRoute() async {
-        guard let start, let position else { return }
-        if walkRouteTo == start.station.name, let walkRouteFrom, distanceMeters(walkRouteFrom, position) < 40 { return }
-        if walkRouteTo != start.station.name { walkRoute = nil }
-        walkRouteFrom = position
-        walkRouteTo = start.station.name
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: position.lat, longitude: position.lon)))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: start.station.lat, longitude: start.station.lon)))
-        request.transportType = .walking
-        guard let route = try? await MKDirections(request: request).calculate().routes.first,
-              self.start?.station.name == walkRouteTo else { return }
-        walkRoute = route
-    }
-
-    private struct DeparturesResponse: Decodable { var departures: [Departure] }
-
-    private func refreshDepartures() async {
-        guard let start, !fetching else { return }
+    private func refreshTrips() async {
+        guard let position, let destination, let target = destination.coordinate, !fetching else { return }
         fetching = true
         defer { fetching = false }
-        let url = URL(string: "https://transport.integration.sl.se/v1/sites/\(start.station.siteId)/departures?transport=METRO")!
-        for attempt in 0..<4 {
-            do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-                // SL:s öppna API svarar ibland 429 på enstaka anrop; nästa brukar gå igenom.
-                if code == 429 && attempt < 3 {
-                    try await Task.sleep(for: .seconds(1.5 * Double(attempt + 1)))
-                    continue
-                }
-                guard code == 200 else { throw URLError(.badServerResponse) }
-                guard self.start?.station == start.station else { return }
-                departures = try JSONDecoder().decode(DeparturesResponse.self, from: data).departures
-                fetchedAt = Date()
-                problem = nil
-                break
-            } catch {
-                problem = "Får inget svar från SL just nu."
-                fetchedAt = Date().addingTimeInterval(-Self.refreshSeconds + 10) // försök igen om en stund
-                break
-            }
+        do {
+            let fresh = try await fetchUpcomingJourneys(from: position, to: target, now: Date())
+            guard self.destination?.id == destination.id else { return }
+            if fetchedFor != destination.id { walkRoute = nil }
+            journeys = fresh
+            fetchedFrom = position
+            fetchedFor = destination.id
+            fetchedAt = Date()
+            problem = nil
+            await refreshFollowed(from: position, to: target, fresh: fresh)
+        } catch {
+            problem = "Får inget svar från SL just nu."
+            fetchedAt = Date().addingTimeInterval(-Self.refreshSeconds + Self.retrySeconds) // försök igen om en stund
+            fetchedFrom = position
+            fetchedFor = destination.id
         }
         now = Date()
         updateFollowing()
+    }
+
+    /// Den följda avgången kan falla ur reseplanerarens tre bästa. Då frågar vi från strax före den.
+    private func refreshFollowed(from position: Coordinate, to target: Coordinate, fresh: [Journey]) async {
+        guard let followed = following?.content.state else { return followedJourneys = [] }
+        if buildTrips(fresh, now: now).contains(where: { $0.key == followed.key }) { return followedJourneys = [] }
+        followedJourneys = (try? await fetchJourneys(from: position, to: target,
+                                                     departAt: followed.trainTime.addingTimeInterval(-2 * 60))) ?? []
+    }
+
+    // MARK: Gången till hållplatsen
+
+    /// Hållplatsen där nästa resa börjar.
+    var stop: Stop? { next?.stop }
+
+    /// Gångvägens längd när den finns, annars fågelvägen. Nil när du redan står där.
+    var stopDistance: Double? {
+        guard let next, let position else { return nil }
+        let straight = distanceMeters(position, next.stop.coordinate)
+        guard straight >= Self.nearStopMeters else { return nil }
+        return next.walkMeters > 0 ? next.walkMeters : straight
+    }
+
+    /// Hur pilen ska vridas för att peka mot hållplatsen, eller nil utan kompass.
+    var arrowAngle: Double? {
+        guard let stop, let position, let heading else { return nil }
+        return bearingDegrees(position, stop.coordinate) - heading
+    }
+
+    /// Gångvägen till hållplatsen för kartan i appen. Hämtas om när du har gått en bit.
+    var walkRoute: MKRoute?
+    private var walkRouteFrom: Coordinate?
+    private var walkRouteTo: Stop?
+
+    func loadWalkRoute() async {
+        guard let stop, let position else { return }
+        if walkRouteTo == stop, let walkRouteFrom, distanceMeters(walkRouteFrom, position) < Self.movedMeters { return }
+        if walkRouteTo != stop { walkRoute = nil }
+        walkRouteFrom = position
+        walkRouteTo = stop
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: position.lat, longitude: position.lon)))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: stop.lat, longitude: stop.lon)))
+        request.transportType = .walking
+        guard let route = try? await MKDirections(request: request).calculate().routes.first,
+              self.stop == walkRouteTo else { return }
+        walkRoute = route
     }
 
     // MARK: Live Activity
 
     var canFollow: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
-    private func state(for train: Train) -> TripAttributes.ContentState {
-        TripAttributes.ContentState(status: train.status, leaveBy: train.leaveBy, trainTime: train.time,
-                                    line: train.line, towards: train.destination, station: start?.station.name ?? "",
-                                    journey: train.journey, minutes: minutesToLeave(train.slackMinutes))
+    private func state(for trip: Trip) -> TripAttributes.ContentState {
+        TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
+                                    line: trip.lineText, towards: trip.towards, station: trip.stop.name,
+                                    key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes))
     }
 
-    /// Visar tåget på låsskärmen och i Dynamic Island tills det har gått.
+    /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
     func follow() {
         guard let next, let destination else { return }
         do {
             following = try Activity.request(attributes: TripAttributes(label: destination.label),
                                              content: .init(state: state(for: next), staleDate: next.time))
             followedStatus = next.status
+            followedJourneys = []
             resumeBackground()
         } catch {
-            problem = "Kunde inte visa tåget på låsskärmen."
+            problem = "Kunde inte visa resan på låsskärmen."
         }
     }
 
@@ -295,7 +265,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         Task { await activity?.end(nil, dismissalPolicy: .immediate) }
     }
 
-    /// Medan du följer ett tåg håller platsen appen vaken i bakgrunden, så att färgen kan bytas.
+    /// Medan du följer en resa håller platsen appen vaken i bakgrunden, så att färgen och minuterna kan bytas.
     private func resumeBackground() {
         manager.allowsBackgroundLocationUpdates = true
         manager.showsBackgroundLocationIndicator = true
@@ -305,6 +275,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func stopFollowing() {
         following = nil
         followedStatus = nil
+        followedJourneys = []
         backgroundSession?.invalidate()
         backgroundSession = nil
         manager.allowsBackgroundLocationUpdates = false
@@ -314,24 +285,25 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard let activity = following else { return }
         guard activity.activityState == .active else { return stopFollowing() }
         let followed = activity.content.state
-        let train = board.first { followed.journey != nil ? $0.journey == followed.journey : $0.time == followed.trainTime }
-        guard let train else {
-            // Tåget har gått eller finns inte längre: låt beskedet ligga kvar en stund och avsluta.
-            var last = activity.content.state
+        let known = buildTrips((journeys ?? []) + followedJourneys, now: now)
+        guard let trip = known.first(where: { $0.key == followed.key }), trip.status != .missed else {
+            // Bara när avgången faktiskt har gått: annars väntar vi på nästa svar från SL.
+            guard now > followed.trainTime || followed.leaveBy.timeIntervalSince(now) < -60 else { return }
+            var last = followed
             last.status = .missed
             stopFollowing()
             Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(120))) }
             return
         }
-        let state = state(for: train)
-        guard state != activity.content.state else { return }
-        let worse = followedStatus.map { urgency(train.status) > urgency($0) } ?? false
-        followedStatus = train.status
-        let label = activity.attributes.label
-        let alert = worse ? AlertConfiguration(title: "\(departureMessage(train).headline)",
-                                               body: "\(alertBody(status: train.status, minutes: state.minutes, trainTime: train.time, label: label))",
-                                               sound: .default) : nil
-        Task { await activity.update(.init(state: state, staleDate: train.time), alertConfiguration: alert) }
+        let state = state(for: trip)
+        guard state != followed else { return }
+        let worse = followedStatus.map { urgency(trip.status) > urgency($0) } ?? false
+        followedStatus = trip.status
+        let alert = worse ? AlertConfiguration(
+            title: "\(departureMessage(trip).headline)",
+            body: "\(alertBody(status: trip.status, minutes: state.minutes, trainTime: trip.time, mode: trip.mode, label: activity.attributes.label))",
+            sound: .default) : nil
+        Task { await activity.update(.init(state: state, staleDate: trip.time), alertConfiguration: alert) }
     }
 
     private func urgency(_ status: Status) -> Int {

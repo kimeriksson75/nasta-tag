@@ -2,7 +2,7 @@ import MapKit
 import NastaTagCore
 import SwiftUI
 
-/// Destinationerna. Du anger en adress, appen tar tunnelbanestationen närmast den.
+/// Destinationerna. Du anger en adress, appen hittar vägen dit med alla trafikslag.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -18,7 +18,7 @@ struct SettingsView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(place.label).font(.headline)
-                                    Text(place.address ?? place.station).foregroundStyle(.secondary)
+                                    Text(place.detail).foregroundStyle(.secondary)
                                     if place.weekdaysOnly {
                                         Text("Bara vardagar").font(.footnote).foregroundStyle(.secondary)
                                     }
@@ -57,7 +57,6 @@ struct PlaceForm: View {
     @State private var weekdaysOnly = false
     @State private var address: String?
     @State private var coordinate: Coordinate?
-    @State private var station: String?
     @State private var search = AddressSearch()
     @State private var problem: String?
     @State private var resolving = false
@@ -67,7 +66,7 @@ struct PlaceForm: View {
     }
 
     private var trimmedLabel: String { label.trimmingCharacters(in: .whitespaces) }
-    private var canSave: Bool { !trimmedLabel.isEmpty && station != nil }
+    private var canSave: Bool { !trimmedLabel.isEmpty && coordinate != nil }
 
     var body: some View {
         NavigationStack {
@@ -79,8 +78,8 @@ struct PlaceForm: View {
                     TextField("Gata och nummer", text: $search.query)
                         .textContentType(.fullStreetAddress)
                         .autocorrectionDisabled()
-                    if let address, let station, search.query == address {
-                        Label("Närmaste tunnelbana: \(station)", systemImage: "checkmark.circle.fill")
+                    if let address, coordinate != nil, search.query == address {
+                        Label("Adressen hittades", systemImage: "checkmark.circle.fill")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
                     if search.query != address {
@@ -135,7 +134,6 @@ struct PlaceForm: View {
         weekdaysOnly = place.weekdaysOnly
         address = place.address
         coordinate = place.coordinate
-        station = place.station
         search.query = place.address ?? ""
     }
 
@@ -158,21 +156,20 @@ struct PlaceForm: View {
             let text = [result.title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ")
             address = text
             coordinate = point
-            station = model.metro.nearestStations(to: point)[0].name
             search.query = text
         }
     }
 
     private func save() {
-        guard let station else { return }
+        guard let coordinate else { return }
         if let place, let index = model.places.firstIndex(where: { $0.id == place.id }) {
             model.places[index].label = trimmedLabel
             model.places[index].weekdaysOnly = weekdaysOnly
             model.places[index].address = address
             model.places[index].coordinate = coordinate
-            model.places[index].station = station
+            model.places[index].station = nil
         } else {
-            model.places.append(Place(label: trimmedLabel, station: station, weekdaysOnly: weekdaysOnly,
+            model.places.append(Place(label: trimmedLabel, weekdaysOnly: weekdaysOnly,
                                       address: address, coordinate: coordinate))
             if model.activeId == nil { model.activeId = model.places.last?.id }
         }
