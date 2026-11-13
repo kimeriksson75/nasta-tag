@@ -87,7 +87,9 @@ private func journeys() throws -> [Journey] {
     #expect(calm.wait == "8 min")
     #expect(calm.caption == "tills du ska gå")
     let rush = departureMessage(status: .rush, minutes: 1, trainTime: time)
-    #expect(rush.wait == "Gå nu")
+    #expect(rush.headline == "Spring!")
+    // Ett budskap: rubriken säger spring, då får siffran inte säga gå.
+    #expect(!rush.wait.contains("Gå") && !rush.caption.contains("gå"))
     for status in [Status.calm, .hurry, .rush] {
         let headline = departureMessage(status: status, minutes: 3, trainTime: time).headline
         #expect(!headline.contains("gå") && !headline.contains("min"))

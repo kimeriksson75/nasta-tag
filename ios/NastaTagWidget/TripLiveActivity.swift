@@ -23,7 +23,7 @@ struct TripLiveActivity: Widget {
                         Text(message.headline).font(.caption.weight(.semibold))
                         Text(message.wait).font(.title.weight(.heavy)).monospacedDigit()
                     }
-                    .foregroundStyle(mood == .idle ? .white : mood.background)
+                    .foregroundStyle(mood.accent)
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -34,13 +34,13 @@ struct TripLiveActivity: Widget {
                     .padding(.trailing, 4)
                 }
             } compactLeading: {
-                Circle().fill(mood.background).frame(width: 12, height: 12)
+                Circle().fill(mood.accent).frame(width: 12, height: 12)
             } compactTrailing: {
                 Text(state.status == .rush ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
             } minimal: {
-                Circle().fill(mood.background).frame(width: 12, height: 12)
+                Circle().fill(mood.accent).frame(width: 12, height: 12)
             }
-            .keylineTint(mood.background)
+            .keylineTint(mood.accent)
         }
     }
 }
@@ -56,29 +56,53 @@ struct LockScreenView: View {
     var body: some View {
         let mood = Mood(state.status)
         let message = state.message
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(message.headline).font(.headline)
-                Text(message.wait)
-                    .font(.system(size: 44, weight: .heavy))
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                Text(message.caption).font(.subheadline)
-            }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(tripName(state.trainTime, mode: state.mode, label)).font(.headline)
-                Text(state.line).font(.subheadline)
-                Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
-                if state.status == .calm || state.status == .hurry {
-                    Text("Gå senast \(stockholmClock(state.leaveBy))")
-                        .font(.subheadline).foregroundStyle(mood.muted)
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(message.headline).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                    Text(message.wait)
+                        .font(.system(size: 44, weight: .heavy))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Text(message.caption).font(.subheadline)
                 }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(tripName(state.trainTime, mode: state.mode, label)).font(.headline)
+                    Text(state.line).font(.subheadline)
+                    Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
+                    if state.status == .calm || state.status == .hurry {
+                        Text("Gå senast \(stockholmClock(state.leaveBy))")
+                            .font(.subheadline).foregroundStyle(mood.muted)
+                    }
+                }
+                .multilineTextAlignment(.trailing)
             }
-            .multilineTextAlignment(.trailing)
+            HStack(spacing: 8) {
+                if state.snoozed == true {
+                    Button(intent: SnoozeTripIntent()) { Pill(text: "Ångra snooze") }
+                } else if let minutes = state.snoozeMinutes, state.status != .missed {
+                    Button(intent: SnoozeTripIntent()) { Pill(text: "Snooze \(minutes) min") }
+                }
+                Button(intent: StopFollowingIntent()) { Pill(text: "Sluta följa") }
+            }
+            .buttonStyle(.plain)
         }
         .foregroundStyle(mood.ink)
+        .fontDesign(.rounded)
         .padding(20)
+    }
+}
+
+/// Knapparna på låsskärmen, lika breda och mjukt rundade.
+private struct Pill: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.subheadline.weight(.heavy))
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(Capsule().fill(Color(hex: "#2A2D34")))
     }
 }

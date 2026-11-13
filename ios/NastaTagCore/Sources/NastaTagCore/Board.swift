@@ -15,18 +15,22 @@ public func classify(_ slackMinutes: Double) -> Status {
 }
 
 /// Rubriken säger bara hur läget är, aldrig något om tid, så den kan inte säga emot siffran under.
+/// Tonen Lugn: samma korta ord varje gång, så att man känner igen läget utan att läsa.
 private let headlines: [Status: [String]] = [
-    .calm: ["Gott om tid.", "Ingen stress.", "Lugnt läge.", "Hinner en kaffe till."],
-    .hurry: ["Snart dags.", "Skorna på.", "Börja runda av.", "Dags att röra på sig."],
-    .rush: ["Spring!", "Ut genom dörren!", "Nu gäller det!", "Full fart!"],
+    .calm: ["Gott om tid."],
+    .hurry: ["Skorna på."],
+    .rush: ["Spring!"],
     .missed: ["Den har gått."],
 ]
+
+/// Under "Spring!" står en uppmaning som säger samma sak, aldrig "gå".
+private let hurryUps = ["Raska på", "Skynda dig", "Snabba på", "Fort nu"]
 
 /// Samma meddelande överallt, i appen, på låsskärmen och i notisen:
 /// rubrik, när du ska gå och vad det leder till.
 ///
 ///     Gott om tid.     Spring!
-///     8 min            Gå nu
+///     8 min            Raska på
 ///     tills du går     så hinner du med
 public struct DepartureMessage: Equatable, Sendable {
     public var headline: String
@@ -43,7 +47,9 @@ public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> D
     let headline = list[Int(trainTime.timeIntervalSince1970 / 60) % list.count]
     switch status {
     case .calm, .hurry: return DepartureMessage(headline: headline, wait: "\(minutes) min", caption: "tills du ska gå")
-    case .rush: return DepartureMessage(headline: headline, wait: "Gå nu", caption: "så hinner du med")
+    case .rush:
+        let wait = hurryUps[Int(trainTime.timeIntervalSince1970 / 60) % hurryUps.count]
+        return DepartureMessage(headline: headline, wait: wait, caption: "så hinner du med")
     case .missed: return DepartureMessage(headline: headline, wait: "–", caption: "Ta nästa")
     }
 }
@@ -71,7 +77,11 @@ public func stockholmClock(_ date: Date) -> String {
 /// Notisen när läget skärps: en hel mening av samma delar.
 public func alertBody(status: Status, minutes: Int, trainTime: Date, mode: Int, label: String) -> String {
     let name = tripName(trainTime, mode: mode, label)
-    return status == .rush ? "Gå nu så hinner du med \(name)." : "Gå om \(minutes) min för att hinna med \(name)."
+    if status == .rush {
+        let wait = departureMessage(status: status, minutes: minutes, trainTime: trainTime).wait
+        return "\(wait) så hinner du med \(name)."
+    }
+    return "Gå om \(minutes) min för att hinna med \(name)."
 }
 
 public func tripPhrase(_ label: String) -> String {
