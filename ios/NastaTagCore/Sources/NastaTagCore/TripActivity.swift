@@ -17,8 +17,10 @@ public struct TripAttributes: ActivityAttributes {
         public var mode: Int
         /// Hela minuter tills du ska gå. Appen uppdaterar dem varje minut medan du följer tåget.
         public var minutes: Int
+        /// Hur mycket senare nästa avgång går, för Snooze-knappen. Nil när det inte finns någon.
+        public var snoozeMinutes: Int?
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
-                    key: String, mode: Int, minutes: Int) {
+                    key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -28,6 +30,7 @@ public struct TripAttributes: ActivityAttributes {
             self.key = key
             self.mode = mode
             self.minutes = minutes
+            self.snoozeMinutes = snoozeMinutes
         }
     }
 

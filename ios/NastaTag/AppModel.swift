@@ -54,6 +54,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.distanceFilter = 10
         manager.headingFilter = 2
+        TripActions.snooze = { [weak self] in self?.snoozeFollowed() }
+        TripActions.stopFollowing = { [weak self] in self?.unfollow() }
     }
 
     private func save() {
@@ -159,20 +161,31 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private(set) var snoozed: [Trip] = []
 
     /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
-    var snoozeTarget: Trip? {
-        guard let next else { return nil }
-        return pickTrips(trips.filter { $0.leaveAt > next.leaveAt }).next
+    var snoozeTarget: Trip? { next.flatMap(target(after:)) }
+
+    private func target(after trip: Trip) -> Trip? {
+        pickTrips(trips.filter { $0.leaveAt > trip.leaveAt }).next
     }
 
     /// Hur mycket senare du kan gå om du snoozar, i hela minuter.
-    var snoozeMinutes: Int? {
-        guard let next, let snoozeTarget else { return nil }
-        return max(1, Int((snoozeTarget.leaveAt.timeIntervalSince(next.leaveAt) / 60).rounded()))
+    var snoozeMinutes: Int? { next.flatMap(snoozeMinutes(for:)) }
+
+    private func snoozeMinutes(for trip: Trip) -> Int? {
+        guard let later = target(after: trip) else { return nil }
+        return max(1, Int((later.leaveAt.timeIntervalSince(trip.leaveAt) / 60).rounded()))
     }
 
     func snooze() {
         guard let next, snoozeTarget != nil else { return }
         snoozed.append(next)
+        retargetFollowing()
+    }
+
+    /// Snooze från låsskärmen hoppar över resan som syns där, även om appen hunnit välja en annan.
+    func snoozeFollowed() {
+        let followed = following?.content.state.key
+        guard let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
+        snoozed.append(trip)
         retargetFollowing()
     }
 
@@ -288,7 +301,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func state(for trip: Trip) -> TripAttributes.ContentState {
         TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
-                                    key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes))
+                                    key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
+                                    snoozeMinutes: snoozeMinutes(for: trip))
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.

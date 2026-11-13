@@ -76,6 +76,11 @@
 			path = NastaTagWidget;
 			sourceTree = "<group>";
 		};
+		A1B2C3D4E5F6000000000040 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +109,7 @@
 			children = (
 				A1B2C3D4E5F6000000000004 /* NastaTag */,
 				A1B2C3D4E5F6000000000005 /* NastaTagWidget */,
+				A1B2C3D4E5F6000000000040 /* Shared */,
 				A1B2C3D4E5F6000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -136,6 +142,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A1B2C3D4E5F6000000000004 /* NastaTag */,
+				A1B2C3D4E5F6000000000040 /* Shared */,
 			);
 			name = NastaTag;
 			packageProductDependencies = (
@@ -160,6 +167,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A1B2C3D4E5F6000000000005 /* NastaTagWidget */,
+				A1B2C3D4E5F6000000000040 /* Shared */,
 			);
 			name = NastaTagWidget;
 			packageProductDependencies = (
