@@ -91,7 +91,7 @@ struct ContentView: View {
                 Ring(mood: mood, fraction: ringFraction(trip), wait: message.wait, caption: message.caption)
                     .frame(maxWidth: 280)
                     .padding(.top, 32)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 28)
                 // Allt under ringen har fast höjd, så att ringen står still när resan byts.
                 Text(tripName(trip, destination.label))
                     .font(.title2.weight(.heavy))
