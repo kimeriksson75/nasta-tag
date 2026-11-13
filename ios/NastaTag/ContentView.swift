@@ -92,22 +92,31 @@ struct ContentView: View {
                     .frame(maxWidth: 280)
                     .padding(.top, 32)
                     .padding(.bottom, 16)
-                Text(tripName(trip, destination.label)).font(.title2.weight(.heavy))
+                // Allt under ringen har fast höjd, så att ringen står still när resan byts.
+                Text(tripName(trip, destination.label))
+                    .font(.title2.weight(.heavy))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(lineText(trip))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(mood.muted)
+                    .lineLimit(2, reservesSpace: true)
                     .padding(.top, 4)
+                Group {
                 if let skipped = model.snoozed {
                     Button("Ångra snooze") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: true))
                         .accessibilityLabel("Ångra snooze, ta \(stockholmClock(skipped.time)) igen")
-                        .padding(.top, 16)
                 } else if let minutes = model.snoozeMinutes {
                     Button("Snooze \(minutes) min") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: false))
                         .accessibilityHint("Hoppa över den här avgången och ta nästa")
-                        .padding(.top, 16)
+                } else {
+                    Color.clear
                 }
+                }
+                .frame(height: SnoozeToggle.height)
+                .padding(.top, 12)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
@@ -277,13 +286,14 @@ struct Outline: ButtonStyle {
 
 /// Snooze och Ångra snooze är samma knapp: lika stor och rund, ifylld när den är på.
 struct SnoozeToggle: ButtonStyle {
+    static let height: CGFloat = 52
     let mood: Mood
     let on: Bool
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline.weight(.heavy))
             .lineLimit(1)
-            .frame(width: 180, height: 52)
+            .frame(width: 180, height: Self.height)
             .background(Capsule().fill(on ? mood.track : .clear))
             .overlay(Capsule().stroke(mood.line, lineWidth: 1.5))
             .contentShape(Capsule())
