@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A1B2C3D4E5F6000000000013 /* NastaTagCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000011 /* NastaTagCore */; };
 		A1B2C3D4E5F6000000000014 /* NastaTagCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000012 /* NastaTagCore */; };
+		A1B2C3D4E5F6000000000031 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000032 /* MapLibre */; };
 		A1B2C3D4E5F6000000000015 /* NastaTagWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000007 /* NastaTagWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -83,6 +84,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D4E5F6000000000013 /* NastaTagCore in Frameworks */,
+				A1B2C3D4E5F6000000000031 /* MapLibre in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,6 +140,7 @@
 			name = NastaTag;
 			packageProductDependencies = (
 				A1B2C3D4E5F6000000000011 /* NastaTagCore */,
+				A1B2C3D4E5F6000000000032 /* MapLibre */,
 			);
 			productName = NastaTag;
 			productReference = A1B2C3D4E5F6000000000006 /* NastaTag.app */;
@@ -187,6 +190,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1B2C3D4E5F6000000000018 /* XCLocalSwiftPackageReference "NastaTagCore" */,
+				A1B2C3D4E5F6000000000033 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1B2C3D4E5F6000000000003 /* Products */;
@@ -414,6 +418,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B2C3D4E5F6000000000033 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.31.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		A1B2C3D4E5F6000000000011 /* NastaTagCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -424,6 +439,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D4E5F6000000000018 /* XCLocalSwiftPackageReference "NastaTagCore" */;
 			productName = NastaTagCore;
+		};
+		A1B2C3D4E5F6000000000032 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F6000000000033 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

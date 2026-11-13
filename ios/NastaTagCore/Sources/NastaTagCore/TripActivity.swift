@@ -12,7 +12,10 @@ public struct TripAttributes: ActivityAttributes {
         public var towards: String
         public var station: String
         public var journey: Int?
-        public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String, journey: Int?) {
+        /// Hela minuter tills du ska gå. Appen uppdaterar dem varje minut medan du följer tåget.
+        public var minutes: Int
+        public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
+                    journey: Int?, minutes: Int) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -20,6 +23,7 @@ public struct TripAttributes: ActivityAttributes {
             self.towards = towards
             self.station = station
             self.journey = journey
+            self.minutes = minutes
         }
     }
 

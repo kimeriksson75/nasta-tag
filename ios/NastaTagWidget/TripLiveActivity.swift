@@ -3,8 +3,10 @@ import NastaTagCore
 import SwiftUI
 import WidgetKit
 
-/// Tåget på låsskärmen och i Dynamic Island. Nedräkningen tickar av sig själv,
-/// färgen byts när appen skickar ett nytt läge.
+/// Tåget på låsskärmen och i Dynamic Island, med samma ord som i appen.
+/// Hela minuter i stället för en sekundräknare: iOS byter sekunderna mot streck när låsskärmen
+/// är nedtonad, och minuter är det appen själv visar. Appen räknar ner dem medan du följer tåget,
+/// och "Gå senast" står kvar som klockslag om appen ändå skulle hamna efter.
 struct TripLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
@@ -14,18 +16,19 @@ struct TripLiveActivity: Widget {
         } dynamicIsland: { context in
             let state = context.state
             let mood = Mood(state.status)
+            let message = state.message
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Lead(status: state.status).font(.caption.weight(.semibold))
-                        LeaveIn(state: state).font(.title.weight(.heavy))
+                        Text(message.headline).font(.caption.weight(.semibold))
+                        Text(message.wait).font(.title.weight(.heavy)).monospacedDigit()
                     }
                     .foregroundStyle(mood == .idle ? .white : mood.background)
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text(trainName(state, context.attributes.label)).font(.subheadline.weight(.bold))
+                        Text(trainName(state.trainTime, context.attributes.label)).font(.subheadline.weight(.bold))
                         Text("Linje \(state.line) mot \(state.towards)").font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(.trailing, 4)
@@ -33,7 +36,7 @@ struct TripLiveActivity: Widget {
             } compactLeading: {
                 Circle().fill(mood.background).frame(width: 12, height: 12)
             } compactTrailing: {
-                LeaveIn(state: state).font(.caption.weight(.bold)).frame(maxWidth: 44)
+                Text(state.status == .rush ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
             } minimal: {
                 Circle().fill(mood.background).frame(width: 12, height: 12)
             }
@@ -42,57 +45,36 @@ struct TripLiveActivity: Widget {
     }
 }
 
-private func trainName(_ state: TripAttributes.ContentState, _ label: String) -> String {
-    "\(state.trainTime.formatted(date: .omitted, time: .shortened))-tåget \(tripPhrase(label))"
-}
-
-/// Tiden kvar tills du måste gå. Räknar ner av sig själv, även när appen inte kör.
-/// På den nedtonade låsskärmen (Alltid på) ritas skärmen bara om ungefär en gång i minuten
-/// och iOS byter då sekunderna mot streck. Där visas i stället klockslaget du ska gå.
-struct LeaveIn: View {
-    let state: TripAttributes.ContentState
-    @Environment(\.isLuminanceReduced) private var dimmed
-
-    var body: some View {
-        if state.status == .missed {
-            Text("–")
-        } else if state.status == .rush || state.leaveBy <= .now {
-            Text("nu")
-        } else if dimmed {
-            Text(state.leaveBy.formatted(date: .omitted, time: .shortened)).monospacedDigit()
-        } else {
-            Text(timerInterval: Date.now...state.leaveBy, countsDown: true, showsHours: false)
-                .monospacedDigit()
-                .multilineTextAlignment(.leading)
-        }
-    }
-}
-
-/// "Gå om" passar nedräkningen, "Gå kl" klockslaget på den nedtonade skärmen.
-struct Lead: View {
-    let status: Status
-    @Environment(\.isLuminanceReduced) private var dimmed
-    var body: some View {
-        Text(dimmed && (status == .calm || status == .hurry) ? activityLead(status).replacingOccurrences(of: "gå om", with: "gå kl")
-                .replacingOccurrences(of: "Gå om", with: "Gå kl") : activityLead(status))
-    }
+extension TripAttributes.ContentState {
+    var message: DepartureMessage { departureMessage(status: status, minutes: minutes, trainTime: trainTime) }
 }
 
 struct LockScreenView: View {
     let state: TripAttributes.ContentState
     let label: String
+
     var body: some View {
         let mood = Mood(state.status)
-        HStack(alignment: .center, spacing: 16) {
+        let message = state.message
+        HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 0) {
-                Lead(status: state.status).font(.headline)
-                LeaveIn(state: state).font(.system(size: 44, weight: .heavy))
+                Text(message.headline).font(.headline)
+                Text(message.wait)
+                    .font(.system(size: 44, weight: .heavy))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                Text(message.caption).font(.subheadline)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(trainName(state, label)).font(.headline)
+                Text(trainName(state.trainTime, label)).font(.headline)
                 Text("Linje \(state.line) mot \(state.towards)").font(.subheadline)
                 Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
+                if state.status == .calm || state.status == .hurry {
+                    Text("Gå senast \(state.leaveBy.formatted(date: .omitted, time: .shortened))")
+                        .font(.subheadline).foregroundStyle(mood.muted)
+                }
             }
             .multilineTextAlignment(.trailing)
         }

@@ -71,29 +71,53 @@ public func buildBoard(departures: [Departure], metro: Metro, from: String, targ
         .sorted { $0.time < $1.time }
 }
 
-private let leads: [Status: [String]] = [
-    .calm: ["Ingen stress.\nDu behöver gå om", "Lugnt läge.\nDet räcker att gå om", "Gott om tid.\nDu kan gå om", "Ta en kaffe till.\nGå om"],
-    .hurry: ["Raska på.\nDu behöver gå om", "Snart dags.\nDu behöver gå om", "Börja packa ihop.\nGå om", "Skorna på.\nDu behöver gå om"],
-    .rush: ["Spring.\nDu behöver gå", "Nu gäller det.\nDu måste gå", "Full fart.\nGå", "Ut genom dörren.\nGå"],
+/// Rubriken säger bara hur läget är, aldrig något om tid, så den kan inte säga emot siffran under.
+private let headlines: [Status: [String]] = [
+    .calm: ["Gott om tid.", "Ingen stress.", "Lugnt läge.", "Hinner en kaffe till."],
+    .hurry: ["Snart dags.", "Skorna på.", "Börja runda av.", "Dags att röra på sig."],
+    .rush: ["Spring!", "Ut genom dörren!", "Nu gäller det!", "Full fart!"],
+    .missed: ["Tåget har gått."],
 ]
-private let bridges = ["för att hinna med", "så hinner du med", "så når du"]
 
+/// Samma meddelande överallt, i appen, på låsskärmen och i notisen:
+/// rubrik, när du ska gå och vad det leder till.
+///
+///     Gott om tid.     Spring!
+///     8 min            Gå nu
+///     tills du går     så hinner du med
 public struct DepartureMessage: Equatable, Sendable {
-    public var lead: String
+    public var headline: String
     public var wait: String
-    public var bridge: String
+    public var caption: String
 }
 
+/// Hela minuter tills du behöver gå, rundat nedåt: hellre en minut för tidigt än ett missat tåg.
+public func minutesToLeave(_ slackMinutes: Double) -> Int { max(0, Int(slackMinutes.rounded(.down))) }
+
 /// Orden följer avgången, så att de inte byts varje gång skärmen ritas om.
-/// Minuterna rundas nedåt: hellre en minut för tidigt än ett missat tåg.
+public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> DepartureMessage {
+    let list = headlines[status] ?? headlines[.calm]!
+    let headline = list[Int(trainTime.timeIntervalSince1970 / 60) % list.count]
+    switch status {
+    case .calm, .hurry: return DepartureMessage(headline: headline, wait: "\(minutes) min", caption: "tills du ska gå")
+    case .rush: return DepartureMessage(headline: headline, wait: "Gå nu", caption: "så hinner du med")
+    case .missed: return DepartureMessage(headline: headline, wait: "–", caption: "Ta nästa")
+    }
+}
+
 public func departureMessage(_ train: Train) -> DepartureMessage {
-    let seed = Int(train.time.timeIntervalSince1970 / 60)
-    func pick(_ list: [String]) -> String { list[seed % list.count] }
-    return DepartureMessage(
-        lead: pick(leads[train.status] ?? leads[.calm]!),
-        wait: train.status == .rush ? "nu" : "\(Int(train.slackMinutes.rounded(.down))) min",
-        bridge: pick(bridges)
-    )
+    departureMessage(status: train.status, minutes: minutesToLeave(train.slackMinutes), trainTime: train.time)
+}
+
+/// "16:40-tåget hem"
+public func trainName(_ time: Date, _ label: String) -> String {
+    "\(time.formatted(date: .omitted, time: .shortened))-tåget \(tripPhrase(label))"
+}
+
+/// Notisen när läget skärps: en hel mening av samma delar.
+public func alertBody(status: Status, minutes: Int, trainTime: Date, label: String) -> String {
+    let name = trainName(trainTime, label)
+    return status == .rush ? "Gå nu så hinner du med \(name)." : "Gå om \(minutes) min för att hinna med \(name)."
 }
 
 public func tripPhrase(_ label: String) -> String {

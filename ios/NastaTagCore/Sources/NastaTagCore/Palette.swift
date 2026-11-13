@@ -35,13 +35,3 @@ public enum Mood: Sendable {
         }
     }
 }
-
-/// Kort besked för låsskärmen, där det bara får plats några ord.
-public func activityLead(_ status: Status) -> String {
-    switch status {
-    case .calm: "Gå om"
-    case .hurry: "Raska på, gå om"
-    case .rush: "Spring, gå"
-    case .missed: "Tåget har gått"
-    }
-}

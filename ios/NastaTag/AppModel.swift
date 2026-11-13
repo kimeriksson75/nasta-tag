@@ -273,7 +273,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func state(for train: Train) -> TripAttributes.ContentState {
         TripAttributes.ContentState(status: train.status, leaveBy: train.leaveBy, trainTime: train.time,
                                     line: train.line, towards: train.destination, station: start?.station.name ?? "",
-                                    journey: train.journey)
+                                    journey: train.journey, minutes: minutesToLeave(train.slackMinutes))
     }
 
     /// Visar tåget på låsskärmen och i Dynamic Island tills det har gått.
@@ -327,8 +327,9 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard state != activity.content.state else { return }
         let worse = followedStatus.map { urgency(train.status) > urgency($0) } ?? false
         followedStatus = train.status
-        let alert = worse ? AlertConfiguration(title: "\(activityLead(train.status))",
-                                               body: "\(departureMessage(train).wait) till \(train.time.formatted(date: .omitted, time: .shortened))-tåget",
+        let label = activity.attributes.label
+        let alert = worse ? AlertConfiguration(title: "\(departureMessage(train).headline)",
+                                               body: "\(alertBody(status: train.status, minutes: state.minutes, trainTime: train.time, label: label))",
                                                sound: .default) : nil
         Task { await activity.update(.init(state: state, staleDate: train.time), alertConfiguration: alert) }
     }

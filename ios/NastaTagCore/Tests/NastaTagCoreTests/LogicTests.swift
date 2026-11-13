@@ -65,3 +65,18 @@ private let metro = Metro.stockholm
     #expect(places[0].station == "Gubbängen")
     #expect(places[0].address == nil)
 }
+
+@Test func messagesNeverContradict() {
+    let time = Date(timeIntervalSince1970: 1_800_000_000)
+    let calm = departureMessage(status: .calm, minutes: 8, trainTime: time)
+    #expect(calm.wait == "8 min")
+    #expect(calm.caption == "tills du ska gå")
+    let rush = departureMessage(status: .rush, minutes: 1, trainTime: time)
+    #expect(rush.wait == "Gå nu")
+    for status in [Status.calm, .hurry, .rush] {
+        let headline = departureMessage(status: status, minutes: 3, trainTime: time).headline
+        #expect(!headline.contains("gå") && !headline.contains("min"))
+    }
+    #expect(minutesToLeave(4.9) == 4)
+    #expect(minutesToLeave(-0.2) == 0)
+}
