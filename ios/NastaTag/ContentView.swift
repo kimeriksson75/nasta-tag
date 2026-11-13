@@ -96,6 +96,12 @@ struct ContentView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(mood.muted)
                     .padding(.top, 4)
+                if let minutes = model.snoozeMinutes {
+                    Button("Snooze \(minutes) min") { model.snooze() }
+                        .buttonStyle(Outline(mood: mood))
+                        .accessibilityHint("Hoppa över den här avgången och ta nästa")
+                        .padding(.top, 16)
+                }
                 if let skipped = model.snoozed.last {
                     HStack(spacing: 4) {
                         Text("Snoozat \(stockholmClock(skipped.time)).")
@@ -130,14 +136,7 @@ struct ContentView: View {
         VStack(spacing: 12) {
             if model.blocker == nil {
                 walkCard
-                HStack(spacing: 10) {
-                    if let minutes = model.snoozeMinutes {
-                        Button("Snooze \(minutes) min") { model.snooze() }
-                            .buttonStyle(Card(mood: mood, wide: !model.canFollow && model.following == nil))
-                            .accessibilityHint("Hoppa över den här avgången och ta nästa")
-                    }
-                    followButton
-                }
+                followButton
             }
             if let fetchedAt = model.fetchedAt {
                 Text("Uppdaterad \(fetchedAt.formatted(date: .omitted, time: .shortened))")
@@ -273,7 +272,8 @@ struct Outline: ButtonStyle {
     var wide = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .font(.headline.weight(.heavy))
+            .lineLimit(1)
             .padding(.horizontal, 20)
             .frame(maxWidth: wide ? .infinity : nil, minHeight: 52)
             .overlay(Capsule().stroke(mood.line, lineWidth: 1.5))
