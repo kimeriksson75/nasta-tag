@@ -13,56 +13,90 @@ struct WalkMapView: View {
 
     var body: some View {
         let theme = MapTheme(mood)
-        ZStack(alignment: .top) {
+        ZStack {
             WalkMap(theme: theme, position: model.position, heading: model.heading,
                     route: model.walkRoute?.polyline.coordinates ?? [], station: model.stop)
-                .overlay { Me().fill(theme.route).stroke(theme.halo, lineWidth: 2).frame(width: 36, height: 36) }
+                .overlay { Arrow().fill(theme.route).stroke(theme.halo, lineWidth: 2).frame(width: 36, height: 36) }
                 .ignoresSafeArea()
-            header
+            VStack {
+                ringChip
+                Spacer()
+                walkCard
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
         }
         .background(mood.background)
-        .preferredColorScheme(mood == .hurry ? .light : .dark)
+        .fontDesign(.rounded)
+        .preferredColorScheme(.dark)
         .onChange(of: model.position) { Task { await model.loadWalkRoute() } }
         .task { await model.loadWalkRoute() }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            if let meters = model.stopDistance {
-                Text(distanceText(meters))
-                    .font(.system(size: 34, weight: .heavy))
-                    .monospacedDigit()
+    /// Ringen flyter överst, så att du ser hur bråttom det är medan du går.
+    @ViewBuilder private var ringChip: some View {
+        HStack(spacing: 14) {
+            if let trip = model.next, let destination = model.destination {
+                let message = departureMessage(trip)
+                MiniRing(mood: mood, fraction: min(1, max(0.04, trip.slackMinutes / 15)),
+                         text: trip.status == .rush ? "Nu" : "\(minutesToLeave(trip.slackMinutes))")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(message.headline).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                    Text(tripName(trip, destination.label)).font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
+                }
+                .lineLimit(1)
             }
-            if let station = model.stop?.name {
-                Text(station).font(.headline).lineLimit(1)
-            }
-            Spacer()
+            Spacer(minLength: 0)
             Button { dismiss() } label: {
-                Image(systemName: "xmark").font(.title3.weight(.bold))
+                Image(systemName: "xmark").font(.headline.weight(.heavy))
                     .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+                    .background(Circle().fill(mood.track))
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Stäng kartan")
         }
         .foregroundStyle(mood.ink)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(mood.background.ignoresSafeArea(edges: .top))
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 32).fill(mood.background.opacity(0.92)))
+    }
+
+    /// Hur långt det är kvar, nere vid tummen.
+    @ViewBuilder private var walkCard: some View {
+        if let station = model.stop?.name {
+            HStack(spacing: 12) {
+                Arrow().fill(mood.background).frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.stopDistance.map(distanceText) ?? "Du är framme")
+                        .font(.title2.weight(.black))
+                        .monospacedDigit()
+                    Text("till \(station)").font(.subheadline.weight(.semibold)).opacity(0.7)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(mood.background)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .background(RoundedRectangle(cornerRadius: 26).fill(mood.ink))
+        }
     }
 }
 
-/// Du är pilen. Den pekar alltid uppåt, det är kartan som vrids. Samma form som på webben.
-private struct Me: Shape {
-    func path(in rect: CGRect) -> Path {
-        let x = rect.width / 24, y = rect.height / 24
-        var path = Path()
-        path.move(to: CGPoint(x: 12 * x, y: 2 * y))
-        path.addLine(to: CGPoint(x: 4.5 * x, y: 21 * y))
-        path.addLine(to: CGPoint(x: 12 * x, y: 17 * y))
-        path.addLine(to: CGPoint(x: 19.5 * x, y: 21 * y))
-        path.closeSubpath()
-        return path
+private struct MiniRing: View {
+    let mood: Mood
+    let fraction: Double
+    let text: String
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(mood.track, lineWidth: 6)
+            Circle().trim(from: 0, to: fraction)
+                .stroke(mood.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text(text).font(.headline.weight(.black)).monospacedDigit()
+        }
+        .frame(width: 56, height: 56)
     }
 }
 
@@ -70,17 +104,11 @@ private struct Me: Shape {
 struct MapTheme: Equatable {
     var land, park, water, building, road, label, routeHex, haloHex: String
 
+    /// Mörk karta i alla lägen. Bara vägen, stationen och du har lägets färg.
     init(_ mood: Mood) {
-        switch mood {
-        case .idle: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#14171c", "#1a2420", "#10262f", "#1b1f26", "#3a424e", "#aab2bd", "#f5f6f7", "#14171c")
-        case .calm: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#157a4b", "#1a8755", "#0f6461", "#1b8656", "#4aa67b", "#e3f5ec", "#ffffff", "#157a4b")
-        case .hurry: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#f2b632", "#e9ad2b", "#d9a02b", "#eaaf2e", "#f9dc8f", "#3d3214", "#14171c", "#f2b632")
-        case .rush: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#d92d2d", "#cf2a2a", "#b52323", "#cf3030", "#ea7272", "#ffe5e5", "#ffffff", "#d92d2d")
-        }
+        (land, park, water, building, road, label, haloHex) =
+            ("#14161B", "#18201D", "#10222B", "#1B1E24", "#343944", "#9AA0A8", "#14161B")
+        routeHex = mood.accentHex
     }
 
     var route: Color { Color(uiColor: UIColor(hex: routeHex)) }
@@ -167,6 +195,8 @@ private struct WalkMap: UIViewRepresentable {
         view.compassView.isHidden = true
         view.logoView.isHidden = true
         view.attributionButton.tintColor = UIColor(hex: theme.label)
+        // Över kortet längst ner, så att kartans upphovsrätt syns.
+        view.attributionButtonMargins = CGPoint(x: 12, y: 130)
         view.setCenter(CLLocationCoordinate2D(latitude: 59.3293, longitude: 18.0686), zoomLevel: 14, animated: false)
         context.coordinator.parent = self
         return view

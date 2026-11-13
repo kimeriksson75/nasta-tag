@@ -23,7 +23,7 @@ struct TripLiveActivity: Widget {
                         Text(message.headline).font(.caption.weight(.semibold))
                         Text(message.wait).font(.title.weight(.heavy)).monospacedDigit()
                     }
-                    .foregroundStyle(mood == .idle ? .white : mood.background)
+                    .foregroundStyle(mood.accent)
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -34,13 +34,13 @@ struct TripLiveActivity: Widget {
                     .padding(.trailing, 4)
                 }
             } compactLeading: {
-                Circle().fill(mood.background).frame(width: 12, height: 12)
+                Circle().fill(mood.accent).frame(width: 12, height: 12)
             } compactTrailing: {
                 Text(state.status == .rush ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
             } minimal: {
-                Circle().fill(mood.background).frame(width: 12, height: 12)
+                Circle().fill(mood.accent).frame(width: 12, height: 12)
             }
-            .keylineTint(mood.background)
+            .keylineTint(mood.accent)
         }
     }
 }
@@ -58,7 +58,7 @@ struct LockScreenView: View {
         let message = state.message
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 0) {
-                Text(message.headline).font(.headline)
+                Text(message.headline).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                 Text(message.wait)
                     .font(.system(size: 44, weight: .heavy))
                     .monospacedDigit()
@@ -79,6 +79,7 @@ struct LockScreenView: View {
             .multilineTextAlignment(.trailing)
         }
         .foregroundStyle(mood.ink)
+        .fontDesign(.rounded)
         .padding(20)
     }
 }

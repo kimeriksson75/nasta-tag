@@ -15,10 +15,11 @@ public func classify(_ slackMinutes: Double) -> Status {
 }
 
 /// Rubriken säger bara hur läget är, aldrig något om tid, så den kan inte säga emot siffran under.
+/// Tonen Lugn: samma korta ord varje gång, så att man känner igen läget utan att läsa.
 private let headlines: [Status: [String]] = [
-    .calm: ["Gott om tid.", "Ingen stress.", "Lugnt läge.", "Hinner en kaffe till."],
-    .hurry: ["Snart dags.", "Skorna på.", "Börja runda av.", "Dags att röra på sig."],
-    .rush: ["Spring!", "Ut genom dörren!", "Nu gäller det!", "Full fart!"],
+    .calm: ["Gott om tid."],
+    .hurry: ["Skorna på."],
+    .rush: ["Spring!"],
     .missed: ["Den har gått."],
 ]
 

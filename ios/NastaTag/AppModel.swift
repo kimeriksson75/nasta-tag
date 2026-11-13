@@ -86,6 +86,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func tick() {
         now = Date()
         chooseDestination()
+        forgetOldSnoozes()
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
     }
 
@@ -131,11 +132,12 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func chooseDestination() {
         hereId = position.flatMap { placeAt(places, position: $0) }
         guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
-        if next.id != activeId { activeId = next.id }
+        if next.id != activeId { activeId = next.id; snoozed = [] }
         if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
     func choose(_ place: Place) {
+        snoozed = []
         chosenId = place.id
         activeId = place.id
         refreshSoon()
@@ -147,7 +149,51 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     // MARK: Resor
 
     private var trips: [Trip] { buildTrips(journeys ?? [], now: now) }
-    private var picked: (next: Trip?, later: [Trip]) { pickTrips(trips) }
+    private var picked: (next: Trip?, later: [Trip]) {
+        pickTrips(trips.filter { trip in snoozed.last.map { trip.leaveAt > $0.leaveAt } ?? true })
+    }
+
+    // MARK: Snooze
+
+    /// Avgångar du har snoozat, den senaste sist. Allt som går före den sista hoppas över.
+    private(set) var snoozed: [Trip] = []
+
+    /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
+    var snoozeTarget: Trip? {
+        guard let next else { return nil }
+        return pickTrips(trips.filter { $0.leaveAt > next.leaveAt }).next
+    }
+
+    /// Hur mycket senare du kan gå om du snoozar, i hela minuter.
+    var snoozeMinutes: Int? {
+        guard let next, let snoozeTarget else { return nil }
+        return max(1, Int((snoozeTarget.leaveAt.timeIntervalSince(next.leaveAt) / 60).rounded()))
+    }
+
+    func snooze() {
+        guard let next, snoozeTarget != nil else { return }
+        snoozed.append(next)
+        retargetFollowing()
+    }
+
+    func undoSnooze() {
+        guard !snoozed.isEmpty else { return }
+        snoozed.removeLast()
+        retargetFollowing()
+    }
+
+    /// En snooze glöms när avgången du hoppade över har gått, då finns inget att ångra.
+    private func forgetOldSnoozes() {
+        snoozed.removeAll { $0.time < now }
+    }
+
+    /// Följer du en resa på låsskärmen följer låsskärmen med till den nya.
+    private func retargetFollowing() {
+        guard let activity = following, let next else { return }
+        followedStatus = next.status
+        followedJourneys = []
+        Task { await activity.update(.init(state: state(for: next), staleDate: next.time)) }
+    }
 
     var next: Trip? { picked.next }
     var later: [Trip] { Array(picked.later.prefix(3)).sorted { $0.time < $1.time } }
