@@ -305,7 +305,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NastaTag/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Din plats används för att hitta närmaste tunnelbanestation och räkna ut gångtiden.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Din plats används för att hitta närmaste hållplats, räkna ut gångtiden och visa vägen dit medan du följer en resa.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -330,7 +331,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NastaTag/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Din plats används för att hitta närmaste tunnelbanestation och räkna ut gångtiden.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Din plats används för att hitta närmaste hållplats, räkna ut gångtiden och visa vägen dit medan du följer en resa.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
