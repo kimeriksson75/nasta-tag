@@ -88,7 +88,9 @@ struct ContentView: View {
                 Text(message.headline)
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(mood.accent)
-                Ring(mood: mood, fraction: ringFraction(trip), wait: message.wait, caption: message.caption)
+                    .frame(maxWidth: .infinity)
+                    .contentTransition(.opacity)
+                Ring(trip: trip, wait: message.wait, caption: message.caption, mood: mood)
                     .frame(maxWidth: 280)
                     .padding(.top, 32)
                     .padding(.bottom, 28)
@@ -97,10 +99,14 @@ struct ContentView: View {
                     .font(.title2.weight(.heavy))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity)
+                    .contentTransition(.opacity)
                 Text(lineText(trip))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(mood.muted)
                     .lineLimit(2, reservesSpace: true)
+                    .frame(maxWidth: .infinity)
+                    .contentTransition(.opacity)
                     .padding(.top, 4)
                 Group {
                 if let skipped = model.snoozed {
@@ -120,12 +126,10 @@ struct ContentView: View {
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
+            // Orden tonar över när de byts. Själva platserna ändras aldrig, så inget flyttar sig.
+            .animation(.easeInOut(duration: 0.35), value: message)
+            .animation(.easeInOut(duration: 0.35), value: trip.key)
         }
-    }
-
-    /// Ringen är full vid en kvart eller mer och töms mot noll, men syns alltid lite.
-    private func ringFraction(_ trip: Trip) -> Double {
-        trip.status == .missed ? 0 : min(1, max(0.04, trip.slackMinutes / 15))
     }
 
     private func lineText(_ trip: Trip) -> String {
@@ -194,46 +198,6 @@ struct ContentView: View {
         } else if model.canFollow {
             Button("Följ på låsskärmen") { model.follow() }.buttonStyle(Filled(mood: mood))
         }
-    }
-}
-
-/// Ringen som töms: tjockt spår, rundade ändar och minuterna i mitten med luft runt sig.
-struct Ring: View {
-    let mood: Mood
-    let fraction: Double
-    let wait: String
-    let caption: String
-
-    var body: some View {
-        GeometryReader { geo in
-            let size = min(geo.size.width, geo.size.height)
-            let stroke = size * 14 / 260
-            ZStack {
-                Circle().stroke(mood.track, lineWidth: stroke)
-                Circle()
-                    .trim(from: 0, to: fraction)
-                    .stroke(mood.accent, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.5), value: fraction)
-                VStack(spacing: 4) {
-                    Text(wait)
-                        .font(.system(size: size * 0.18, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Text(caption)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(mood.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .padding(size * 0.22)
-            }
-            .frame(width: size, height: size)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityElement(children: .combine)
     }
 }
 

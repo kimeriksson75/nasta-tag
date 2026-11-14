@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		A1B2C3D4E5F6000000000013 /* NastaTagCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000011 /* NastaTagCore */; };
 		A1B2C3D4E5F6000000000014 /* NastaTagCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000012 /* NastaTagCore */; };
-		A1B2C3D4E5F6000000000031 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000032 /* MapLibre */; };
 		A1B2C3D4E5F6000000000015 /* NastaTagWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000007 /* NastaTagWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1B2C3D4E5F6000000000031 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6000000000032 /* MapLibre */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
