@@ -55,7 +55,7 @@ struct WalkMapView: View {
             if let trip = model.next, let destination = model.destination {
                 let message = departureMessage(trip)
                 ZStack {
-                    LiveRing(leaveAt: trip.leaveAt, key: trip.key, lineWidth: 6)
+                    LiveRing(leaveAt: trip.leaveAt, key: trip.key, mood: mood, lineWidth: 6)
                     Text(trip.status == .rush ? "Nu" : "\(minutesToLeave(trip.slackMinutes))")
                         .font(.headline.weight(.black))
                         .monospacedDigit()

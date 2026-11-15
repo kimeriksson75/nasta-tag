@@ -29,9 +29,13 @@ private let hurryUps = ["Raska på", "Skynda dig", "Snabba på", "Fort nu"]
 /// Samma meddelande överallt, i appen, på låsskärmen och i notisen:
 /// rubrik, när du ska gå och vad det leder till.
 ///
-///     Gott om tid.     Spring!
-///     8 min            Raska på
-///     tills du går     så hinner du med
+/// Rubriken är en egen mening. Siffran, raden under den och avgångens namn läses
+/// ihop till en mening, så raden under siffran slutar alltid där namnet tar vid:
+///
+///     Gott om tid.               Spring!
+///     8 min                      Raska på
+///     tills du behöver gå mot    så hinner du med
+///     16:40-tåget hem            16:40-tåget hem
 public struct DepartureMessage: Equatable, Sendable {
     public var headline: String
     public var wait: String
@@ -46,11 +50,11 @@ public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> D
     let list = headlines[status] ?? headlines[.calm]!
     let headline = list[Int(trainTime.timeIntervalSince1970 / 60) % list.count]
     switch status {
-    case .calm, .hurry: return DepartureMessage(headline: headline, wait: "\(minutes) min", caption: "tills du ska gå")
+    case .calm, .hurry: return DepartureMessage(headline: headline, wait: "\(minutes) min", caption: "tills du behöver gå mot")
     case .rush:
         let wait = hurryUps[Int(trainTime.timeIntervalSince1970 / 60) % hurryUps.count]
         return DepartureMessage(headline: headline, wait: wait, caption: "så hinner du med")
-    case .missed: return DepartureMessage(headline: headline, wait: "–", caption: "Ta nästa")
+    case .missed: return DepartureMessage(headline: headline, wait: "–", caption: "ta nästa efter")
     }
 }
 

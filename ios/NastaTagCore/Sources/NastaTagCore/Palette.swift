@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Ring A: mörk botten överallt, och läget syns i en enda färg på ringen, rubriken och knappen.
 /// Grönt gott om tid, gult skorna på, rött spring, grått när inget tåg finns.
-public enum Mood: Sendable {
+public enum Mood: Hashable, Sendable {
     case idle, calm, hurry, rush
 
     public init(_ status: Status?) {
@@ -41,4 +41,21 @@ public extension Color {
         self.init(red: Double((value >> 16) & 0xff) / 255, green: Double((value >> 8) & 0xff) / 255,
                   blue: Double(value & 0xff) / 255)
     }
+}
+
+/// Ringen fylls efter hur lång tid som är kvar, en kvart är full ring.
+public let ringFullMinutes = 15.0
+
+/// Det ringen ska visa i ett visst ögonblick. Hur full den är räknas om varje bildruta,
+/// men färgen tar den från läget, samma läge som rubriken och knappen.
+/// Ringen har ingen egen klocka för färgen, så den kan aldrig ligga före eller efter dem.
+public struct RingTarget: Equatable, Sendable {
+    public var fraction: Double
+    public var mood: Mood
+}
+
+public func ringTarget(leaveAt: Date?, mood: Mood, now: Date) -> RingTarget {
+    guard let leaveAt, mood != .idle else { return RingTarget(fraction: 0, mood: .idle) }
+    let slack = leaveAt.timeIntervalSince(now) / 60
+    return RingTarget(fraction: min(1, max(0.04, slack / ringFullMinutes)), mood: mood)
 }

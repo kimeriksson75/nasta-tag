@@ -85,7 +85,7 @@ private func journeys() throws -> [Journey] {
     let time = Date(timeIntervalSince1970: 1_800_000_000)
     let calm = departureMessage(status: .calm, minutes: 8, trainTime: time)
     #expect(calm.wait == "8 min")
-    #expect(calm.caption == "tills du ska gå")
+    #expect(calm.caption == "tills du behöver gå mot")
     let rush = departureMessage(status: .rush, minutes: 1, trainTime: time)
     #expect(rush.headline == "Spring!")
     // Ett budskap: rubriken säger spring, då får siffran inte säga gå.
@@ -96,4 +96,26 @@ private func journeys() throws -> [Journey] {
     }
     #expect(minutesToLeave(4.9) == 4)
     #expect(minutesToLeave(-0.2) == 0)
+}
+
+/// Siffran, raden under och avgångens namn läses ihop. Varje läge ska bli en hel mening.
+@Test func ringReadsAsOneSentence() {
+    let time = Date(timeIntervalSince1970: 1_800_000_000) // 10:40 i Stockholm
+    let name = tripName(time, mode: 1, "Hem")
+    func sentence(_ status: Status, _ minutes: Int) -> String {
+        let m = departureMessage(status: status, minutes: minutes, trainTime: time)
+        return "\(m.wait) \(m.caption) \(name)"
+    }
+    #expect(sentence(.calm, 8) == "8 min tills du behöver gå mot \(name)")
+    #expect(sentence(.hurry, 3) == "3 min tills du behöver gå mot \(name)")
+    #expect(sentence(.rush, 1).hasSuffix(" så hinner du med \(name)"))
+    #expect(sentence(.missed, 0) == "– ta nästa efter \(name)")
+    for status in [Status.calm, .hurry, .rush, .missed] {
+        let m = departureMessage(status: status, minutes: 3, trainTime: time)
+        // Raden under siffran står mitt i meningen: liten bokstav och ingen punkt.
+        #expect(m.caption.first?.isLowercase == true)
+        #expect(!m.caption.hasSuffix(".") && !m.caption.hasSuffix("!"))
+        // Den slutar på ett ord som leder in i avgångens namn, aldrig på "gå".
+        #expect(!m.caption.hasSuffix("gå"))
+    }
 }

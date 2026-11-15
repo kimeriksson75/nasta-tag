@@ -2,20 +2,24 @@ import NastaTagCore
 import SwiftUI
 
 /// Ringen räknas om varje bildruta från när du ska gå, så den glider hela tiden i stället för att hoppa
-/// var femte sekund. Färgen tonar över till nästa läge under minuten innan det byts, och när resan
-/// byts (Snooze, ny avgång) glider ringen och färgen över till den nya i stället för att hoppa.
+/// var femte sekund. Färgen tar den från läget, samma läge som rubriken och knappen, så alla byter
+/// samtidigt. När läget eller resan byts glider ringen och färgen över på samma halva sekund som resten.
 struct LiveRing: View {
     /// När du ska gå, eller nil när det inte finns någon resa.
     let leaveAt: Date?
     /// Avgången ringen gäller, så att ett byte kan tonas över.
     let key: String?
+    /// Läget som resten av skärmen visar.
+    let mood: Mood
     var lineWidth: CGFloat
 
     @State private var memory = RingMemory()
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 60)) { context in
-            let drawn = memory.draw(target: target(at: context.date), at: context.date)
+            let target = ringTarget(leaveAt: leaveAt, mood: mood, now: context.date)
+            let drawn = memory.draw(target: RingState(fraction: target.fraction, color: RGB(hex: target.mood.accentHex)),
+                                    identity: "\(key ?? "")|\(target.mood)", at: context.date)
             ZStack {
                 Circle().stroke(Color(hex: "#23262D"), lineWidth: lineWidth)
                 Circle()
@@ -25,15 +29,7 @@ struct LiveRing: View {
             }
             .padding(lineWidth / 2)
         }
-        .onChange(of: key) { memory.beginTransition() }
         .accessibilityHidden(true)
-    }
-
-    private func target(at date: Date) -> RingState {
-        guard let leaveAt else { return RingState(fraction: 0, color: .missed) }
-        let slack = leaveAt.timeIntervalSince(date) / 60
-        if slack < 0 { return RingState(fraction: 0, color: .missed) }
-        return RingState(fraction: min(1, max(0.04, slack / 15)), color: RGB.forSlack(slack))
     }
 }
 
@@ -43,21 +39,22 @@ struct RingState {
 }
 
 /// Det som ritades senast och en pågående övertoning. En klass, så att varje bildruta
-/// kan minnas utan att rita om vyn en gång till.
+/// kan minnas utan att rita om vyn en gång till. Ett byte märks på att resan eller läget
+/// är ett annat än i förra bildrutan, så övertoningen börjar i samma bildruta som bytet.
 final class RingMemory {
-    private var last = RingState(fraction: 0, color: .missed)
+    private var last = RingState(fraction: 0, color: RGB(hex: Mood.idle.accentHex))
+    private var lastIdentity: String?
     private var from: RingState?
     private var start = Date.distantPast
-    private var hasDrawn = false
-    static let duration = 0.6
+    /// Samma tid som rubriken och knappen tonar över på.
+    static let duration = 0.5
 
-    func beginTransition() {
-        guard hasDrawn else { return }
-        from = last
-        start = Date()
-    }
-
-    func draw(target: RingState, at date: Date) -> RingState {
+    func draw(target: RingState, identity: String, at date: Date) -> RingState {
+        if let lastIdentity, lastIdentity != identity {
+            from = last
+            start = date
+        }
+        lastIdentity = identity
         var state = target
         if let from {
             let p = min(1, max(0, date.timeIntervalSince(start) / Self.duration))
@@ -67,7 +64,6 @@ final class RingMemory {
             if p >= 1 { self.from = nil }
         }
         last = state
-        hasDrawn = true
         return state
     }
 }
@@ -83,11 +79,6 @@ struct RGB: Equatable {
         b = Double(value & 0xff) / 255
     }
 
-    static let calm = RGB(hex: Mood.calm.accentHex)
-    static let hurry = RGB(hex: Mood.hurry.accentHex)
-    static let rush = RGB(hex: Mood.rush.accentHex)
-    static let missed = RGB(hex: Mood.idle.accentHex)
-
     var color: Color { Color(red: r, green: g, blue: b) }
 
     func mix(_ other: RGB, _ t: Double) -> RGB {
@@ -96,16 +87,6 @@ struct RGB: Equatable {
         out.g += (other.g - g) * t
         out.b += (other.b - b) * t
         return out
-    }
-
-    /// Lägets färg, och under minuten före ett byte en blandning på väg mot nästa.
-    static func forSlack(_ slack: Double) -> RGB {
-        let fade = 1.0
-        if slack >= hurryLimitMinutes + fade { return calm }
-        if slack >= hurryLimitMinutes { return hurry.mix(calm, (slack - hurryLimitMinutes) / fade) }
-        if slack >= rushLimitMinutes + fade { return hurry }
-        if slack >= rushLimitMinutes { return rush.mix(hurry, (slack - rushLimitMinutes) / fade) }
-        return rush
     }
 }
 
@@ -120,7 +101,7 @@ struct Ring: View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             ZStack {
-                LiveRing(leaveAt: trip?.leaveAt, key: trip?.key, lineWidth: size * 14 / 260)
+                LiveRing(leaveAt: trip?.leaveAt, key: trip?.key, mood: mood, lineWidth: size * 14 / 260)
                 VStack(spacing: 4) {
                     Text(wait)
                         .font(.system(size: size * 0.18, weight: .black, design: .rounded))
