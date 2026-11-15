@@ -23,7 +23,7 @@ struct AskSkipIntent: LiveActivityIntent {
     }
 }
 
-/// Svaret på frågan: Kör! eller Nej, jag går.
+/// Svaret på frågan: Ja! eller Nej 🙁.
 struct AnswerSkipIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Svara på frågan"
     static let isDiscoverable = false

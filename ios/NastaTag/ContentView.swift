@@ -31,6 +31,8 @@ struct ContentView: View {
         .fontDesign(.rounded)
         .animation(.easeInOut(duration: 0.5), value: model.next?.status)
         .preferredColorScheme(.dark)
+        .overlay { skipDialog }
+        .animation(.easeOut(duration: 0.2), value: askSkip)
         .sheet(isPresented: $showSettings) { SettingsView() }
         .fullScreenCover(isPresented: $showMap) { WalkMapView(mood: mood) }
         .onAppear { if model.places.isEmpty { showSettings = true } }
@@ -79,7 +81,7 @@ struct ContentView: View {
     @ViewBuilder private var hero: some View {
         if model.isSkipped, let destination = model.destination {
             VStack(spacing: 12) {
-                Text(model.skipDone ?? "Okej. Vi hörs i morgon.").font(.title2.weight(.heavy))
+                Text(model.skipDone ?? "Okej. Vi hörs imorgon.").font(.title2.weight(.heavy))
                 Text("Inga påminnelser om resan \(tripPhrase(destination.label)) idag.")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
                 Button("Visa avgångar igen") { model.unskip() }
@@ -125,9 +127,7 @@ struct ContentView: View {
                     .contentTransition(.opacity)
                     .padding(.top, 4)
                 Group {
-                if model.offerSkip, let words = model.skipWords {
-                    skipButton(words)
-                } else if let skipped = model.snoozed {
+                if let skipped = model.snoozed {
                     Button("Ångra snooze") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: true))
                         .accessibilityLabel("Ångra snooze, ta \(stockholmClock(skipped.time)) igen")
@@ -141,6 +141,7 @@ struct ContentView: View {
                 }
                 .frame(height: SnoozeToggle.height)
                 .padding(.top, 12)
+                skipLink
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
@@ -156,12 +157,58 @@ struct ContentView: View {
             .buttonStyle(SnoozeToggle(mood: mood, on: false))
             .accessibilityLabel("Strunta i resan idag")
             .accessibilityHint("Frågar först. Sedan slutar appen påminna dig om resan idag.")
-            .alert(words.ask, isPresented: $askSkip) {
-                Button(Voice.skipConfirm) { model.skipToday() }
-                Button(Voice.skipCancel, role: .cancel) {}
-            } message: {
-                Text(words.detail)
+    }
+
+    /// Den tysta vägen ut, som alltid finns: samma fråga som knappen.
+    private var skipLink: some View {
+        Button("Strunta i resan idag") { askSkip = true }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(mood.muted)
+            .buttonStyle(.plain)
+            .frame(height: Self.linkHeight)
+            .contentShape(Rectangle())
+            .accessibilityHint("Frågar först. Sedan slutar appen påminna dig om resan idag.")
+    }
+
+    private static let linkHeight: CGFloat = 36
+
+    /// Frågan innan appen struntar i resan. En egen ruta, så att Ja står till vänster i grönt
+    /// och Nej bredvid som en tunn knapp: det ska synas direkt vilken som är vilken.
+    @ViewBuilder private var skipDialog: some View {
+        if askSkip, let words = model.skipWords {
+            ZStack {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+                    .onTapGesture { askSkip = false }
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(words.ask).font(.title3.weight(.heavy))
+                        Text(words.detail).font(.subheadline).foregroundStyle(Mood.idle.muted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 10) {
+                        Button(Voice.skipConfirm) {
+                            askSkip = false
+                            model.skipToday()
+                        }
+                        .buttonStyle(DialogButton(primary: true))
+                        .accessibilityLabel("Ja, strunta i resan idag")
+                        Button(Voice.skipCancel) { askSkip = false }
+                            .buttonStyle(DialogButton(primary: false))
+                            .accessibilityLabel("Nej, påminn mig som vanligt")
+                    }
+                }
+                .multilineTextAlignment(.leading)
+                .foregroundStyle(Mood.idle.ink)
+                .padding(22)
+                .background(RoundedRectangle(cornerRadius: 28).fill(Color(hex: "#1B1D22")))
+                .overlay(RoundedRectangle(cornerRadius: 28).stroke(Mood.idle.line, lineWidth: 1))
+                .padding(.horizontal, 28)
+                .accessibilityAddTraits(.isModal)
             }
+            .transition(.opacity)
+        }
     }
 
     /// Tiden att gå tog slut: en stund i grått med frågan om du bryr dig, sedan nästa avgång av sig själv.
@@ -201,6 +248,8 @@ struct ContentView: View {
             }
             .frame(height: SnoozeToggle.height)
             .padding(.top, 12)
+            // Länken har sin plats även här, så att inget flyttar sig.
+            Color.clear.frame(height: Self.linkHeight)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
@@ -220,13 +269,16 @@ struct ContentView: View {
     private var bottom: some View {
         VStack(spacing: 12) {
             if model.blocker == nil && !model.isSkipped {
-                if model.missed != nil {
-                    // Kortet och knappen tar samma plats som vanligt, så att inget hoppar.
-                    Color.clear.frame(height: Card.height * 2 + 12)
-                } else {
+                // När avgången är missad finns kortet och knappen kvar men syns inte,
+                // så att de tar exakt samma plats som vanligt och inget hoppar.
+                let hidden = model.missed != nil
+                Group {
                     walkCard
                     followButton
                 }
+                .opacity(hidden ? 0 : 1)
+                .allowsHitTesting(!hidden)
+                .accessibilityHidden(hidden)
             }
             if let fetchedAt = model.fetchedAt {
                 Text("Uppdaterad \(fetchedAt.formatted(date: .omitted, time: .shortened))")
@@ -344,6 +396,22 @@ struct SnoozeToggle: ButtonStyle {
             .frame(width: 180, height: Self.height)
             .background(Capsule().fill(on ? mood.track : .clear))
             .overlay(Capsule().stroke(mood.line, lineWidth: 1.5))
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+/// Knapparna i frågan om att strunta i resan: Ja är fylld och grön, Nej bara en kant.
+struct DialogButton: ButtonStyle {
+    let primary: Bool
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline.weight(.heavy))
+            .lineLimit(1)
+            .foregroundStyle(primary ? Mood.calm.background : Mood.idle.ink)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(Capsule().fill(primary ? Mood.calm.accent : .clear))
+            .overlay(Capsule().stroke(primary ? .clear : Mood.idle.line, lineWidth: 1.5))
             .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.6 : 1)
     }

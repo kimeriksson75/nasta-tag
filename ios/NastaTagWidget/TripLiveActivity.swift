@@ -58,7 +58,7 @@ struct LockScreenView: View {
         let message = state.message
         let words = skipWords(label: label, trainTime: state.trainTime, mode: state.mode)
         if state.skipped == true {
-            // Efter Kör!: samma ord som i appen, en stund innan resan försvinner.
+            // Efter Ja!: samma ord som i appen, en stund innan resan försvinner.
             VStack(alignment: .leading, spacing: 4) {
                 Text(words.done).font(.headline.weight(.heavy))
                 Text("Inga påminnelser om resan \(tripPhrase(label)) idag.").font(.subheadline).foregroundStyle(Mood.idle.muted)
@@ -75,9 +75,12 @@ struct LockScreenView: View {
                     Text(words.detail).font(.subheadline).foregroundStyle(mood.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // Tre vägar: Ja (grön, till vänster) struntar i resan idag, i mitten stängs bara
+                // låsskärmen, och Nej ångrar sig. Samma ordning och färger som i appen.
                 HStack(spacing: 8) {
+                    Button(intent: AnswerSkipIntent(skip: true)) { Pill(text: Voice.skipConfirm, primary: true) }
+                    Button(intent: StopFollowingIntent()) { Pill(text: "Bara låsskärmen") }
                     Button(intent: AnswerSkipIntent(skip: false)) { Pill(text: Voice.skipCancel) }
-                    Button(intent: AnswerSkipIntent(skip: true)) { Pill(text: Voice.skipConfirm) }
                 }
                 .buttonStyle(.plain)
             }
@@ -114,7 +117,7 @@ struct LockScreenView: View {
                 .multilineTextAlignment(.trailing)
             }
             HStack(spacing: 8) {
-                if state.offerSkip == true && state.snoozed != true && state.status != .missed {
+                if state.status == .missed {
                     Button(intent: AskSkipIntent()) { Pill(text: words.button) }
                         .accessibilityLabel("Strunta i resan idag")
                 } else if state.snoozed == true {
@@ -122,7 +125,11 @@ struct LockScreenView: View {
                 } else if let minutes = state.snoozeMinutes, state.status != .missed {
                     Button(intent: SnoozeTripIntent()) { Pill(text: "Snooze \(minutes) min") }
                 }
-                Button(intent: StopFollowingIntent()) { Pill(text: "Sluta följa") }
+                // Frågar först, så att du kan välja mellan att strunta i resan och bara stänga låsskärmen.
+                // När avgången är missad gör knappen till vänster redan det.
+                if state.status != .missed {
+                    Button(intent: AskSkipIntent()) { Pill(text: "Sluta följa") }
+                }
             }
             .buttonStyle(.plain)
         }
@@ -135,11 +142,15 @@ struct LockScreenView: View {
 /// Knapparna på låsskärmen, lika breda och mjukt rundade.
 private struct Pill: View {
     let text: String
+    var primary = false
     var body: some View {
         Text(text)
             .font(.subheadline.weight(.heavy))
             .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .foregroundStyle(primary ? Mood.calm.background : Mood.idle.ink)
+            .padding(.horizontal, 6)
             .frame(maxWidth: .infinity, minHeight: 44)
-            .background(Capsule().fill(Color(hex: "#2A2D34")))
+            .background(Capsule().fill(primary ? Mood.calm.accent : Color(hex: "#2A2D34")))
     }
 }

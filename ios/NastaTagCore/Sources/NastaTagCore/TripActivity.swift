@@ -21,9 +21,9 @@ public struct TripAttributes: ActivityAttributes {
         public var snoozeMinutes: Int?
         /// Om resan är en snoozad avgång, så att knappen kan ångra.
         public var snoozed: Bool?
-        /// Du har redan snoozat idag: knappen struntar i resan i stället, till exempel "Skit i det.".
+        /// Avgången är missad: knappen struntar i resan, till exempel "Fuck it.".
         public var offerSkip: Bool?
-        /// Låsskärmen frågar "Dra en rövare?" och väntar på Kör! eller Nej, jag går.
+        /// Låsskärmen frågar "Dra en rövare?" och väntar på Ja! eller Nej 🙁.
         public var askingSkip: Bool?
         /// Du har struntat i resan. Låsskärmen säger det en stund innan den försvinner.
         public var skipped: Bool?

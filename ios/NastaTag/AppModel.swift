@@ -188,7 +188,6 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             guard let next, snoozeTarget != nil else { return }
             snoozed = next
         }
-        countSnooze(undo: snoozed == nil)
         retargetFollowing()
     }
 
@@ -198,7 +197,6 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         let followed = following?.content.state.key
         guard let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
         snoozed = trip
-        countSnooze(undo: false)
         retargetFollowing()
     }
 
@@ -233,27 +231,13 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private static let skipKey = "skippedDay"
     /// Destinationen och dagen du har struntat i, "jobb|2026-11-15". Gäller till midnatt.
     private var skippedDay = UserDefaults.standard.string(forKey: "skippedDay")
-    /// Hur många gånger du har snoozat mot den här destinationen idag.
-    private var snoozeTally: (day: String, count: Int)?
     /// Orden efteråt, valda när du tryckte så att de står still.
     private(set) var skipDone: String?
 
     private var dayKey: String? { destination.map { "\($0.id)|\(stockholmDay(now))" } }
 
-    private func countSnooze(undo: Bool) {
-        guard let dayKey else { return }
-        let count = snoozeTally?.day == dayKey ? snoozeTally!.count : 0
-        snoozeTally = (dayKey, max(0, count + (undo ? -1 : 1)))
-    }
-
     /// Du har struntat i resan dit idag.
     var isSkipped: Bool { dayKey != nil && skippedDay == dayKey }
-
-    /// Har du redan snoozat en gång idag byter Snooze-knappen till att strunta i resan.
-    var offerSkip: Bool {
-        guard !isSkipped, snoozed == nil, next != nil, let dayKey, let snoozeTally else { return false }
-        return snoozeTally.day == dayKey && snoozeTally.count >= 1
-    }
 
     var skipWords: SkipWords? {
         guard let trip = missed?.trip ?? next, let destination else { return nil }
@@ -266,7 +250,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         if let followed = following?.content.state, let destination {
             skipDone = NastaTagCore.skipWords(label: destination.label, trainTime: followed.trainTime, mode: followed.mode).done
         } else {
-            skipDone = skipWords?.done ?? "Okej. Vi hörs i morgon."
+            skipDone = skipWords?.done ?? "Okej. Vi hörs imorgon."
         }
         skippedDay = dayKey
         UserDefaults.standard.set(skippedDay, forKey: Self.skipKey)
@@ -285,7 +269,6 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private(set) var askingSkip = false
 
     func askSkipFollowed() {
-        guard offerSkip else { return }
         askingSkip = true
         pushFollowed()
     }
@@ -308,7 +291,6 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     func unskip() {
         skippedDay = nil
         UserDefaults.standard.removeObject(forKey: Self.skipKey)
-        snoozeTally = nil
     }
 
     /// En snooze glöms när avgången du hoppade över har gått, då finns inget att ångra.
@@ -419,7 +401,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
                                     snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
-                                    offerSkip: offerSkip, askingSkip: askingSkip)
+                                    offerSkip: trip.status == .missed, askingSkip: askingSkip)
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
@@ -452,6 +434,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func stopFollowing() {
         following = nil
         askingSkip = false
+        followedMissedUntil = nil
         followedStatus = nil
         followedJourneys = []
         backgroundSession?.invalidate()
@@ -464,7 +447,12 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard activity.activityState == .active else { return stopFollowing() }
         let followed = activity.content.state
         let known = buildTrips((journeys ?? []) + followedJourneys, now: now)
-        guard let trip = known.first(where: { $0.key == followed.key }), trip.status != .missed else {
+        // Missad men inte avgången än: låsskärmen visar det en stund, med knappen, och följer sedan nästa.
+        if let trip = known.first(where: { $0.key == followed.key }), trip.status == .missed {
+            return showFollowedMissed(trip, activity: activity)
+        }
+        followedMissedUntil = nil
+        guard let trip = known.first(where: { $0.key == followed.key }) else {
             // Bara när avgången faktiskt har gått: annars väntar vi på nästa svar från SL.
             guard now > followed.trainTime || followed.leaveBy.timeIntervalSince(now) < -60 else { return }
             var last = followed
@@ -482,6 +470,28 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             body: "\(alertBody(status: trip.status, minutes: state.minutes, trainTime: trip.time, mode: trip.mode, label: activity.attributes.label))",
             sound: .default) : nil
         Task { await activity.update(.init(state: state, staleDate: trip.time), alertConfiguration: alert) }
+    }
+
+    /// När den följda avgången blev missad. Efter så lång tid som appen visar det följer låsskärmen nästa.
+    private var followedMissedUntil: Date?
+
+    private func showFollowedMissed(_ trip: Trip, activity: Activity<TripAttributes>) {
+        guard let until = followedMissedUntil else {
+            followedMissedUntil = now.addingTimeInterval(Self.missedSeconds)
+            followedStatus = .missed
+            Task { await activity.update(.init(state: state(for: trip), staleDate: trip.time)) }
+            return
+        }
+        guard now >= until, !askingSkip else { return }
+        followedMissedUntil = nil
+        guard let next, next.key != trip.key else {
+            var last = activity.content.state
+            last.status = .missed
+            stopFollowing()
+            Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(120))) }
+            return
+        }
+        retargetFollowing()
     }
 
     private func urgency(_ status: Status) -> Int {

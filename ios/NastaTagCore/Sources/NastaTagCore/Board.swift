@@ -27,13 +27,12 @@ public func classify(_ slackMinutes: Double) -> Status {
 public enum Voice {
     /// Rubriken säger bara hur läget är, aldrig något om tid, så den kan inte säga emot siffran.
     public static let headlines: [Status: [String]] = [
-        .calm: ["Gott om tid.", "Ingen stress.", "Lugnt läge.", "Du ligger bra till.",
-                "Häng kvar en stund.", "Allt under kontroll.", "Luta dig tillbaka."],
-        .hurry: ["Skorna på.", "Jackan på.", "Gör dig redo.", "Plocka ihop grejerna.",
-                 "Dags att röra på sig.", "Snart dags.", "Nu närmar det sig."],
-        .rush: ["Spring!", "Full fart!", "Iväg med dig!", "Benen på ryggen!", "Nu kör vi!", "Dags att sticka!"],
+        .calm: ["Gott om tid.", "Ingen brådska.", "Du hinner.", "Luta dig tillbaka.", "Häng kvar en stund."],
+        .hurry: ["På med skorna.", "Börja avrunda.", "Samla ihop grejerna.", "Dags att röra på sig.", "Snart dags."],
+        // Kort, för att det är bråttom. Du hinner fortfarande om du går raskt, så "Spring!" är en glimt i ögat.
+        .rush: ["Spring!", "Nu gäller det!", "Raska steg!", "Full fart!", "Iväg med dig!"],
         // Tåget har oftast inte gått än, det är du som inte hinner. Orden säger det.
-        .missed: ["Den hinner du inte.", "Släpp den.", "Den får gå utan dig.", "Missad. Ingen fara."],
+        .missed: ["Den hinner du inte.", "Släpp den.", "Den får gå utan dig.", "Det kommer fler.", "Missad. Ingen fara."],
     ]
     /// Bara på morgonen, när avgången går före tio.
     public static let morningHeadlines = ["Kaffet hinner du."]
@@ -161,15 +160,16 @@ public struct SkipWords: Equatable, Sendable {
 
 extension Voice {
     public static let skipButtons = ["Fuck it.", "Skit i det."]
-    public static let skipButtonsWork = ["Sängen vinner.", "Ledig dag."]
-    public static let skipButtonsHome = ["En öl till."]
-    public static let skipButtonsOther = ["Skippa idag."]
-    public static let skipAsks = ["Dra en rövare?", "Strunta i det idag?"]
-    public static let skipAsksWork = ["Ledig dag?"]
-    public static let skipConfirm = "Kör!"
-    public static let skipCancel = "Nej, jag går"
-    public static let skipDones = ["Snyggt. Vi hörs i morgon.", "Njut. Vi ses i morgon.", "Okej, ingen fara. Vi hörs.",
-                                   "Bra val. {N} klarar sig."]
+    public static let skipButtonsWork = ["Sängen vinner.", "Jobbet klarar sig."]
+    public static let skipButtonsHome = ["En öl till.", "Vi tar en till."]
+    public static let skipButtonsOther = ["Inte idag."]
+    public static let skipAsks = ["Dra en rövare?", "Strunta i det idag?", "Ska vi skippa idag?"]
+    public static let skipAsksWork = ["Ledig idag?", "Ta en spontan ledig dag?"]
+    public static let skipConfirm = "Ja!"
+    public static let skipCancel = "Nej 🙁"
+    public static let skipDones = ["Snyggt. Vi hörs imorgon.", "Livet är mer än tidtabeller.",
+                                   "Klokt? Oklart. Skönt? Absolut.", "Bra val. {N} klarar sig."]
+    public static let skipDonesWork = ["Ibland vinner soffan."]
 }
 
 /// Orden följer avgången och vart du ska: "Sängen vinner." bara mot jobbet, "En öl till." bara hem.
@@ -179,7 +179,8 @@ public func skipWords(label: String, trainTime: Date, mode: Int) -> SkipWords {
     let asks = Voice.skipAsks + (label == "Jobbet" ? Voice.skipAsksWork : [])
     let ask = Voice.pick(asks, seed: trainTime, salt: 6, avoiding: button)
     let noun = Mode(mode).noun
-    let done = Voice.pick(Voice.skipDones, seed: trainTime, salt: 7)
+    let dones = Voice.skipDones + (label == "Jobbet" ? Voice.skipDonesWork : [])
+    let done = Voice.pick(dones, seed: trainTime, salt: 7, avoiding: button)
         .replacingOccurrences(of: "{N}", with: noun.prefix(1).uppercased() + noun.dropFirst())
     return SkipWords(button: button, ask: ask, detail: "Vi slutar påminna dig om \(noun) idag.", done: done)
 }
