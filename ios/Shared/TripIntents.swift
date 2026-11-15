@@ -11,7 +11,7 @@ enum TripActions {
     static var answerSkip: ((Bool) -> Void)?
 }
 
-/// "Skit i det." på låsskärmen: frågar först, som rutan i appen.
+/// "Fuck it." på låsskärmen när avgången är missad: frågar först, som rutan i appen.
 struct AskSkipIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Strunta i resan idag"
     static let isDiscoverable = false

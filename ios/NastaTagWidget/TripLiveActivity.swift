@@ -75,11 +75,9 @@ struct LockScreenView: View {
                     Text(words.detail).font(.subheadline).foregroundStyle(mood.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                // Tre vägar: Ja (grön, till vänster) struntar i resan idag, i mitten stängs bara
-                // låsskärmen, och Nej ångrar sig. Samma ordning och färger som i appen.
+                // Samma två svar som i appen: Ja (grön, till vänster) struntar i resan idag, Nej ångrar sig.
                 HStack(spacing: 8) {
                     Button(intent: AnswerSkipIntent(skip: true)) { Pill(text: Voice.skipConfirm, primary: true) }
-                    Button(intent: StopFollowingIntent()) { Pill(text: "Bara låsskärmen") }
                     Button(intent: AnswerSkipIntent(skip: false)) { Pill(text: Voice.skipCancel) }
                 }
                 .buttonStyle(.plain)
@@ -125,11 +123,8 @@ struct LockScreenView: View {
                 } else if let minutes = state.snoozeMinutes, state.status != .missed {
                     Button(intent: SnoozeTripIntent()) { Pill(text: "Snooze \(minutes) min") }
                 }
-                // Frågar först, så att du kan välja mellan att strunta i resan och bara stänga låsskärmen.
-                // När avgången är missad gör knappen till vänster redan det.
-                if state.status != .missed {
-                    Button(intent: AskSkipIntent()) { Pill(text: "Sluta följa") }
-                }
+                // Stänger bara låsskärmen, som i appen. Att strunta i resan frågar "Fuck it." om.
+                Button(intent: StopFollowingIntent()) { Pill(text: "Sluta följa") }
             }
             .buttonStyle(.plain)
         }
