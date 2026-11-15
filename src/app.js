@@ -415,9 +415,9 @@ function render() {
   const message = departureMessage(next);
   setStatus(next.status);
   $('retry').hidden = true;
-  $('verdict').textContent = message.lead;
+  $('verdict').textContent = message.headline;
   $('time').textContent = message.wait;
-  $('advice').textContent = message.bridge;
+  $('advice').textContent = message.caption;
   $('train').textContent = tripName(next, destination.label);
   $('line').textContent = lineText(next);
   renderLater(later.slice(0, LATER_COUNT));
