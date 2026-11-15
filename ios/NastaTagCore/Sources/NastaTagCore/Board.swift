@@ -143,3 +143,51 @@ public func alertBody(status: Status, minutes: Int, trainTime: Date, mode: Int, 
 public func tripPhrase(_ label: String) -> String {
     ["Hem": "hem", "Jobbet": "till jobbet"][label] ?? "till \(label)"
 }
+
+// MARK: Strunta i resan
+
+/// Orden när du redan har snoozat och hellre struntar i resan idag. Appen håller med, den ifrågasätter inte.
+public struct SkipWords: Equatable, Sendable {
+    /// Knappen där Snooze satt. Kort, den ska rymmas på en rad.
+    public var button: String
+    /// Rutans fråga.
+    public var ask: String
+    /// Raden i rutan som säger rakt vad som händer.
+    public var detail: String
+    /// Det som står på skärmen efteråt.
+    public var done: String
+}
+
+extension Voice {
+    public static let skipButtons = ["Fuck it.", "Skit i det."]
+    public static let skipButtonsWork = ["Sängen vinner.", "Ledig dag."]
+    public static let skipButtonsHome = ["En öl till."]
+    public static let skipButtonsOther = ["Skippa idag."]
+    public static let skipAsks = ["Dra en rövare?", "Strunta i det idag?"]
+    public static let skipAsksWork = ["Ledig dag?"]
+    public static let skipConfirm = "Kör!"
+    public static let skipCancel = "Nej, jag går"
+    public static let skipDones = ["Snyggt. Vi hörs i morgon.", "Njut. Vi ses i morgon.", "Okej, ingen fara. Vi hörs.",
+                                   "Bra val. {N} klarar sig."]
+}
+
+/// Orden följer avgången och vart du ska: "Sängen vinner." bara mot jobbet, "En öl till." bara hem.
+public func skipWords(label: String, trainTime: Date, mode: Int) -> SkipWords {
+    let extra = label == "Jobbet" ? Voice.skipButtonsWork : label == "Hem" ? Voice.skipButtonsHome : Voice.skipButtonsOther
+    let button = Voice.pick(Voice.skipButtons + extra, seed: trainTime, salt: 5)
+    let asks = Voice.skipAsks + (label == "Jobbet" ? Voice.skipAsksWork : [])
+    let ask = Voice.pick(asks, seed: trainTime, salt: 6, avoiding: button)
+    let noun = Mode(mode).noun
+    let done = Voice.pick(Voice.skipDones, seed: trainTime, salt: 7)
+        .replacingOccurrences(of: "{N}", with: noun.prefix(1).uppercased() + noun.dropFirst())
+    return SkipWords(button: button, ask: ask, detail: "Vi slutar påminna dig om \(noun) idag.", done: done)
+}
+
+/// Dagen i Stockholm, "2026-11-15", så att ett "strunta i det" gäller till midnatt.
+public func stockholmDay(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "sv_SE")
+    formatter.timeZone = TimeZone(identifier: "Europe/Stockholm")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter.string(from: date)
+}

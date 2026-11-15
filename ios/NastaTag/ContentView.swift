@@ -7,8 +7,9 @@ struct ContentView: View {
     @Environment(AppModel.self) private var model
     @State private var showSettings = false
     @State private var showMap = false
+    @State private var askSkip = false
 
-    private var mood: Mood { Mood(model.blocker == nil ? model.next?.status : nil) }
+    private var mood: Mood { Mood(model.blocker == nil && !model.isSkipped ? model.next?.status : nil) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,7 +75,18 @@ struct ContentView: View {
     // MARK: Mitten: ringen
 
     @ViewBuilder private var hero: some View {
-        if let blocker = model.blocker {
+        if model.isSkipped, let destination = model.destination {
+            VStack(spacing: 12) {
+                Text(model.skipDone ?? "Okej. Vi hörs i morgon.").font(.title2.weight(.heavy))
+                Text("Inga påminnelser om resan \(tripPhrase(destination.label)) idag.")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
+                Button("Visa avgångar igen") { model.unskip() }
+                    .buttonStyle(Outline(mood: mood))
+                    .padding(.top, 12)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+        } else if let blocker = model.blocker {
             VStack(spacing: 20) {
                 Text(blocker).font(.title2.weight(.bold)).multilineTextAlignment(.center)
                 if model.places.isEmpty {
@@ -109,7 +121,18 @@ struct ContentView: View {
                     .contentTransition(.opacity)
                     .padding(.top, 4)
                 Group {
-                if let skipped = model.snoozed {
+                if model.offerSkip, let words = model.skipWords {
+                    Button(words.button) { askSkip = true }
+                        .buttonStyle(SnoozeToggle(mood: mood, on: false))
+                        .accessibilityLabel("Strunta i resan idag")
+                        .accessibilityHint("Frågar först. Sedan slutar appen påminna dig om resan idag.")
+                        .alert(words.ask, isPresented: $askSkip) {
+                            Button(Voice.skipConfirm) { model.skipToday() }
+                            Button(Voice.skipCancel, role: .cancel) {}
+                        } message: {
+                            Text(words.detail)
+                        }
+                } else if let skipped = model.snoozed {
                     Button("Ångra snooze") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: true))
                         .accessibilityLabel("Ångra snooze, ta \(stockholmClock(skipped.time)) igen")
@@ -140,7 +163,7 @@ struct ContentView: View {
 
     private var bottom: some View {
         VStack(spacing: 12) {
-            if model.blocker == nil {
+            if model.blocker == nil && !model.isSkipped {
                 walkCard
                 followButton
             }

@@ -183,6 +183,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             guard let next, snoozeTarget != nil else { return }
             snoozed = next
         }
+        countSnooze(undo: snoozed == nil)
         retargetFollowing()
     }
 
@@ -192,7 +193,56 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         let followed = following?.content.state.key
         guard let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
         snoozed = trip
+        countSnooze(undo: false)
         retargetFollowing()
+    }
+
+    // MARK: Strunta i resan
+
+    private static let skipKey = "skippedDay"
+    /// Destinationen och dagen du har struntat i, "jobb|2026-11-15". Gäller till midnatt.
+    private var skippedDay = UserDefaults.standard.string(forKey: "skippedDay")
+    /// Hur många gånger du har snoozat mot den här destinationen idag.
+    private var snoozeTally: (day: String, count: Int)?
+    /// Orden efteråt, valda när du tryckte så att de står still.
+    private(set) var skipDone: String?
+
+    private var dayKey: String? { destination.map { "\($0.id)|\(stockholmDay(now))" } }
+
+    private func countSnooze(undo: Bool) {
+        guard let dayKey else { return }
+        let count = snoozeTally?.day == dayKey ? snoozeTally!.count : 0
+        snoozeTally = (dayKey, max(0, count + (undo ? -1 : 1)))
+    }
+
+    /// Du har struntat i resan dit idag.
+    var isSkipped: Bool { dayKey != nil && skippedDay == dayKey }
+
+    /// Har du redan snoozat en gång idag byter Snooze-knappen till att strunta i resan.
+    var offerSkip: Bool {
+        guard !isSkipped, snoozed == nil, next != nil, let dayKey, let snoozeTally else { return false }
+        return snoozeTally.day == dayKey && snoozeTally.count >= 1
+    }
+
+    var skipWords: SkipWords? {
+        guard let next, let destination else { return nil }
+        return NastaTagCore.skipWords(label: destination.label, trainTime: next.time, mode: next.mode)
+    }
+
+    /// Slutar påminna om resan dit idag: låsskärmen och notiserna slutar.
+    func skipToday() {
+        skipDone = skipWords?.done ?? "Okej. Vi hörs i morgon."
+        skippedDay = dayKey
+        UserDefaults.standard.set(skippedDay, forKey: Self.skipKey)
+        snoozed = nil
+        unfollow()
+    }
+
+    /// Ångrar: avgångarna visas igen och Snooze börjar om.
+    func unskip() {
+        skippedDay = nil
+        UserDefaults.standard.removeObject(forKey: Self.skipKey)
+        snoozeTally = nil
     }
 
     /// En snooze glöms när avgången du hoppade över har gått, då finns inget att ångra.
