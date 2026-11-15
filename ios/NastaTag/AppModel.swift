@@ -92,6 +92,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         chooseDestination()
         forgetOldSnoozes()
         noticeMissed()
+        noteWalk()
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
     }
 
@@ -364,6 +365,21 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         let straight = distanceMeters(position, next.stop.coordinate)
         guard straight >= Self.nearStopMeters else { return nil }
         return next.walkMeters > 0 ? next.walkMeters : straight
+    }
+
+    /// Hur långt det var till hållplatsen när du började gå mot den, så att kartan kan heja efter
+    /// hur långt du har kommit. Går du åt andra hållet börjar det om därifrån.
+    private var walkStart: (stop: Stop, meters: Double)?
+
+    private func noteWalk() {
+        guard let stop, let left = stopDistance else { return }
+        if walkStart?.stop != stop || left > walkStart!.meters { walkStart = (stop, left) }
+    }
+
+    /// Var på vägen du är, eller nil innan du har kommit i gång.
+    var walkStage: WalkStage? {
+        guard let stop, position != nil, let walkStart, walkStart.stop == stop else { return nil }
+        return NastaTagCore.walkStage(startMeters: walkStart.meters, leftMeters: stopDistance)
     }
 
     /// Hur pilen ska vridas för att peka mot hållplatsen, eller nil utan kompass.

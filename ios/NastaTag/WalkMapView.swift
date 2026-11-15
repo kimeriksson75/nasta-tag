@@ -63,7 +63,10 @@ struct WalkMapView: View {
                 }
                 .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(message.headline).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                    // Medan du går hejar rubriken efter hur långt du har kommit.
+                    Text(walkHeadline(stage: model.walkStage, status: trip.status, trainTime: trip.time) ?? message.headline)
+                        .font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                        .contentTransition(.opacity)
                     Text(tripName(trip, destination.label)).font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
                 }
                 .lineLimit(1)
