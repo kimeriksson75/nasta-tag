@@ -145,12 +145,18 @@ public func parseJourney(_ journey: Journey) -> Trip? {
 }
 
 /// Resorna med marginal och färg. Samma avgång kan komma flera gånger, den räknas en gång.
-public func buildTrips(_ journeys: [Journey], now: Date) -> [Trip] {
+/// `walkFactor` över 1 räknar med längre gångtid, till exempel när det är halt.
+public func buildTrips(_ journeys: [Journey], now: Date, walkFactor: Double = 1) -> [Trip] {
     var seen = Set<String>()
     return journeys.compactMap(parseJourney)
         .filter { seen.insert($0.key).inserted }
         .map { trip in
             var trip = trip
+            if walkFactor > 1 {
+                let extra = trip.walkMinutes * (walkFactor - 1)
+                trip.leaveAt.addTimeInterval(-extra * 60)
+                trip.walkMinutes += extra
+            }
             trip.slackMinutes = trip.leaveAt.timeIntervalSince(now) / 60
             trip.status = classify(trip.slackMinutes)
             return trip

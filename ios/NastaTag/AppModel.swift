@@ -93,6 +93,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         forgetOldSnoozes()
         noticeMissed()
         noteWalk()
+        if needsWeather { Task { await refreshWeather() } }
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
     }
 
@@ -156,7 +157,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     // MARK: Resor
 
-    private var trips: [Trip] { buildTrips(journeys ?? [], now: now) }
+    private var trips: [Trip] { buildTrips(journeys ?? [], now: now, walkFactor: walkFactor) }
     private var picked: (next: Trip?, later: [Trip]) {
         pickTrips(trips.filter { trip in snoozed.map { trip.leaveAt > $0.leaveAt } ?? true })
     }
@@ -354,6 +355,54 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
                                                      departAt: followed.trainTime.addingTimeInterval(-2 * 60))) ?? []
     }
 
+    // MARK: Vädret
+
+    /// SMHI:s prognos för där du är. Hämtas var trettionde minut, eller när du har rest en bit.
+    private var weatherHours: [WeatherHour] = []
+    private var weatherFetchedAt: Date?
+    private var weatherFrom: Coordinate?
+    private var fetchingWeather = false
+    private static let weatherSeconds: TimeInterval = 30 * 60
+    private static let weatherMovedMeters = 3000.0
+
+    private var needsWeather: Bool {
+        guard let position, !fetchingWeather else { return false }
+        guard let weatherFetchedAt, let weatherFrom else { return true }
+        return now.timeIntervalSince(weatherFetchedAt) >= Self.weatherSeconds
+            || distanceMeters(weatherFrom, position) >= Self.weatherMovedMeters
+    }
+
+    private func refreshWeather() async {
+        guard let position, !fetchingWeather else { return }
+        fetchingWeather = true
+        defer { fetchingWeather = false }
+        // Svarar inte SMHI blir det inget väder, och ett nytt försök om en halvtimme. Resorna bryr sig inte.
+        weatherFetchedAt = Date()
+        weatherFrom = position
+        guard let (data, _) = try? await URLSession.shared.data(from: smhiURL(position)),
+              let hours = try? parseSMHI(data) else { return }
+        weatherHours = hours
+    }
+
+    /// Vädret när du ska gå till avgången, om det är värt att nämna.
+    func weather(for trip: Trip) -> Weather? {
+        #if DEBUG
+        // För att prova: starta med -fakeWeather rain (eller ice, snow …).
+        if let fake = UserDefaults.standard.string(forKey: "fakeWeather") { return Weather(rawValue: fake) }
+        #endif
+        guard let position else { return nil }
+        return NastaTagCore.weather(at: trip.leaveAt, hours: weatherHours, at: position)
+    }
+
+    /// Är det halt nu räknas gångtiden lite längre.
+    private var walkFactor: Double {
+        guard let position else { return 1 }
+        return NastaTagCore.weather(at: now, hours: weatherHours, at: position) == .ice ? iceWalkFactor : 1
+    }
+
+    /// Orden för en avgång, med vädret.
+    func message(for trip: Trip) -> DepartureMessage { departureMessage(trip, weather: weather(for: trip)) }
+
     // MARK: Gången till hållplatsen
 
     /// Hållplatsen där nästa resa börjar.
@@ -417,7 +466,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
                                     snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
-                                    offerSkip: trip.status == .missed, askingSkip: askingSkip)
+                                    offerSkip: trip.status == .missed, askingSkip: askingSkip, weather: weather(for: trip))
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
@@ -462,7 +511,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard let activity = following else { return }
         guard activity.activityState == .active else { return stopFollowing() }
         let followed = activity.content.state
-        let known = buildTrips((journeys ?? []) + followedJourneys, now: now)
+        let known = buildTrips((journeys ?? []) + followedJourneys, now: now, walkFactor: walkFactor)
         // Missad men inte avgången än: låsskärmen visar det en stund, med knappen, och följer sedan nästa.
         if let trip = known.first(where: { $0.key == followed.key }), trip.status == .missed {
             return showFollowedMissed(trip, activity: activity)
@@ -482,8 +531,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         let worse = followedStatus.map { urgency(trip.status) > urgency($0) } ?? false
         followedStatus = trip.status
         let alert = worse ? AlertConfiguration(
-            title: "\(departureMessage(trip).headline)",
-            body: "\(alertBody(status: trip.status, minutes: state.minutes, trainTime: trip.time, mode: trip.mode, label: activity.attributes.label))",
+            title: "\(message(for: trip).title)",
+            body: "\(alertBody(status: trip.status, minutes: state.minutes, trainTime: trip.time, mode: trip.mode, label: activity.attributes.label, weather: weather(for: trip)))",
             sound: .default) : nil
         Task { await activity.update(.init(state: state, staleDate: trip.time), alertConfiguration: alert) }
     }

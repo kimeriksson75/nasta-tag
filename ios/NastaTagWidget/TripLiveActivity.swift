@@ -20,7 +20,7 @@ struct TripLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(message.headline).font(.caption.weight(.semibold))
+                        Text(message.title).font(.caption.weight(.semibold))
                         Text(message.wait).font(.title.weight(.heavy)).monospacedDigit()
                     }
                     .foregroundStyle(mood.accent)
@@ -46,7 +46,7 @@ struct TripLiveActivity: Widget {
 }
 
 extension TripAttributes.ContentState {
-    var message: DepartureMessage { departureMessage(status: status, minutes: minutes, trainTime: trainTime) }
+    var message: DepartureMessage { departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather) }
 }
 
 struct LockScreenView: View {
@@ -94,7 +94,7 @@ struct LockScreenView: View {
         VStack(spacing: 14) {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(message.headline).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                    Text(message.title).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                     Text(message.wait)
                         .font(.system(size: 44, weight: .heavy))
                         .monospacedDigit()

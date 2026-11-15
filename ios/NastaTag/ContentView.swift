@@ -101,13 +101,14 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
         } else if let trip = model.next, let destination = model.destination {
-            let message = departureMessage(trip)
+            let message = model.message(for: trip)
             VStack(spacing: 0) {
-                Text(message.headline)
+                Text(message.title)
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(mood.accent)
                     .frame(maxWidth: .infinity)
                     .contentTransition(.opacity)
+                    .accessibilityLabel(message.weather.map { "\($0.label). \(message.headline)" } ?? message.headline)
                 Ring(trip: trip, wait: message.wait, caption: message.caption, mood: mood)
                     .frame(maxWidth: 280)
                     .padding(.top, 32)

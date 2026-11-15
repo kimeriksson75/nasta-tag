@@ -92,14 +92,23 @@ public struct DepartureMessage: Equatable, Sendable {
     public var headline: String
     public var wait: String
     public var caption: String
+    /// Vädret, när det är värt att nämna.
+    public var weather: Weather? = nil
+
+    /// Rubriken med vädrets emoji framför, som den visas.
+    public var title: String { weather.map { "\($0.emoji) \(headline)" } ?? headline }
 }
 
 /// Hela minuter tills du behöver gå, rundat nedåt: hellre en minut för tidigt än ett missat tåg.
 public func minutesToLeave(_ slackMinutes: Double) -> Int { max(0, Int(slackMinutes.rounded(.down))) }
 
 /// Orden följer avgången, så att de inte byts varje gång skärmen ritas om.
-public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> DepartureMessage {
-    let headline = Voice.pick(Voice.headlines(status, trainTime: trainTime), seed: trainTime, salt: 1)
+/// Vädret ersätter rubriken när det är Snart, för då klär du på dig. Lugnt får bara emojin,
+/// och när det är bråttom byts orden bara vid halka. En missad avgång bryr sig inte om vädret.
+public func departureMessage(status: Status, minutes: Int, trainTime: Date, weather: Weather? = nil) -> DepartureMessage {
+    let weather = status == .missed ? nil : weather
+    let weatherWords = weather.flatMap { (status == .rush ? Voice.weatherRushHeadlines : status == .hurry ? Voice.weatherHeadlines : [:])[$0] }
+    let headline = Voice.pick(weatherWords ?? Voice.headlines(status, trainTime: trainTime), seed: trainTime, salt: 1)
     let wait: String
     switch status {
     case .calm, .hurry: wait = "\(minutes) min"
@@ -107,11 +116,11 @@ public func departureMessage(status: Status, minutes: Int, trainTime: Date) -> D
     case .missed: wait = "–"
     }
     let caption = Voice.pick(Voice.captions[status] ?? [], seed: trainTime, salt: 3, avoiding: headline)
-    return DepartureMessage(headline: headline, wait: wait, caption: caption)
+    return DepartureMessage(headline: headline, wait: wait, caption: caption, weather: weather)
 }
 
-public func departureMessage(_ trip: Trip) -> DepartureMessage {
-    departureMessage(status: trip.status, minutes: minutesToLeave(trip.slackMinutes), trainTime: trip.time)
+public func departureMessage(_ trip: Trip, weather: Weather? = nil) -> DepartureMessage {
+    departureMessage(status: trip.status, minutes: minutesToLeave(trip.slackMinutes), trainTime: trip.time, weather: weather)
 }
 
 /// "16:40-bussen hem"
@@ -131,9 +140,9 @@ public func stockholmClock(_ date: Date) -> String {
 }
 
 /// Notisen när läget skärps: en hel mening, som inte upprepar rubriken den står under.
-public func alertBody(status: Status, minutes: Int, trainTime: Date, mode: Int, label: String) -> String {
+public func alertBody(status: Status, minutes: Int, trainTime: Date, mode: Int, label: String, weather: Weather? = nil) -> String {
     let name = tripName(trainTime, mode: mode, label)
-    let headline = departureMessage(status: status, minutes: minutes, trainTime: trainTime).headline
+    let headline = departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather).headline
     let list = status == .rush ? Voice.rushAlerts : Voice.hurryAlerts
     return Voice.pick(list, seed: trainTime, salt: 4, avoiding: headline)
         .replacingOccurrences(of: "{m}", with: "\(minutes)")

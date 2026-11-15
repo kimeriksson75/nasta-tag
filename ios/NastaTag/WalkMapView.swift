@@ -53,7 +53,7 @@ struct WalkMapView: View {
     @ViewBuilder private var ringChip: some View {
         HStack(spacing: 14) {
             if let trip = model.next, let destination = model.destination {
-                let message = departureMessage(trip)
+                let message = model.message(for: trip)
                 ZStack {
                     LiveRing(leaveAt: trip.leaveAt, key: trip.key, mood: mood, lineWidth: 6)
                     Text(trip.status == .rush ? "Nu" : "\(minutesToLeave(trip.slackMinutes))")
@@ -64,7 +64,8 @@ struct WalkMapView: View {
                 .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
                     // Medan du går hejar rubriken efter hur långt du har kommit.
-                    Text(walkHeadline(stage: model.walkStage, status: trip.status, trainTime: trip.time) ?? message.headline)
+                    let cheer = walkHeadline(stage: model.walkStage, status: trip.status, trainTime: trip.time)
+                    Text(cheer.map { c in message.weather.map { "\($0.emoji) \(c)" } ?? c } ?? message.title)
                         .font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                         .contentTransition(.opacity)
                     Text(tripName(trip, destination.label)).font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)

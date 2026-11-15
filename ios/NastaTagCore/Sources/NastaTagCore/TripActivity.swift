@@ -27,9 +27,12 @@ public struct TripAttributes: ActivityAttributes {
         public var askingSkip: Bool?
         /// Du har struntat i resan. Låsskärmen säger det en stund innan den försvinner.
         public var skipped: Bool?
+        /// Vädret när du ska gå, om det är värt att nämna.
+        public var weather: Weather?
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
                     key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil, snoozed: Bool = false,
-                    offerSkip: Bool = false, askingSkip: Bool = false, skipped: Bool = false) {
+                    offerSkip: Bool = false, askingSkip: Bool = false, skipped: Bool = false,
+                    weather: Weather? = nil) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -44,6 +47,7 @@ public struct TripAttributes: ActivityAttributes {
             self.offerSkip = offerSkip
             self.askingSkip = askingSkip
             self.skipped = skipped
+            self.weather = weather
         }
     }
 
