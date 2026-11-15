@@ -21,8 +21,15 @@ public struct TripAttributes: ActivityAttributes {
         public var snoozeMinutes: Int?
         /// Om resan är en snoozad avgång, så att knappen kan ångra.
         public var snoozed: Bool?
+        /// Du har redan snoozat idag: knappen struntar i resan i stället, till exempel "Skit i det.".
+        public var offerSkip: Bool?
+        /// Låsskärmen frågar "Dra en rövare?" och väntar på Kör! eller Nej, jag går.
+        public var askingSkip: Bool?
+        /// Du har struntat i resan. Låsskärmen säger det en stund innan den försvinner.
+        public var skipped: Bool?
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
-                    key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil, snoozed: Bool = false) {
+                    key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil, snoozed: Bool = false,
+                    offerSkip: Bool = false, askingSkip: Bool = false, skipped: Bool = false) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -34,6 +41,9 @@ public struct TripAttributes: ActivityAttributes {
             self.minutes = minutes
             self.snoozeMinutes = snoozeMinutes
             self.snoozed = snoozed
+            self.offerSkip = offerSkip
+            self.askingSkip = askingSkip
+            self.skipped = skipped
         }
     }
 

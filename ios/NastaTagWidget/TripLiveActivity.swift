@@ -56,6 +56,40 @@ struct LockScreenView: View {
     var body: some View {
         let mood = Mood(state.status)
         let message = state.message
+        let words = skipWords(label: label, trainTime: state.trainTime, mode: state.mode)
+        if state.skipped == true {
+            // Efter Kör!: samma ord som i appen, en stund innan resan försvinner.
+            VStack(alignment: .leading, spacing: 4) {
+                Text(words.done).font(.headline.weight(.heavy))
+                Text("Inga påminnelser om resan \(tripPhrase(label)) idag.").font(.subheadline).foregroundStyle(Mood.idle.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(Mood.idle.ink)
+            .fontDesign(.rounded)
+            .padding(20)
+        } else if state.askingSkip == true {
+            // Rutan från appen, på låsskärmen.
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(words.ask).font(.headline.weight(.heavy))
+                    Text(words.detail).font(.subheadline).foregroundStyle(mood.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 8) {
+                    Button(intent: AnswerSkipIntent(skip: false)) { Pill(text: Voice.skipCancel) }
+                    Button(intent: AnswerSkipIntent(skip: true)) { Pill(text: Voice.skipConfirm) }
+                }
+                .buttonStyle(.plain)
+            }
+            .foregroundStyle(mood.ink)
+            .fontDesign(.rounded)
+            .padding(20)
+        } else {
+            trip(mood: mood, message: message, words: words)
+        }
+    }
+
+    private func trip(mood: Mood, message: DepartureMessage, words: SkipWords) -> some View {
         VStack(spacing: 14) {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -80,7 +114,10 @@ struct LockScreenView: View {
                 .multilineTextAlignment(.trailing)
             }
             HStack(spacing: 8) {
-                if state.snoozed == true {
+                if state.offerSkip == true && state.snoozed != true && state.status != .missed {
+                    Button(intent: AskSkipIntent()) { Pill(text: words.button) }
+                        .accessibilityLabel("Strunta i resan idag")
+                } else if state.snoozed == true {
                     Button(intent: SnoozeTripIntent()) { Pill(text: "Ångra snooze") }
                 } else if let minutes = state.snoozeMinutes, state.status != .missed {
                     Button(intent: SnoozeTripIntent()) { Pill(text: "Snooze \(minutes) min") }

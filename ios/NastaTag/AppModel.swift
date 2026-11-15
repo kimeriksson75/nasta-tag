@@ -56,6 +56,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         manager.headingFilter = 2
         TripActions.snooze = { [weak self] in self?.toggleSnoozeFollowed() }
         TripActions.stopFollowing = { [weak self] in self?.unfollow() }
+        TripActions.askSkip = { [weak self] in self?.askSkipFollowed() }
+        TripActions.answerSkip = { [weak self] skip in self?.answerSkipFollowed(skip) }
     }
 
     private func save() {
@@ -229,13 +231,47 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         return NastaTagCore.skipWords(label: destination.label, trainTime: next.time, mode: next.mode)
     }
 
-    /// Slutar påminna om resan dit idag: låsskärmen och notiserna slutar.
+    /// Slutar påminna om resan dit idag: notiserna slutar, och låsskärmen säger det en stund innan den försvinner.
     func skipToday() {
-        skipDone = skipWords?.done ?? "Okej. Vi hörs i morgon."
+        // Samma ord som låsskärmen visar, som gäller den följda avgången.
+        if let followed = following?.content.state, let destination {
+            skipDone = NastaTagCore.skipWords(label: destination.label, trainTime: followed.trainTime, mode: followed.mode).done
+        } else {
+            skipDone = skipWords?.done ?? "Okej. Vi hörs i morgon."
+        }
         skippedDay = dayKey
         UserDefaults.standard.set(skippedDay, forKey: Self.skipKey)
         snoozed = nil
-        unfollow()
+        askingSkip = false
+        guard let activity = following else { return }
+        var last = activity.content.state
+        last.skipped = true
+        last.askingSkip = false
+        stopFollowing()
+        Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(30))) }
+    }
+
+    /// Låsskärmen frågar innan den struntar i resan.
+    private(set) var askingSkip = false
+
+    func askSkipFollowed() {
+        guard offerSkip else { return }
+        askingSkip = true
+        pushFollowed()
+    }
+
+    func answerSkipFollowed(_ skip: Bool) {
+        if skip { return skipToday() }
+        askingSkip = false
+        pushFollowed()
+    }
+
+    /// Visar ändringen på låsskärmen direkt, utan att vänta på nästa tick.
+    private func pushFollowed() {
+        guard let activity = following else { return }
+        let followed = activity.content.state
+        guard let trip = trips.first(where: { $0.key == followed.key }) ?? next else { return }
+        Task { await activity.update(.init(state: state(for: trip), staleDate: trip.time)) }
     }
 
     /// Ångrar: avgångarna visas igen och Snooze börjar om.
@@ -352,7 +388,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
-                                    snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil)
+                                    snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
+                                    offerSkip: offerSkip, askingSkip: askingSkip)
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
@@ -384,6 +421,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     private func stopFollowing() {
         following = nil
+        askingSkip = false
         followedStatus = nil
         followedJourneys = []
         backgroundSession?.invalidate()

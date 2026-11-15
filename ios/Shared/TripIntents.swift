@@ -7,6 +7,37 @@ import NastaTagCore
 enum TripActions {
     static var snooze: (() -> Void)?
     static var stopFollowing: (() -> Void)?
+    static var askSkip: (() -> Void)?
+    static var answerSkip: ((Bool) -> Void)?
+}
+
+/// "Skit i det." på låsskärmen: frågar först, som rutan i appen.
+struct AskSkipIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Strunta i resan idag"
+    static let isDiscoverable = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        TripActions.askSkip?()
+        return .result()
+    }
+}
+
+/// Svaret på frågan: Kör! eller Nej, jag går.
+struct AnswerSkipIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Svara på frågan"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Strunta i resan") var skip: Bool
+
+    init() {}
+    init(skip: Bool) { self.skip = skip }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        TripActions.answerSkip?(skip)
+        return .result()
+    }
 }
 
 /// Hoppa över avgången du följer och ta nästa, eller ångra det.
