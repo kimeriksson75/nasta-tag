@@ -9,7 +9,9 @@ struct ContentView: View {
     @State private var showMap = false
     @State private var askSkip = false
 
-    private var mood: Mood { Mood(model.blocker == nil && !model.isSkipped ? model.next?.status : nil) }
+    private var mood: Mood {
+        Mood(model.blocker == nil && !model.isSkipped && model.missed == nil ? model.next?.status : nil)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -86,6 +88,8 @@ struct ContentView: View {
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
+        } else if model.blocker == nil, let missed = model.missed, let destination = model.destination {
+            missedView(missed.trip, until: missed.until, destination: destination)
         } else if let blocker = model.blocker {
             VStack(spacing: 20) {
                 Text(blocker).font(.title2.weight(.bold)).multilineTextAlignment(.center)
@@ -122,16 +126,7 @@ struct ContentView: View {
                     .padding(.top, 4)
                 Group {
                 if model.offerSkip, let words = model.skipWords {
-                    Button(words.button) { askSkip = true }
-                        .buttonStyle(SnoozeToggle(mood: mood, on: false))
-                        .accessibilityLabel("Strunta i resan idag")
-                        .accessibilityHint("Frågar först. Sedan slutar appen påminna dig om resan idag.")
-                        .alert(words.ask, isPresented: $askSkip) {
-                            Button(Voice.skipConfirm) { model.skipToday() }
-                            Button(Voice.skipCancel, role: .cancel) {}
-                        } message: {
-                            Text(words.detail)
-                        }
+                    skipButton(words)
                 } else if let skipped = model.snoozed {
                     Button("Ångra snooze") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: true))
@@ -155,6 +150,67 @@ struct ContentView: View {
         }
     }
 
+    /// Knappen som struntar i resan. Rutan frågar först.
+    private func skipButton(_ words: SkipWords) -> some View {
+        Button(words.button) { askSkip = true }
+            .buttonStyle(SnoozeToggle(mood: mood, on: false))
+            .accessibilityLabel("Strunta i resan idag")
+            .accessibilityHint("Frågar först. Sedan slutar appen påminna dig om resan idag.")
+            .alert(words.ask, isPresented: $askSkip) {
+                Button(Voice.skipConfirm) { model.skipToday() }
+                Button(Voice.skipCancel, role: .cancel) {}
+            } message: {
+                Text(words.detail)
+            }
+    }
+
+    /// Tiden att gå tog slut: en stund i grått med frågan om du bryr dig, sedan nästa avgång av sig själv.
+    private func missedView(_ trip: Trip, until: Date, destination: Place) -> some View {
+        let message = departureMessage(status: .missed, minutes: 0, trainTime: trip.time)
+        return VStack(spacing: 0) {
+            Text(message.headline)
+                .font(.title2.weight(.heavy))
+                .foregroundStyle(mood.accent)
+                .frame(maxWidth: .infinity)
+            Ring(trip: trip, wait: message.wait, caption: message.caption, mood: .idle)
+                .frame(maxWidth: 280)
+                .padding(.top, 32)
+                .padding(.bottom, 28)
+            Text(tripName(trip, destination.label))
+                .font(.title2.weight(.heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
+            Button { model.dismissMissed() } label: {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let seconds = max(0, Int(until.timeIntervalSince(context.date).rounded(.up)))
+                    Text("Nästa avgång om \(seconds) s")
+                        .monospacedDigit()
+                        // Samma höjd som linjeraden, så att ringen står kvar på samma plats.
+                        .lineLimit(2, reservesSpace: true)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(mood.muted)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Visa nästa avgång nu")
+            .padding(.top, 4)
+            Group {
+                if let words = model.skipWords { skipButton(words) } else { Color.clear }
+            }
+            .frame(height: SnoozeToggle.height)
+            .padding(.top, 12)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        // Går vidare på sekunden, utan att vänta på nästa tick.
+        .task(id: trip.key) {
+            try? await Task.sleep(for: .seconds(max(0, until.timeIntervalSinceNow)))
+            if !askSkip { model.dismissMissed() }
+        }
+    }
+
     private func lineText(_ trip: Trip) -> String {
         ([trip.lineText, "från \(trip.stop.name)"] + trip.transfers.map { "byte \($0)" }).joined(separator: " · ")
     }
@@ -164,8 +220,13 @@ struct ContentView: View {
     private var bottom: some View {
         VStack(spacing: 12) {
             if model.blocker == nil && !model.isSkipped {
-                walkCard
-                followButton
+                if model.missed != nil {
+                    // Kortet och knappen tar samma plats som vanligt, så att inget hoppar.
+                    Color.clear.frame(height: Card.height * 2 + 12)
+                } else {
+                    walkCard
+                    followButton
+                }
             }
             if let fetchedAt = model.fetchedAt {
                 Text("Uppdaterad \(fetchedAt.formatted(date: .omitted, time: .shortened))")

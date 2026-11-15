@@ -20,11 +20,14 @@ struct LiveRing: View {
             let target = ringTarget(leaveAt: leaveAt, mood: mood, now: context.date)
             let drawn = memory.draw(target: RingState(fraction: target.fraction, color: RGB(hex: target.mood.accentHex)),
                                     identity: "\(key ?? "")|\(target.mood)", at: context.date)
+            // En rund ände ritar en prick även när ringen är tom, så den tonas bort sista biten.
+            let visible: Double = min(1, drawn.fraction * 100)
             ZStack {
                 Circle().stroke(Color(hex: "#23262D"), lineWidth: lineWidth)
                 Circle()
                     .trim(from: 0, to: drawn.fraction)
                     .stroke(drawn.color.color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .opacity(visible)
                     .rotationEffect(.degrees(-90))
             }
             .padding(lineWidth / 2)

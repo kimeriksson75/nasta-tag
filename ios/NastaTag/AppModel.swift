@@ -91,6 +91,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         now = Date()
         chooseDestination()
         forgetOldSnoozes()
+        noticeMissed()
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
     }
 
@@ -136,12 +137,14 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func chooseDestination() {
         hereId = position.flatMap { placeAt(places, position: $0) }
         guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
-        if next.id != activeId { activeId = next.id; snoozed = nil }
+        if next.id != activeId { activeId = next.id; snoozed = nil; missed = nil; shownKey = nil }
         if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
     func choose(_ place: Place) {
         snoozed = nil
+        missed = nil
+        shownKey = nil
         chosenId = place.id
         activeId = place.id
         refreshSoon()
@@ -199,6 +202,32 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         retargetFollowing()
     }
 
+    // MARK: Missad
+
+    /// Hur länge appen visar att du missade innan den går vidare till nästa avgång.
+    static let missedSeconds: TimeInterval = 15
+    /// Avgången du nyss missade, och när appen går vidare av sig själv.
+    private(set) var missed: (trip: Trip, until: Date)?
+    /// Avgången som visades vid förra ticket, så att appen märker när den blir missad.
+    private var shownKey: String?
+
+    /// När tiden att gå tar slut visas avgången som missad en stund, med frågan om du bryr dig,
+    /// i stället för att appen hoppar direkt till nästa.
+    private func noticeMissed() {
+        if let missed, now >= missed.until || missed.trip.time < now.addingTimeInterval(-60) { self.missed = nil }
+        if missed == nil, let shownKey, next?.key != shownKey,
+           let trip = trips.first(where: { $0.key == shownKey }), trip.status == .missed, !isSkipped {
+            missed = (trip, now.addingTimeInterval(Self.missedSeconds))
+        }
+        shownKey = missed == nil ? next?.key : nil
+    }
+
+    /// Gå vidare till nästa avgång direkt.
+    func dismissMissed() {
+        missed = nil
+        shownKey = next?.key
+    }
+
     // MARK: Strunta i resan
 
     private static let skipKey = "skippedDay"
@@ -227,8 +256,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     }
 
     var skipWords: SkipWords? {
-        guard let next, let destination else { return nil }
-        return NastaTagCore.skipWords(label: destination.label, trainTime: next.time, mode: next.mode)
+        guard let trip = missed?.trip ?? next, let destination else { return nil }
+        return NastaTagCore.skipWords(label: destination.label, trainTime: trip.time, mode: trip.mode)
     }
 
     /// Slutar påminna om resan dit idag: notiserna slutar, och låsskärmen säger det en stund innan den försvinner.
@@ -242,6 +271,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         skippedDay = dayKey
         UserDefaults.standard.set(skippedDay, forKey: Self.skipKey)
         snoozed = nil
+        missed = nil
         askingSkip = false
         guard let activity = following else { return }
         var last = activity.content.state

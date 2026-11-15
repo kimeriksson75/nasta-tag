@@ -32,7 +32,8 @@ public enum Voice {
         .hurry: ["Skorna på.", "Jackan på.", "Gör dig redo.", "Plocka ihop grejerna.",
                  "Dags att röra på sig.", "Snart dags.", "Nu närmar det sig."],
         .rush: ["Spring!", "Full fart!", "Iväg med dig!", "Benen på ryggen!", "Nu kör vi!", "Dags att sticka!"],
-        .missed: ["Den har gått.", "Den hann gå.", "Den gick utan dig.", "Missad. Ingen fara."],
+        // Tåget har oftast inte gått än, det är du som inte hinner. Orden säger det.
+        .missed: ["Den hinner du inte.", "Släpp den.", "Den får gå utan dig.", "Missad. Ingen fara."],
     ]
     /// Bara på morgonen, när avgången går före tio.
     public static let morningHeadlines = ["Kaffet hinner du."]

@@ -57,5 +57,5 @@ public struct RingTarget: Equatable, Sendable {
 public func ringTarget(leaveAt: Date?, mood: Mood, now: Date) -> RingTarget {
     guard let leaveAt, mood != .idle else { return RingTarget(fraction: 0, mood: .idle) }
     let slack = leaveAt.timeIntervalSince(now) / 60
-    return RingTarget(fraction: min(1, max(0.04, slack / ringFullMinutes)), mood: mood)
+    return RingTarget(fraction: min(1, max(0, slack / ringFullMinutes)), mood: mood)
 }

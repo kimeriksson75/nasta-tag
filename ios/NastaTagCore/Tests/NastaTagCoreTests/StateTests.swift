@@ -82,9 +82,12 @@ private let pairs: [String: Set<String>] = [
     let full = ringTarget(leaveAt: leaveAt, mood: .calm, now: leaveAt.addingTimeInterval(-20 * 60))
     let half = ringTarget(leaveAt: leaveAt, mood: .calm, now: leaveAt.addingTimeInterval(-7.5 * 60))
     let late = ringTarget(leaveAt: leaveAt, mood: .rush, now: leaveAt.addingTimeInterval(3))
+    let last = ringTarget(leaveAt: leaveAt, mood: .rush, now: leaveAt.addingTimeInterval(-30))
     #expect(full.fraction == 1)
     #expect(abs(half.fraction - 0.5) < 0.0001)
-    #expect(late.fraction == 0.04 && late.mood == .rush) // en sliver kvar tills läget hinner bli Missad
+    // Ringen krymper hela vägen och är tom precis när du måste gå.
+    #expect(abs(last.fraction - 0.5 / ringFullMinutes) < 0.0001)
+    #expect(late.fraction == 0 && late.mood == .rush)
     #expect(ringTarget(leaveAt: nil, mood: .calm, now: leaveAt) == RingTarget(fraction: 0, mood: .idle))
     #expect(ringTarget(leaveAt: leaveAt, mood: .idle, now: leaveAt).fraction == 0)
 }
