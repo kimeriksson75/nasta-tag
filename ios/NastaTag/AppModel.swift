@@ -87,6 +87,19 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         tick()
     }
 
+    /// Ticket går var femte sekund. När tiden att gå tar slut, eller den missade skärmen ska gå vidare,
+    /// kommer ett extra tick på sekunden, så att skärmen byts när ringen är tom och inte upp till fem sekunder senare.
+    private var edge: Timer?
+
+    private func scheduleEdge() {
+        edge?.invalidate()
+        let at = [next?.leaveAt, missed?.until].compactMap { $0 }.filter { $0 > now }.min()
+        guard let at, at.timeIntervalSince(now) < 6 else { return }
+        edge = Timer.scheduledTimer(withTimeInterval: at.timeIntervalSince(Date()) + 0.05, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+    }
+
     private func tick() {
         now = Date()
         chooseDestination()
@@ -95,6 +108,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         noteWalk()
         if needsWeather { Task { await refreshWeather() } }
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
+        scheduleEdge()
     }
 
     private var needsRefresh: Bool {
@@ -139,14 +153,14 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func chooseDestination() {
         hereId = position.flatMap { placeAt(places, position: $0) }
         guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
-        if next.id != activeId { activeId = next.id; snoozed = nil; missed = nil; shownKey = nil }
+        if next.id != activeId { activeId = next.id; snoozed = nil; missed = nil; shown = nil }
         if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
     func choose(_ place: Place) {
         snoozed = nil
         missed = nil
-        shownKey = nil
+        shown = nil
         chosenId = place.id
         activeId = place.id
         refreshSoon()
@@ -209,23 +223,26 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Avgången du nyss missade, och när appen går vidare av sig själv.
     private(set) var missed: (trip: Trip, until: Date)?
     /// Avgången som visades vid förra ticket, så att appen märker när den blir missad.
-    private var shownKey: String?
+    /// Hela resan sparas, ifall SL redan har tagit bort den ur svaren.
+    private var shown: Trip?
 
     /// När tiden att gå tar slut visas avgången som missad en stund, med frågan om du bryr dig,
     /// i stället för att appen hoppar direkt till nästa.
     private func noticeMissed() {
         if let missed, now >= missed.until || missed.trip.time < now.addingTimeInterval(-60) { self.missed = nil }
-        if missed == nil, let shownKey, next?.key != shownKey,
-           let trip = trips.first(where: { $0.key == shownKey }), trip.status == .missed, !isSkipped {
+        if missed == nil, let shown, next?.key != shown.key, shown.leaveAt <= now, !isSkipped {
+            var trip = trips.first { $0.key == shown.key } ?? shown
+            trip.slackMinutes = trip.leaveAt.timeIntervalSince(now) / 60
+            trip.status = .missed
             missed = (trip, now.addingTimeInterval(Self.missedSeconds))
         }
-        shownKey = missed == nil ? next?.key : nil
+        shown = missed == nil ? next : nil
     }
 
     /// Gå vidare till nästa avgång direkt.
     func dismissMissed() {
         missed = nil
-        shownKey = next?.key
+        shown = next
     }
 
     // MARK: Strunta i resan
@@ -343,7 +360,9 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             fetchedFrom = position
             fetchedFor = destination.id
         }
+        // Samma ordning som ticket: en avgång som just gick ut blir missad innan nästa visas.
         now = Date()
+        noticeMissed()
         updateFollowing()
     }
 
