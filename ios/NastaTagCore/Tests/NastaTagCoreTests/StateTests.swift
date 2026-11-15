@@ -22,12 +22,12 @@ private func screen(stateAt now: Date, ringAt frame: Date) -> Screen {
                   headlineHex: mood.accentHex, buttonHex: mood.accentHex, ringHex: ring.mood.accentHex)
 }
 
-/// Varje läge har en egen färg och en egen rubrik, och de hör alltid ihop.
-private let pairs: [String: String] = [
-    Mood.calm.accentHex: "Gott om tid.",
-    Mood.hurry.accentHex: "Skorna på.",
-    Mood.rush.accentHex: "Spring!",
-    Mood.idle.accentHex: "Den har gått.",
+/// Varje läge har en egen färg och egna rubriker, och de hör alltid ihop.
+private let pairs: [String: Set<String>] = [
+    Mood.calm.accentHex: Set(Voice.headlines[.calm]! + Voice.morningHeadlines),
+    Mood.hurry.accentHex: Set(Voice.headlines[.hurry]!),
+    Mood.rush.accentHex: Set(Voice.headlines[.rush]!),
+    Mood.idle.accentHex: Set(Voice.headlines[.missed]!),
 ]
 
 @Test func fourStatesFourColours() {
@@ -42,7 +42,7 @@ private let pairs: [String: String] = [
         let shown = screen(stateAt: now, ringAt: now)
         #expect(shown.ringHex == shown.headlineHex, "ringen och rubriken skiljer sig \(second) s från att gå")
         #expect(shown.buttonHex == shown.headlineHex)
-        #expect(pairs[shown.headlineHex] == shown.headline, "rubriken passar inte färgen \(second) s från att gå")
+        #expect(pairs[shown.headlineHex]?.contains(shown.headline) == true, "rubriken passar inte färgen \(second) s från att gå")
     }
 }
 
