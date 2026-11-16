@@ -284,9 +284,14 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         var last = state(for: arrivedTrip(trip, now: now))
         last.arrived = false
         last.boarded = true
+        last.stage = .onboard
+        last.arrival = trip.arrival
         last.status = .calm
+        // Kortet ligger kvar hela resan och försvinner när du är framme. iOS fyller förloppet själv,
+        // så appen behöver inte vara vaken under tiden.
         stopFollowing()
-        Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(3 * 60))) }
+        let gone = max(trip.arrival, Date().addingTimeInterval(5 * 60)).addingTimeInterval(60)
+        Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(gone)) }
     }
 
     /// Tillbaka till avgångarna direkt.
@@ -543,14 +548,27 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     var canFollow: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
     private func state(for trip: Trip) -> TripAttributes.ContentState {
-        TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
+        var state = TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode,
                                     minutes: trip.key == atStop?.key ? minutesToDeparture(trip.slackMinutes) : minutesToLeave(trip.slackMinutes),
                                     snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
                                     offerSkip: trip.status == .missed, askingSkip: askingSkip,
                                     weather: trip.key == atStop?.key ? nil : weather(for: trip),
-                                    arrived: trip.key == atStop?.key)
+                                    arrived: trip.key == atStop?.key, arrival: trip.arrival)
+        // På väg: förloppet fylls efter sträckan, i steg som inte fladdrar.
+        if trip.key != atStop?.key, let walking = walking(to: trip.stop) {
+            state.stage = .walking
+            state.walked = (walking.fraction * 50).rounded() / 50
+            state.metersLeft = (walking.left / 10).rounded() * 10
+        }
+        return state
+    }
+
+    /// Hur långt du har kommit mot hållplatsen, om du har börjat gå.
+    private func walking(to stop: Stop) -> (fraction: Double, left: Double)? {
+        guard let walkStage, walkStage != .there, let walkStart, walkStart.stop == stop, let left = stopDistance else { return nil }
+        return (walkedFraction(startMeters: walkStart.meters, leftMeters: left), left)
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
@@ -568,9 +586,9 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     }
 
     func unfollow() {
-        let activity = following
         stopFollowing()
-        Task { await activity?.end(nil, dismissalPolicy: .immediate) }
+        // Även ett kort som ligger kvar under resan, efter att appen slutat följa.
+        Task { for activity in Activity<TripAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) } }
     }
 
     /// Medan du följer en resa håller platsen appen vaken i bakgrunden, så att färgen och minuterna kan bytas.

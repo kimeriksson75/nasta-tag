@@ -78,3 +78,9 @@ public func arrivedMessage(minutes: Int, trainTime: Date) -> DepartureMessage {
 public func boardedHeadline(trainTime: Date, label: String? = nil) -> String {
     Voice.pick(withMoment(Voice.boardedHeadlines, Voice.momentBoarded(label: label, trainTime: trainTime)), seed: trainTime, salt: 22)
 }
+
+/// Orden ombord: trevlig resa, och när du är framme.
+public func boardedMessage(trainTime: Date, arrival: Date?, label: String? = nil) -> DepartureMessage {
+    DepartureMessage(headline: boardedHeadline(trainTime: trainTime, label: label),
+                     wait: stockholmClock(arrival ?? trainTime), caption: "är du framme")
+}

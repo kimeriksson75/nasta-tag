@@ -33,10 +33,18 @@ public struct TripAttributes: ActivityAttributes {
         public var arrived: Bool?
         /// Avgången har gått med dig. Låsskärmen önskar trevlig resa innan den försvinner.
         public var boarded: Bool?
+        /// Skedet i resan, som förloppet följer. Nil i äldre lägen: hemma, eller det `arrived` och `boarded` säger.
+        public var stage: TripStage?
+        /// På väg: hur stor del av vägen till hållplatsen du har gått, och hur långt det är kvar.
+        public var walked: Double?
+        public var metersLeft: Double?
+        /// När du är framme där du ska, för skedet ombord.
+        public var arrival: Date?
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
                     key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil, snoozed: Bool = false,
                     offerSkip: Bool = false, askingSkip: Bool = false, skipped: Bool = false,
-                    weather: Weather? = nil, arrived: Bool = false, boarded: Bool = false) {
+                    weather: Weather? = nil, arrived: Bool = false, boarded: Bool = false,
+                    stage: TripStage? = nil, walked: Double? = nil, metersLeft: Double? = nil, arrival: Date? = nil) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -54,6 +62,17 @@ public struct TripAttributes: ActivityAttributes {
             self.weather = weather
             self.arrived = arrived
             self.boarded = boarded
+            self.stage = stage
+            self.walked = walked
+            self.metersLeft = metersLeft
+            self.arrival = arrival
+        }
+
+        /// Skedet att visa.
+        public var currentStage: TripStage {
+            if boarded == true { return .onboard }
+            if arrived == true { return .atStop }
+            return stage ?? .home
         }
     }
 
