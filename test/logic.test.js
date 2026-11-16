@@ -176,7 +176,19 @@ test('besked: samma ord som i iOS-appen för samma avgång', () => {
   const at = (seconds, status) => departureMessage({ status, slackMinutes: 3.5, time: new Date(seconds * 1000) });
   assert.deepEqual(at(1800000000, 'hurry'), { headline: 'Samla ihop grejerna.', wait: '3 min', caption: 'sen är det dags för' });
   assert.deepEqual(at(1800003600, 'rush'), { headline: 'Iväg med dig!', wait: 'Nu', caption: 'om du ska hinna med' });
-  assert.deepEqual(at(1794721920, 'calm'), { headline: 'Du hinner.', wait: '3 min', caption: 'innan du behöver dra mot' });
+  // En söndag: helgens ord.
+  assert.deepEqual(at(1794721920, 'calm'), { headline: 'Helg, ingen stress.', wait: '3 min', caption: 'innan du behöver dra mot' });
+});
+
+test('besked: ord efter resa och tid, samma som i iOS-appen', () => {
+  // Facit från NastaTagCore (MomentTests.swift): en tisdagskväll hem och en måndagsmorgon till jobbet.
+  const at = (seconds, label) => departureMessage({ status: 'calm', slackMinutes: 9, time: new Date(seconds * 1000) }, label).headline;
+  assert.equal(at(1794931200, 'Hem'), 'Middagen hägrar.');
+  assert.equal(at(1794931440, 'Hem'), 'Soffan väntar.');
+  assert.equal(at(1794812400, 'Jobbet'), 'Ny vecka, nya tåg.');
+  // Bråttom är bråttom, vilken dag det än är.
+  const hurry = departureMessage({ status: 'hurry', slackMinutes: 3, time: new Date(1794931200 * 1000) }, 'Hem').headline;
+  assert.ok(!['Middagen hägrar.', 'Soffan väntar.'].includes(hurry));
 });
 
 test('besked: orden ligger still för samma avgång och varierar mellan avgångar', () => {

@@ -225,15 +225,44 @@ const stockholmHour = (date) => Number(new Intl.DateTimeFormat('sv-SE', {
   hour: 'numeric', hourCycle: 'h23', timeZone: 'Europe/Stockholm',
 }).format(date));
 
-export function headlines(status, time) {
+// Veckodag i Stockholm, 1 är söndag och 7 lördag, som i appen.
+const WEEKDAYS = { Sun: 1, Mon: 2, Tue: 3, Wed: 4, Thu: 5, Fri: 6, Sat: 7 };
+const stockholmWeekday = (date) => WEEKDAYS[new Intl.DateTimeFormat('en-US', {
+  weekday: 'short', timeZone: 'Europe/Stockholm',
+}).format(date)];
+
+// Orden för stunden: vart du ska och när avgången går. Samma som i appen (Moments.swift).
+function momentHeadlines(label, time) {
+  const hour = stockholmHour(time);
+  const day = stockholmWeekday(time);
+  if (day === 7 || day === 1) return ['Helg, ingen stress.'];
+  if (label === 'Jobbet') {
+    if (day === 2) return ['Ny vecka, nya tåg.'];
+    if (day === 6) return ['Fredagsfeeling.'];
+    return hour < 10 ? ['Morgonen är din.'] : [];
+  }
+  if (label === 'Hem') {
+    if (hour >= 21 || hour < 4) return ['Sängen kallar.', 'Kvällen är ung.'];
+    if (day === 6 && hour >= 14) return ['Helgen väntar.', 'Snart helg.'];
+    if (hour >= 16) return ['Soffan väntar.', 'Middagen hägrar.'];
+  }
+  return [];
+}
+
+// Ord för stunden får två platser i listan, så att de syns ungefär hälften av gångerna.
+const withMoment = (list, moment) => [...list, ...moment, ...moment];
+
+export function headlines(status, time, label = null) {
   const list = HEADLINES[status] ?? [];
-  return status === 'calm' && stockholmHour(time) < 10 ? [...list, ...MORNING_HEADLINES] : list;
+  if (status !== 'calm') return list;
+  const morning = stockholmHour(time) < 10 ? MORNING_HEADLINES : [];
+  return withMoment([...list, ...morning], momentHeadlines(label, time));
 }
 
 // Orden följer avgången, så att de inte byts varje gång skärmen ritas om.
 // Minuterna rundas nedåt: hellre en minut för tidigt än ett missat tåg.
-export function departureMessage({ status, slackMinutes, time }) {
-  const headline = pick(headlines(status, time), time, 1);
+export function departureMessage({ status, slackMinutes, time }, label = null) {
+  const headline = pick(headlines(status, time, label), time, 1);
   const wait = status === 'rush' ? pick(RUSH_WORDS, time, 2, headline)
     : status === 'missed' ? '–' : `${Math.max(0, Math.floor(slackMinutes))} min`;
   const caption = pick(CAPTIONS[status] ?? [], time, 3, headline);
@@ -288,7 +317,7 @@ const stockholmClock = new Intl.DateTimeFormat('sv-SE', {
 
 // Påminnelsen: en hel mening, som inte upprepar rubriken.
 export function reminderText(trip, label) {
-  const { headline } = departureMessage(trip);
+  const { headline } = departureMessage(trip, label);
   const minutes = Math.max(0, Math.floor(trip.slackMinutes));
   return pick(trip.status === 'rush' ? RUSH_ALERTS : HURRY_ALERTS, trip.time, 4, headline)
     .replace('{m}', minutes).replace('{n}', tripName(trip, label));
@@ -314,7 +343,7 @@ export function watchSummary({ place, atPlace, trips }) {
   const { next } = pickTrips(trips);
   if (!next) return `Hittar ingen resa du hinner med just nu\n${place.label}`;
   return [
-    `${WATCH_DOTS[next.status]} ${departureMessage(next).headline}`,
+    `${WATCH_DOTS[next.status]} ${departureMessage(next, place.label).headline}`,
     `${stockholmClock.format(next.time)} ${lineText(next)} från ${next.stop.name}`,
     `Gå senast ${stockholmClock.format(next.leaveAt)}, ${Math.max(1, Math.round(next.walkMinutes))} min gång`,
     routeText(next, place.label),

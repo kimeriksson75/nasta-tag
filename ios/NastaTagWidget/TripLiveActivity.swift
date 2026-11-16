@@ -16,7 +16,7 @@ struct TripLiveActivity: Widget {
         } dynamicIsland: { context in
             let state = context.state
             let mood = Mood(state.status)
-            let message = state.message
+            let message = state.message(label: context.attributes.label)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -46,9 +46,9 @@ struct TripLiveActivity: Widget {
 }
 
 extension TripAttributes.ContentState {
-    var message: DepartureMessage {
+    func message(label: String) -> DepartureMessage {
         if arrived == true { return arrivedMessage(minutes: minutes, trainTime: trainTime) }
-        return departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather)
+        return departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather, label: label)
     }
 }
 
@@ -58,12 +58,12 @@ struct LockScreenView: View {
 
     var body: some View {
         let mood = Mood(state.status)
-        let message = state.message
+        let message = state.message(label: label)
         let words = skipWords(label: label, trainTime: state.trainTime, mode: state.mode)
         if state.boarded == true {
             // Tåget gick med dig: trevlig resa, en stund innan låsskärmen släpper.
             VStack(alignment: .leading, spacing: 4) {
-                Text(boardedHeadline(trainTime: state.trainTime)).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                Text(boardedHeadline(trainTime: state.trainTime, label: label)).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                 Text("Med \(tripName(state.trainTime, mode: state.mode, label)).").font(.subheadline).foregroundStyle(mood.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

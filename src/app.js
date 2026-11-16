@@ -412,7 +412,7 @@ function render() {
   renderCompass();
   if ($('walk').open) showWalkStop(next.stop);
   renderReminder();
-  const message = departureMessage(next);
+  const message = departureMessage(next, destination.label);
   setStatus(next.status);
   $('retry').hidden = true;
   $('verdict').textContent = message.headline;

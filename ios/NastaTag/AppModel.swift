@@ -483,7 +483,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Orden för en avgång, med vädret.
     func message(for trip: Trip) -> DepartureMessage {
         if trip.key == atStop?.key { return arrivedMessage(minutes: minutesToDeparture(trip.slackMinutes), trainTime: trip.time) }
-        return departureMessage(trip, weather: weather(for: trip))
+        return departureMessage(trip, weather: weather(for: trip), label: destination?.label)
     }
 
     // MARK: Gången till hållplatsen

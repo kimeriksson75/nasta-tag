@@ -52,7 +52,7 @@ private let times = (0..<480).map { Date(timeIntervalSince1970: 1_800_000_000 + 
 @Test func theVoiceVaries() {
     for status in statuses {
         let seen = Set(times.map { departureMessage(status: status, minutes: 3, trainTime: $0).headline })
-        #expect(seen.count == Voice.headlines[status]!.count + (status == .calm ? 1 : 0), "\(status) visar inte alla rubriker")
+        #expect(Set(Voice.headlines[status]!).isSubset(of: seen), "\(status) visar inte alla rubriker")
     }
     let captions = Set(times.map { departureMessage(status: .hurry, minutes: 3, trainTime: $0).caption })
     #expect(captions.count == Voice.captions[.hurry]!.count)

@@ -93,7 +93,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
         } else if let boarded = model.boarded, let destination = model.destination {
             VStack(spacing: 12) {
-                Text(boardedHeadline(trainTime: boarded.trip.time))
+                Text(boardedHeadline(trainTime: boarded.trip.time, label: destination.label))
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(mood.accent)
                 Text("Med \(tripName(boarded.trip, destination.label)). Framme cirka \(stockholmClock(boarded.trip.arrival)).")

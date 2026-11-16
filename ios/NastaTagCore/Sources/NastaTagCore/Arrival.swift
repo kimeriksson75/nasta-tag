@@ -75,4 +75,6 @@ public func arrivedMessage(minutes: Int, trainTime: Date) -> DepartureMessage {
     return DepartureMessage(headline: headline, wait: wait, caption: caption)
 }
 
-public func boardedHeadline(trainTime: Date) -> String { Voice.pick(Voice.boardedHeadlines, seed: trainTime, salt: 22) }
+public func boardedHeadline(trainTime: Date, label: String? = nil) -> String {
+    Voice.pick(withMoment(Voice.boardedHeadlines, Voice.momentBoarded(label: label, trainTime: trainTime)), seed: trainTime, salt: 22)
+}
