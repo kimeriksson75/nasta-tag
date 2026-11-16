@@ -109,13 +109,14 @@ struct LockScreenView: View {
     }
 
     private func trip(mood: Mood, message: DepartureMessage, words: SkipWords) -> some View {
-        // Låsskärmen ger kortet en begränsad höjd, så avstånden är snålare här än i rutorna ovan.
-        VStack(spacing: 10) {
+        // Låsskärmen ger kortet högst 160 punkter, och blir det högre trycker iOS ihop det och
+        // äter upp marginalerna. Därför står "Gå senast" i förloppet och knapparna är låga.
+        VStack(spacing: 6) {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(message.title).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                     Text(message.wait)
-                        .font(.system(size: 36, weight: .heavy))
+                        .font(.system(size: 30, weight: .heavy))
                         .monospacedDigit()
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
@@ -124,12 +125,8 @@ struct LockScreenView: View {
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(tripName(state.trainTime, mode: state.mode, label)).font(.headline)
-                    Text(state.line).font(.subheadline)
-                    Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
-                    if state.arrived != true && (state.status == .calm || state.status == .hurry) {
-                        Text("Gå senast \(stockholmClock(state.leaveBy))")
-                            .font(.subheadline).foregroundStyle(mood.muted)
-                    }
+                    Text(state.line).font(.subheadline).lineLimit(1)
+                    Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted).lineLimit(1)
                 }
                 .multilineTextAlignment(.trailing)
             }
@@ -165,9 +162,12 @@ struct LeaveBar: View {
     let mood: Mood
 
     var body: some View {
-        let end = state.arrived == true ? state.trainTime : state.leaveBy
+        let arrived = state.arrived == true
+        let end = arrived ? state.trainTime : state.leaveBy
         let start = end.addingTimeInterval(-ringFullMinutes * 60)
-        HStack(spacing: 10) {
+        // Gå senast står i änden av förloppet, där du ska vara när det är fullt.
+        let leaveBy = !arrived && (state.status == .calm || state.status == .hurry)
+        HStack(spacing: 8) {
             ProgressView(timerInterval: start...end, countsDown: false) {
                 EmptyView()
             } currentValueLabel: {
@@ -175,11 +175,17 @@ struct LeaveBar: View {
             }
             .progressViewStyle(.linear)
             .tint(mood.accent)
-            Image(systemName: state.arrived == true ? Mode(state.mode).symbol : "figure.walk")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(mood.accent)
+            .accessibilityHidden(true)
+            HStack(spacing: 4) {
+                Image(systemName: arrived ? Mode(state.mode).symbol : "figure.walk")
+                if leaveBy { Text(stockholmClock(state.leaveBy)).monospacedDigit() }
+            }
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(mood.accent)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(leaveBy ? "Gå senast \(stockholmClock(state.leaveBy))" : "")
+            .accessibilityHidden(!leaveBy)
         }
-        .accessibilityHidden(true)
     }
 }
 
@@ -194,7 +200,7 @@ private struct Pill: View {
             .minimumScaleFactor(0.75)
             .foregroundStyle(primary ? Mood.calm.background : Mood.idle.ink)
             .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity, minHeight: 40)
+            .frame(maxWidth: .infinity, minHeight: 32)
             .background(Capsule().fill(primary ? Mood.calm.accent : Color(hex: "#2A2D34")))
     }
 }
