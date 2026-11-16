@@ -16,6 +16,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private var chosenId: String?
 
     var position: Coordinate?
+    /// Hur osäker positionen är, i meter.
+    private var accuracy: Double = 0
     var heading: Double?
     /// Platsen du står vid, om du är nära någon.
     private(set) var hereId: String?
@@ -42,7 +44,6 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private static let refreshSeconds: TimeInterval = 30
     private static let retrySeconds: TimeInterval = 10
     private static let movedMeters = 40.0 // gå så här långt innan resorna räknas om
-    private static let nearStopMeters = 30.0
 
     override init() {
         let saved = UserDefaults.standard.data(forKey: Self.placesKey)
@@ -93,7 +94,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     private func scheduleEdge() {
         edge?.invalidate()
-        let at = [next?.leaveAt, missed?.until].compactMap { $0 }.filter { $0 > now }.min()
+        let at = [next?.leaveAt, missed?.until, boarded?.until].compactMap { $0 }.filter { $0 > now }.min()
         guard let at, at.timeIntervalSince(now) < 6 else { return }
         edge = Timer.scheduledTimer(withTimeInterval: at.timeIntervalSince(Date()) + 0.05, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -104,6 +105,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         now = Date()
         chooseDestination()
         forgetOldSnoozes()
+        noticeArrival()
         noticeMissed()
         noteWalk()
         if needsWeather { Task { await refreshWeather() } }
@@ -125,7 +127,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last, location.horizontalAccuracy >= 0, location.horizontalAccuracy < 100 else { return }
         let coordinate = Coordinate(lat: location.coordinate.latitude, lon: location.coordinate.longitude)
-        Task { @MainActor in self.onPosition(coordinate) }
+        let accuracy = location.horizontalAccuracy
+        Task { @MainActor in self.onPosition(coordinate, accuracy: accuracy) }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
@@ -139,9 +142,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         Task { @MainActor in self.locationDenied = status == .denied || status == .restricted }
     }
 
-    private func onPosition(_ coordinate: Coordinate) {
+    private func onPosition(_ coordinate: Coordinate, accuracy: Double) {
         let first = position == nil
         position = coordinate
+        self.accuracy = accuracy
         if first { tick() }
     }
 
@@ -153,7 +157,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func chooseDestination() {
         hereId = position.flatMap { placeAt(places, position: $0) }
         guard let next = nextDestination(places, activeId: activeId, hereId: hereId, now: now, chosenId: chosenId) else { return }
-        if next.id != activeId { activeId = next.id; snoozed = nil; missed = nil; shown = nil }
+        if next.id != activeId { activeId = next.id; snoozed = nil; missed = nil; shown = nil; atStop = nil; boarded = nil }
         if let chosenId, chosenId == hereId { self.chosenId = nil }
     }
 
@@ -161,6 +165,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         snoozed = nil
         missed = nil
         shown = nil
+        atStop = nil
+        boarded = nil
         chosenId = place.id
         activeId = place.id
         refreshSoon()
@@ -182,7 +188,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private(set) var snoozed: Trip?
 
     /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
-    var snoozeTarget: Trip? { next.flatMap(target(after:)) }
+    var snoozeTarget: Trip? { atStop == nil ? next.flatMap(target(after:)) : nil }
 
     private func target(after trip: Trip) -> Trip? {
         pickTrips(trips.filter { $0.leaveAt > trip.leaveAt }).next
@@ -192,7 +198,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     var snoozeMinutes: Int? { next.flatMap(snoozeMinutes(for:)) }
 
     private func snoozeMinutes(for trip: Trip) -> Int? {
-        guard let later = target(after: trip) else { return nil }
+        guard atStop == nil, let later = target(after: trip) else { return nil }
         return max(1, Int((later.leaveAt.timeIntervalSince(trip.leaveAt) / 60).rounded()))
     }
 
@@ -211,7 +217,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     func toggleSnoozeFollowed() {
         if snoozed != nil { return toggleSnooze() }
         let followed = following?.content.state.key
-        guard let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
+        guard atStop == nil, let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
         snoozed = trip
         retargetFollowing()
     }
@@ -230,13 +236,63 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// i stället för att appen hoppar direkt till nästa.
     private func noticeMissed() {
         if let missed, now >= missed.until || missed.trip.time < now.addingTimeInterval(-60) { self.missed = nil }
-        if missed == nil, let shown, next?.key != shown.key, shown.leaveAt <= now, !isSkipped {
+        if missed == nil, atStop == nil, boarded == nil, let shown, next?.key != shown.key, shown.leaveAt <= now, !isSkipped {
             var trip = trips.first { $0.key == shown.key } ?? shown
             trip.slackMinutes = trip.leaveAt.timeIntervalSince(now) / 60
             trip.status = .missed
             missed = (trip, now.addingTimeInterval(Self.missedSeconds))
         }
         shown = missed == nil ? next : nil
+    }
+
+    // MARK: Framme
+
+    /// Avgången du står och väntar på vid hållplatsen. Låst, så att appen inte räknar om resan
+    /// från perrongen och byter till ett annat tåg.
+    private(set) var atStop: Trip?
+    /// Avgången som gick med dig, och till när appen önskar trevlig resa.
+    private(set) var boarded: (trip: Trip, until: Date)?
+
+    private func noticeArrival() {
+        if let boarded, now >= boarded.until { self.boarded = nil }
+        if let locked = atStop {
+            // Samma avgång med SL:s senaste tid, om den finns kvar i svaren.
+            let current = trips.first { $0.key == locked.key } ?? locked
+            atStop = current
+            switch stopOutcome(current, position: position, now: now) {
+            case .waiting: return
+            case .left: atStop = nil
+            case .boarded: return board(current)
+            }
+        }
+        guard boarded == nil, !isSkipped, let position else { return }
+        let candidates = trips.filter { trip in snoozed.map { trip.time > $0.time } ?? true }
+        guard let trip = tripAtStop(candidates, position: position, accuracy: accuracy, now: now) else { return }
+        atStop = trips.first { $0.key == trip.key } ?? trip
+        missed = nil
+        shown = nil
+    }
+
+    /// Tåget gick medan du stod vid hållplatsen: du åkte med. Ingen Missad, utan trevlig resa.
+    private func board(_ trip: Trip) {
+        atStop = nil
+        missed = nil
+        snoozed = nil
+        shown = nil
+        boarded = (trip, max(trip.arrival, now.addingTimeInterval(5 * 60)))
+        guard let activity = following else { return }
+        var last = state(for: arrivedTrip(trip, now: now))
+        last.arrived = false
+        last.boarded = true
+        last.status = .calm
+        stopFollowing()
+        Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(3 * 60))) }
+    }
+
+    /// Tillbaka till avgångarna direkt.
+    func dismissBoarded() {
+        boarded = nil
+        shown = nil
     }
 
     /// Gå vidare till nästa avgång direkt.
@@ -325,7 +381,11 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         Task { await activity.update(.init(state: state(for: next), staleDate: next.time)) }
     }
 
-    var next: Trip? { picked.next }
+    /// Vid hållplatsen den låsta avgången, räknad till när den går. Annars den bästa resan.
+    var next: Trip? {
+        if let atStop { return arrivedTrip(atStop, now: now) }
+        return picked.next
+    }
     var later: [Trip] { Array(picked.later.prefix(3)).sorted { $0.time < $1.time } }
 
     /// Det som står i stället för resan när något saknas.
@@ -362,6 +422,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         }
         // Samma ordning som ticket: en avgång som just gick ut blir missad innan nästa visas.
         now = Date()
+        noticeArrival()
         noticeMissed()
         updateFollowing()
     }
@@ -420,19 +481,20 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     }
 
     /// Orden för en avgång, med vädret.
-    func message(for trip: Trip) -> DepartureMessage { departureMessage(trip, weather: weather(for: trip)) }
+    func message(for trip: Trip) -> DepartureMessage {
+        if trip.key == atStop?.key { return arrivedMessage(minutes: minutesToDeparture(trip.slackMinutes), trainTime: trip.time) }
+        return departureMessage(trip, weather: weather(for: trip))
+    }
 
     // MARK: Gången till hållplatsen
 
     /// Hållplatsen där nästa resa börjar.
     var stop: Stop? { next?.stop }
 
-    /// Gångvägens längd när den finns, annars fågelvägen. Nil när du redan står där.
+    /// Gångvägen som är kvar, räknad om för varje ny position. Nil när du är framme.
     var stopDistance: Double? {
-        guard let next, let position else { return nil }
-        let straight = distanceMeters(position, next.stop.coordinate)
-        guard straight >= Self.nearStopMeters else { return nil }
-        return next.walkMeters > 0 ? next.walkMeters : straight
+        guard let next, let position, atStop == nil, !isAtStop(position, next.stop, accuracy: accuracy) else { return nil }
+        return walkLeft(position: position, stop: next.stop, walkMeters: next.walkMeters, fetchedFrom: fetchedFrom)
     }
 
     /// Hur långt det var till hållplatsen när du började gå mot den, så att kartan kan heja efter
@@ -483,9 +545,12 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     private func state(for trip: Trip) -> TripAttributes.ContentState {
         TripAttributes.ContentState(status: trip.status, leaveBy: trip.leaveAt, trainTime: trip.time,
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
-                                    key: trip.key, mode: trip.mode, minutes: minutesToLeave(trip.slackMinutes),
+                                    key: trip.key, mode: trip.mode,
+                                    minutes: trip.key == atStop?.key ? minutesToDeparture(trip.slackMinutes) : minutesToLeave(trip.slackMinutes),
                                     snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
-                                    offerSkip: trip.status == .missed, askingSkip: askingSkip, weather: weather(for: trip))
+                                    offerSkip: trip.status == .missed, askingSkip: askingSkip,
+                                    weather: trip.key == atStop?.key ? nil : weather(for: trip),
+                                    arrived: trip.key == atStop?.key)
     }
 
     /// Visar resan på låsskärmen och i Dynamic Island tills den har gått.
@@ -530,6 +595,15 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard let activity = following else { return }
         guard activity.activityState == .active else { return stopFollowing() }
         let followed = activity.content.state
+        // Vid hållplatsen följer låsskärmen avgången du väntar på och räknar ner till den.
+        if let trip = next, trip.key == atStop?.key {
+            followedMissedUntil = nil
+            followedStatus = trip.status
+            let state = state(for: trip)
+            guard state != followed else { return }
+            Task { await activity.update(.init(state: state, staleDate: trip.time.addingTimeInterval(120))) }
+            return
+        }
         let known = buildTrips((journeys ?? []) + followedJourneys, now: now, walkFactor: walkFactor)
         // Missad men inte avgången än: låsskärmen visar det en stund, med knappen, och följer sedan nästa.
         if let trip = known.first(where: { $0.key == followed.key }), trip.status == .missed {

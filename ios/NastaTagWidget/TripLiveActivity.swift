@@ -36,7 +36,7 @@ struct TripLiveActivity: Widget {
             } compactLeading: {
                 Circle().fill(mood.accent).frame(width: 12, height: 12)
             } compactTrailing: {
-                Text(state.status == .rush ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
+                Text(state.status == .rush && state.arrived != true ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
             } minimal: {
                 Circle().fill(mood.accent).frame(width: 12, height: 12)
             }
@@ -46,7 +46,10 @@ struct TripLiveActivity: Widget {
 }
 
 extension TripAttributes.ContentState {
-    var message: DepartureMessage { departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather) }
+    var message: DepartureMessage {
+        if arrived == true { return arrivedMessage(minutes: minutes, trainTime: trainTime) }
+        return departureMessage(status: status, minutes: minutes, trainTime: trainTime, weather: weather)
+    }
 }
 
 struct LockScreenView: View {
@@ -57,7 +60,17 @@ struct LockScreenView: View {
         let mood = Mood(state.status)
         let message = state.message
         let words = skipWords(label: label, trainTime: state.trainTime, mode: state.mode)
-        if state.skipped == true {
+        if state.boarded == true {
+            // Tåget gick med dig: trevlig resa, en stund innan låsskärmen släpper.
+            VStack(alignment: .leading, spacing: 4) {
+                Text(boardedHeadline(trainTime: state.trainTime)).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                Text("Med \(tripName(state.trainTime, mode: state.mode, label)).").font(.subheadline).foregroundStyle(mood.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(mood.ink)
+            .fontDesign(.rounded)
+            .padding(20)
+        } else if state.skipped == true {
             // Efter Ja!: samma ord som i appen, en stund innan resan försvinner.
             VStack(alignment: .leading, spacing: 4) {
                 Text(words.done).font(.headline.weight(.heavy))
@@ -107,7 +120,7 @@ struct LockScreenView: View {
                     Text(tripName(state.trainTime, mode: state.mode, label)).font(.headline)
                     Text(state.line).font(.subheadline)
                     Text("Från \(state.station)").font(.subheadline).foregroundStyle(mood.muted)
-                    if state.status == .calm || state.status == .hurry {
+                    if state.arrived != true && (state.status == .calm || state.status == .hurry) {
                         Text("Gå senast \(stockholmClock(state.leaveBy))")
                             .font(.subheadline).foregroundStyle(mood.muted)
                     }

@@ -10,7 +10,8 @@ struct ContentView: View {
     @State private var askSkip = false
 
     private var mood: Mood {
-        Mood(model.blocker == nil && !model.isSkipped && model.missed == nil ? model.next?.status : nil)
+        if model.boarded != nil && !model.isSkipped { return Mood(.calm) }
+        return Mood(model.blocker == nil && !model.isSkipped && model.missed == nil ? model.next?.status : nil)
     }
 
     var body: some View {
@@ -90,6 +91,19 @@ struct ContentView: View {
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
+        } else if let boarded = model.boarded, let destination = model.destination {
+            VStack(spacing: 12) {
+                Text(boardedHeadline(trainTime: boarded.trip.time))
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(mood.accent)
+                Text("Med \(tripName(boarded.trip, destination.label)). Framme cirka \(stockholmClock(boarded.trip.arrival)).")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
+                Button("Visa avgångar") { model.dismissBoarded() }
+                    .buttonStyle(Outline(mood: mood))
+                    .padding(.top, 12)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
         } else if model.blocker == nil, let missed = model.missed, let destination = model.destination {
             missedView(missed.trip, until: missed.until, destination: destination)
         } else if let blocker = model.blocker {
@@ -142,7 +156,11 @@ struct ContentView: View {
                 }
                 .frame(height: SnoozeToggle.height)
                 .padding(.top, 12)
+                // Vid hållplatsen finns inget att strunta i, men länken har kvar sin plats.
                 skipLink
+                    .opacity(model.atStop == nil ? 1 : 0)
+                    .allowsHitTesting(model.atStop == nil)
+                    .accessibilityHidden(model.atStop != nil)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
@@ -269,7 +287,7 @@ struct ContentView: View {
 
     private var bottom: some View {
         VStack(spacing: 12) {
-            if model.blocker == nil && !model.isSkipped {
+            if model.blocker == nil && !model.isSkipped && model.boarded == nil {
                 // När avgången är missad finns kortet och knappen kvar men syns inte,
                 // så att de tar exakt samma plats som vanligt och inget hoppar.
                 let hidden = model.missed != nil
