@@ -26,6 +26,11 @@ struct TripLiveActivity: Widget {
                     .foregroundStyle(mood.accent)
                     .padding(.leading, 4)
                 }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if state.status != .missed {
+                        LeaveBar(state: state, mood: mood).padding(.horizontal, 4)
+                    }
+                }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(tripName(state.trainTime, mode: state.mode, context.attributes.label)).font(.subheadline.weight(.bold))
@@ -104,12 +109,13 @@ struct LockScreenView: View {
     }
 
     private func trip(mood: Mood, message: DepartureMessage, words: SkipWords) -> some View {
-        VStack(spacing: 14) {
+        // Låsskärmen ger kortet en begränsad höjd, så avstånden är snålare här än i rutorna ovan.
+        VStack(spacing: 10) {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(message.title).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
                     Text(message.wait)
-                        .font(.system(size: 44, weight: .heavy))
+                        .font(.system(size: 36, weight: .heavy))
                         .monospacedDigit()
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
@@ -127,6 +133,9 @@ struct LockScreenView: View {
                 }
                 .multilineTextAlignment(.trailing)
             }
+            if state.status != .missed {
+                LeaveBar(state: state, mood: mood)
+            }
             HStack(spacing: 8) {
                 if state.status == .missed {
                     Button(intent: AskSkipIntent()) { Pill(text: words.button) }
@@ -143,7 +152,34 @@ struct LockScreenView: View {
         }
         .foregroundStyle(mood.ink)
         .fontDesign(.rounded)
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+}
+
+/// Förloppet fram till att du ska gå, som en bil på väg i en taxiapp. Det fylls de sista
+/// femton minuterna, samma tid som ringen i appen töms på, och iOS flyttar det själv utan
+/// att appen behöver skicka något. Vid hållplatsen fylls det fram till avgången, med tåget i änden.
+struct LeaveBar: View {
+    let state: TripAttributes.ContentState
+    let mood: Mood
+
+    var body: some View {
+        let end = state.arrived == true ? state.trainTime : state.leaveBy
+        let start = end.addingTimeInterval(-ringFullMinutes * 60)
+        HStack(spacing: 10) {
+            ProgressView(timerInterval: start...end, countsDown: false) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
+            }
+            .progressViewStyle(.linear)
+            .tint(mood.accent)
+            Image(systemName: state.arrived == true ? Mode(state.mode).symbol : "figure.walk")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(mood.accent)
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -158,7 +194,7 @@ private struct Pill: View {
             .minimumScaleFactor(0.75)
             .foregroundStyle(primary ? Mood.calm.background : Mood.idle.ink)
             .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 40)
             .background(Capsule().fill(primary ? Mood.calm.accent : Color(hex: "#2A2D34")))
     }
 }
