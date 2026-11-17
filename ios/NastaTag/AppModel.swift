@@ -21,7 +21,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     var heading: Double?
     /// Platsen du står vid, om du är nära någon.
     private(set) var hereId: String?
-    private var journeys: [Journey]?
+    private var journeys: [Journey]? { didSet { journeysVersion += 1 } }
+    @ObservationIgnored private var journeysVersion = 0
     /// Resor som börjar vid den följda avgången, ifall den har fallit ur de vanliga resultaten.
     private var followedJourneys: [Journey] = []
     var problem: String?
@@ -177,7 +178,15 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     // MARK: Resor
 
-    private var trips: [Trip] { buildTrips(journeys ?? [], now: now, walkFactor: walkFactor) }
+    /// Resorna byggs en gång per hämtning och tick, inte varje gång skärmen frågar efter dem.
+    @ObservationIgnored private var tripsCache: (version: Int, now: Date, factor: Double, trips: [Trip])?
+    private var trips: [Trip] {
+        let journeys = journeys, now = now, factor = walkFactor
+        if let cache = tripsCache, cache.version == journeysVersion, cache.now == now, cache.factor == factor { return cache.trips }
+        let trips = buildTrips(journeys ?? [], now: now, walkFactor: factor)
+        tripsCache = (journeysVersion, now, factor, trips)
+        return trips
+    }
     private var picked: (next: Trip?, later: [Trip]) {
         pickTrips(trips.filter { trip in snoozed.map { trip.leaveAt > $0.leaveAt } ?? true })
     }

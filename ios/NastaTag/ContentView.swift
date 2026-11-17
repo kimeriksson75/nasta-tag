@@ -305,10 +305,11 @@ struct ContentView: View {
                 .allowsHitTesting(!hidden)
                 .accessibilityHidden(hidden)
             }
-            if let fetchedAt = model.fetchedAt {
-                Text("Uppdaterad \(fetchedAt.formatted(date: .omitted, time: .shortened))")
-                    .font(.footnote).foregroundStyle(mood.muted)
-            }
+            // Raden har alltid sin plats, så att inget ovanför flyttar sig när den dyker upp.
+            Text("Uppdaterad \((model.fetchedAt ?? .now).formatted(date: .omitted, time: .shortened))")
+                .font(.footnote).foregroundStyle(mood.muted)
+                .opacity(model.fetchedAt == nil ? 0 : 1)
+                .accessibilityHidden(model.fetchedAt == nil)
         }
     }
 

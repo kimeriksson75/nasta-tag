@@ -118,12 +118,18 @@ public struct Journey: Decodable, Sendable {
 
 struct JourneysResponse: Decodable { var journeys: [Journey]? }
 
+/// Tolkarna görs en gång: att skapa dem är dyrt, och tiderna läses många gånger per bild.
+/// Apples datumformaterare tål att användas från flera trådar.
+nonisolated(unsafe) private let slParser = ISO8601DateFormatter()
+nonisolated(unsafe) private let slFractionParser: ISO8601DateFormatter = {
+    let parser = ISO8601DateFormatter()
+    parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return parser
+}()
+
 private func slDate(_ text: String?) -> Date? {
     guard let text else { return nil }
-    let parser = ISO8601DateFormatter()
-    if let date = parser.date(from: text) { return date }
-    parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return parser.date(from: text)
+    return slParser.date(from: text) ?? slFractionParser.date(from: text)
 }
 
 private func isWalk(_ leg: Journey.Leg) -> Bool { Mode.isWalk(leg.transportation?.product?.productClass) }

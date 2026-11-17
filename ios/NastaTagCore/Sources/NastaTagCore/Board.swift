@@ -134,11 +134,7 @@ public func tripName(_ trip: Trip, _ label: String) -> String { tripName(trip.ti
 
 /// Klockslag i Stockholmstid, oavsett vilken tidszon telefonen står i.
 public func stockholmClock(_ date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "sv_SE")
-    formatter.timeZone = TimeZone(identifier: "Europe/Stockholm")
-    formatter.dateFormat = "HH:mm"
-    return formatter.string(from: date)
+    clockFormatter.string(from: date)
 }
 
 /// Notisen när läget skärps: en hel mening, som inte upprepar rubriken den står under.
@@ -213,9 +209,15 @@ public func skipWords(label: String, trainTime: Date, mode: Int) -> SkipWords {
 
 /// Dagen i Stockholm, "2026-11-15", så att ett "strunta i det" gäller till midnatt.
 public func stockholmDay(_ date: Date) -> String {
+    dayFormatter.string(from: date)
+}
+
+private func stockholmFormatter(_ format: String) -> DateFormatter {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "sv_SE")
     formatter.timeZone = TimeZone(identifier: "Europe/Stockholm")
-    formatter.dateFormat = "yyyy-MM-dd"
-    return formatter.string(from: date)
+    formatter.dateFormat = format
+    return formatter
 }
+nonisolated(unsafe) private let clockFormatter = stockholmFormatter("HH:mm")
+nonisolated(unsafe) private let dayFormatter = stockholmFormatter("yyyy-MM-dd")
