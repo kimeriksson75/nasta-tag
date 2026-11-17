@@ -186,6 +186,11 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     /// Avgången du har snoozat. Bara en åt gången: Snooze-knappen slår av och på.
     private(set) var snoozed: Trip?
+    /// Avgången du snoozade till. Snoozen står kvar så länge den är din, även när den du hoppade över har gått.
+    private var snoozedTo: String?
+
+    /// Ångra går bara så länge du hinner med avgången du hoppade över.
+    var canUndoSnooze: Bool { snoozed.map { $0.leaveAt > now } ?? false }
 
     /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
     var snoozeTarget: Trip? { atStop == nil ? next.flatMap(target(after:)) : nil }
@@ -205,10 +210,12 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Snoozar avgången du har nu, eller ångrar snoozen om du redan har en.
     func toggleSnooze() {
         if snoozed != nil {
+            guard canUndoSnooze else { return }
             snoozed = nil
         } else {
             guard let next, snoozeTarget != nil else { return }
             snoozed = next
+            snoozedTo = self.next?.key
         }
         retargetFollowing()
     }
@@ -219,6 +226,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         let followed = following?.content.state.key
         guard atStop == nil, let trip = trips.first(where: { $0.key == followed }) ?? next, target(after: trip) != nil else { return }
         snoozed = trip
+        snoozedTo = next?.key
         retargetFollowing()
     }
 
@@ -373,9 +381,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         UserDefaults.standard.removeObject(forKey: Self.skipKey)
     }
 
-    /// En snooze glöms när avgången du hoppade över har gått, då finns inget att ångra.
+    /// En snooze glöms först när avgången du snoozade till inte är din längre. Glömdes den när
+    /// avgången du hoppade över gick, bytte knappen av sig själv från Ångra snooze till Snooze.
     private func forgetOldSnoozes() {
-        if let snoozed, snoozed.time < now { self.snoozed = nil }
+        if let snoozed, snoozed.time < now, next?.key != snoozedTo { self.snoozed = nil }
     }
 
     /// Följer du en resa på låsskärmen följer låsskärmen med till den nya.
@@ -552,7 +561,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
                                     line: trip.lineText, towards: trip.towards, station: trip.stop.name,
                                     key: trip.key, mode: trip.mode,
                                     minutes: trip.key == atStop?.key ? minutesToDeparture(trip.slackMinutes) : minutesToLeave(trip.slackMinutes),
-                                    snoozeMinutes: snoozeMinutes(for: trip), snoozed: snoozed != nil,
+                                    snoozeMinutes: snoozed == nil ? snoozeMinutes(for: trip) : nil, snoozed: canUndoSnooze,
                                     offerSkip: trip.status == .missed, askingSkip: askingSkip,
                                     weather: trip.key == atStop?.key ? nil : weather(for: trip),
                                     arrived: trip.key == atStop?.key, arrival: trip.arrival)

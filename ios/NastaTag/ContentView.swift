@@ -143,9 +143,12 @@ struct ContentView: View {
                     .padding(.top, 4)
                 Group {
                 if let skipped = model.snoozed {
+                    // När avgången du hoppade över har gått finns inget att ångra, men snoozen står kvar.
                     Button("Ångra snooze") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: true))
-                        .accessibilityLabel("Ångra snooze, ta \(stockholmClock(skipped.time)) igen")
+                        .disabled(!model.canUndoSnooze)
+                        .opacity(model.canUndoSnooze ? 1 : 0.4)
+                        .accessibilityLabel(model.canUndoSnooze ? "Ångra snooze, ta \(stockholmClock(skipped.time)) igen" : "Snoozad, \(stockholmClock(skipped.time)) har gått")
                 } else if let minutes = model.snoozeMinutes {
                     Button("Snooze \(minutes) min") { model.toggleSnooze() }
                         .buttonStyle(SnoozeToggle(mood: mood, on: false))
