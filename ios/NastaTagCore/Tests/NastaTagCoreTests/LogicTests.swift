@@ -114,10 +114,12 @@ private func journeys() throws -> [Journey] {
     #expect(sentence(.missed, 0) == "– ta nästa efter \(name)")
 }
 
-/// Tåget är 33 minuter sent men SL har kvar gångens gamla tider: ankomsten ska ändå bli efter tåget.
+/// Tåget är 33 minuter sent men SL har kvar gångens gamla tider: du ska gå efter det sena tåget
+/// och vara framme efter att det kommit fram.
 @Test func arrivalFollowsLateTrain() throws {
-    func point(_ name: String, dep: String? = nil, arr: String? = nil) -> String {
+    func point(_ name: String, dep: String? = nil, depEstimated: String? = nil, arr: String? = nil) -> String {
         "{\"name\":\"\(name)\",\"coord\":[59.33,18.06]" + (dep.map { ",\"departureTimePlanned\":\"\($0)\"" } ?? "")
+            + (depEstimated.map { ",\"departureTimeEstimated\":\"\($0)\"" } ?? "")
             + (arr.map { ",\"arrivalTimePlanned\":\"\($0)\"" } ?? "") + "}"
     }
     let walk = "{\"product\":{\"class\":99}}"
@@ -125,11 +127,14 @@ private func journeys() throws -> [Journey] {
     let json = """
     {"journeys":[{"legs":[
       {"transportation":\(walk),"origin":\(point("Hemma", dep: "2026-11-17T13:30:12Z")),"destination":\(point("T-Centralen", arr: "2026-11-17T13:40:12Z"))},
-      {"transportation":\(train),"origin":\(point("T-Centralen", dep: "2026-11-17T14:13:06Z")),"destination":\(point("Gubbängen", arr: "2026-11-17T14:30:00Z"))},
+      {"transportation":\(train),"origin":\(point("T-Centralen", dep: "2026-11-17T13:40:12Z", depEstimated: "2026-11-17T14:13:06Z")),"destination":\(point("Gubbängen", arr: "2026-11-17T14:30:00Z"))},
       {"transportation":\(walk),"origin":\(point("Gubbängen", dep: "2026-11-17T13:58:18Z")),"destination":\(point("Knektvägen", arr: "2026-11-17T14:02:18Z"))}
     ]}]}
     """
     let journey = try #require(try JSONDecoder().decode(JourneysResponse.self, from: Data(json.utf8)).journeys?.first)
     let trip = try #require(parseJourney(journey))
     #expect(trip.arrival == ISO8601DateFormatter().date(from: "2026-11-17T14:34:00Z"))
+    // Gå tio minuter före det sena tåget, inte enligt tidtabellen.
+    #expect(trip.leaveAt == ISO8601DateFormatter().date(from: "2026-11-17T14:03:06Z"))
+    #expect(trip.walkMinutes == 10)
 }

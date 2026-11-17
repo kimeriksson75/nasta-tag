@@ -140,6 +140,15 @@ private func arrivalTime(_ legs: [Journey.Leg]) -> Date? {
     return landed.addingTimeInterval(walk)
 }
 
+/// När du ska gå. SL räknar gången från tidtabellen även när fordonet är sent, så ett tåg som går
+/// en halvtimme senare skulle säga åt dig att gå nu. Därför behålls tidtabellens avstånd mellan
+/// att gå och avgången, räknat från när fordonet faktiskt går.
+private func leaveTime(_ legs: [Journey.Leg], ride: Int, time: Date) -> Date? {
+    guard let planned = slDate(legs[ride].origin.departureTimePlanned),
+          let start = slDate(legs[0].origin.departureTimePlanned) else { return nil }
+    return time.addingTimeInterval(-max(0, planned.timeIntervalSince(start)))
+}
+
 /// Inställda resor och resor utan fordon räknas inte.
 public func parseJourney(_ journey: Journey) -> Trip? {
     let legs = journey.legs
@@ -147,8 +156,8 @@ public func parseJourney(_ journey: Journey) -> Trip? {
           !legs.contains(where: { ($0.realtimeStatus ?? []).contains { $0.contains("CANCELLED") } }),
           let transportation = legs[ride].transportation,
           let first = legs.first, let last = legs.last,
-          let leaveAt = first.origin.departure,
           let time = legs[ride].origin.departure,
+          let leaveAt = leaveTime(legs, ride: ride, time: time) ?? first.origin.departure,
           let arrival = arrivalTime(legs) ?? last.destination.arrival,
           let coord = legs[ride].origin.parent?.coord ?? legs[ride].origin.coord, coord.count == 2
     else { return nil }
