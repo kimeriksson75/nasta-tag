@@ -140,6 +140,24 @@ private func arrivalTime(_ legs: [Journey.Leg]) -> Date? {
     return landed.addingTimeInterval(walk)
 }
 
+/// Hinns varje byte? SL flyttar fram ett sent fordon men behåller nästa fordon i tidtabellen,
+/// så en resa kan kräva att du kliver på en buss som gick innan tåget var framme. Gången
+/// följer med dig, så den räknas från när du faktiskt är där. En minut fick räcka för marginaler.
+func connectionsHold(_ legs: [Journey.Leg]) -> Bool {
+    // Gången fram till första fordonet räknas om från dess avgång, så där finns inget att hinna.
+    var ready: Date?
+    for leg in legs {
+        guard let start = leg.origin.departure, let end = leg.destination.arrival else { continue }
+        if isWalk(leg) {
+            ready = ready.map { max($0, start).addingTimeInterval(max(0, end.timeIntervalSince(start))) }
+        } else {
+            if let ready, start < ready.addingTimeInterval(-60) { return false }
+            ready = end
+        }
+    }
+    return true
+}
+
 /// När du ska gå. SL räknar gången från tidtabellen även när fordonet är sent, så ett tåg som går
 /// en halvtimme senare skulle säga åt dig att gå nu. Därför behålls tidtabellens avstånd mellan
 /// att gå och avgången, räknat från när fordonet faktiskt går.
@@ -161,6 +179,8 @@ public func parseJourney(_ journey: Journey) -> Trip? {
           let arrival = arrivalTime(legs) ?? last.destination.arrival,
           let coord = legs[ride].origin.parent?.coord ?? legs[ride].origin.coord, coord.count == 2
     else { return nil }
+    // En resa vars byte inte längre går att hinna, eller vars tider inte hänger ihop, visas inte.
+    guard connectionsHold(legs), leaveAt <= time, time < arrival else { return nil }
     let origin = legs[ride].origin
     return Trip(
         key: "\(transportation.id ?? "")|\(origin.departureTimePlanned ?? "")",

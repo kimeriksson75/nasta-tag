@@ -155,6 +155,14 @@ public func tripPhrase(_ label: String) -> String {
     ["Hem": "hem", "Jobbet": "till jobbet"][label] ?? "till \(label)"
 }
 
+/// Raden under resan: linjen, hållplatsen, bytena och när du är framme. Riktningen behövs först
+/// vid perrongen, så hemma och på väg får ankomsten dess plats och raden blir inte längre.
+public func tripLine(_ trip: Trip, label: String?, atStop: Bool) -> String {
+    let line = atStop ? trip.lineText : "\(Mode(trip.mode).line) \(trip.line)"
+    return (["\(line) från \(trip.stop.name)"] + trip.transfers.map { "byte \($0)" }
+        + [arrivalPhrase(label, arrival: trip.arrival)]).joined(separator: " · ")
+}
+
 /// När du är framme, med platsens ord: "hemma 08:02", "på jobbet 08:02", annars "framme 08:02".
 public func arrivalPhrase(_ label: String?, arrival: Date) -> String {
     let words = label.flatMap { ["Hem": "hemma", "Jobbet": "på jobbet"][$0] } ?? "framme"
