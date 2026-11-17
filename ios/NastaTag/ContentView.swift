@@ -285,8 +285,12 @@ struct ContentView: View {
         }
     }
 
+    /// Linjen, hållplatsen, bytena och när du är framme. Riktningen behövs först vid perrongen,
+    /// så hemma och på väg får ankomsten dess plats och raden blir inte längre.
     private func lineText(_ trip: Trip) -> String {
-        ([trip.lineText, "från \(trip.stop.name)"] + trip.transfers.map { "byte \($0)" }).joined(separator: " · ")
+        let line = trip.key == model.atStop?.key ? trip.lineText : "\(Mode(trip.mode).line) \(trip.line)"
+        return (["\(line) från \(trip.stop.name)"] + trip.transfers.map { "byte \($0)" }
+            + [arrivalPhrase(model.destination?.label, arrival: trip.arrival)]).joined(separator: " · ")
     }
 
     // MARK: Nederst: vägen dit, Snooze och låsskärmen

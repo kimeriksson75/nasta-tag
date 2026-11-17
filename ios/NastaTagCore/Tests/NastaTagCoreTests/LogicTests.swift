@@ -64,6 +64,10 @@ private func journeys() throws -> [Journey] {
     #expect(nextDestination([home, work], activeId: "h", hereId: placeAt([home, work], position: Coordinate(lat: 59.2630, lon: 18.0820)), now: wednesday)?.id == "w")
     #expect(nextDestination([home, work], activeId: "h", hereId: placeAt([home, work], position: Coordinate(lat: 59.2630, lon: 18.0820)), now: saturday)?.id == "h")
     #expect(tripPhrase("Jobbet") == "till jobbet")
+    let arrival = ISO8601DateFormatter().date(from: "2026-11-11T07:02:00Z")!
+    #expect(arrivalPhrase("Hem", arrival: arrival) == "hemma 08:02")
+    #expect(arrivalPhrase("Jobbet", arrival: arrival) == "på jobbet 08:02")
+    #expect(arrivalPhrase("Gymmet", arrival: arrival) == "framme 08:02")
 }
 
 @Test func stockholmBox() {
@@ -108,4 +112,24 @@ private func journeys() throws -> [Journey] {
     }
     #expect(sentence(.calm, 8).hasPrefix("8 min "))
     #expect(sentence(.missed, 0) == "– ta nästa efter \(name)")
+}
+
+/// Tåget är 33 minuter sent men SL har kvar gångens gamla tider: ankomsten ska ändå bli efter tåget.
+@Test func arrivalFollowsLateTrain() throws {
+    func point(_ name: String, dep: String? = nil, arr: String? = nil) -> String {
+        "{\"name\":\"\(name)\",\"coord\":[59.33,18.06]" + (dep.map { ",\"departureTimePlanned\":\"\($0)\"" } ?? "")
+            + (arr.map { ",\"arrivalTimePlanned\":\"\($0)\"" } ?? "") + "}"
+    }
+    let walk = "{\"product\":{\"class\":99}}"
+    let train = "{\"id\":\"t18\",\"disassembledName\":\"18\",\"product\":{\"class\":2},\"destination\":{\"name\":\"Farsta strand\"}}"
+    let json = """
+    {"journeys":[{"legs":[
+      {"transportation":\(walk),"origin":\(point("Hemma", dep: "2026-11-17T13:30:12Z")),"destination":\(point("T-Centralen", arr: "2026-11-17T13:40:12Z"))},
+      {"transportation":\(train),"origin":\(point("T-Centralen", dep: "2026-11-17T14:13:06Z")),"destination":\(point("Gubbängen", arr: "2026-11-17T14:30:00Z"))},
+      {"transportation":\(walk),"origin":\(point("Gubbängen", dep: "2026-11-17T13:58:18Z")),"destination":\(point("Knektvägen", arr: "2026-11-17T14:02:18Z"))}
+    ]}]}
+    """
+    let journey = try #require(try JSONDecoder().decode(JourneysResponse.self, from: Data(json.utf8)).journeys?.first)
+    let trip = try #require(parseJourney(journey))
+    #expect(trip.arrival == ISO8601DateFormatter().date(from: "2026-11-17T14:34:00Z"))
 }

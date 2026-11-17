@@ -155,6 +155,12 @@ public func tripPhrase(_ label: String) -> String {
     ["Hem": "hem", "Jobbet": "till jobbet"][label] ?? "till \(label)"
 }
 
+/// När du är framme, med platsens ord: "hemma 08:02", "på jobbet 08:02", annars "framme 08:02".
+public func arrivalPhrase(_ label: String?, arrival: Date) -> String {
+    let words = label.flatMap { ["Hem": "hemma", "Jobbet": "på jobbet"][$0] } ?? "framme"
+    return "\(words) \(stockholmClock(arrival))"
+}
+
 // MARK: Strunta i resan
 
 /// Orden när du redan har snoozat och hellre struntar i resan idag. Appen håller med, den ifrågasätter inte.

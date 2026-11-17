@@ -128,6 +128,18 @@ private func slDate(_ text: String?) -> Date? {
 
 private func isWalk(_ leg: Journey.Leg) -> Bool { Mode.isWalk(leg.transportation?.product?.productClass) }
 
+/// När du är framme. SL flyttar fram fordonens tider när de är sena, men inte gången efteråt,
+/// så sista benets ankomst kan ligga före avgången. Därför räknas ankomsten från när sista
+/// fordonet är framme, plus hur lång gången därifrån är.
+private func arrivalTime(_ legs: [Journey.Leg]) -> Date? {
+    guard let ride = legs.lastIndex(where: { !isWalk($0) }), let landed = legs[ride].destination.arrival else { return nil }
+    let walk = legs[(ride + 1)...].reduce(0.0) { total, leg in
+        guard let from = leg.origin.departure, let to = leg.destination.arrival else { return total }
+        return total + max(0, to.timeIntervalSince(from))
+    }
+    return landed.addingTimeInterval(walk)
+}
+
 /// Inställda resor och resor utan fordon räknas inte.
 public func parseJourney(_ journey: Journey) -> Trip? {
     let legs = journey.legs
@@ -137,7 +149,7 @@ public func parseJourney(_ journey: Journey) -> Trip? {
           let first = legs.first, let last = legs.last,
           let leaveAt = first.origin.departure,
           let time = legs[ride].origin.departure,
-          let arrival = last.destination.arrival,
+          let arrival = arrivalTime(legs) ?? last.destination.arrival,
           let coord = legs[ride].origin.parent?.coord ?? legs[ride].origin.coord, coord.count == 2
     else { return nil }
     let origin = legs[ride].origin

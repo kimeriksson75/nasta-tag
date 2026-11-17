@@ -264,6 +264,17 @@ struct StageBar: View {
             }
             .font(.footnote.weight(.bold))
             .foregroundStyle(mood.accent)
+            // Längst ut målet och när du är där, dämpat: resten av resan, inte det du gör nu.
+            // Ombord är det redan det stora på kortet.
+            if stage != .onboard, let arrival = state.arrival {
+                HStack(spacing: 4) {
+                    Image(systemName: destinationSymbol(label: label, trainTime: state.trainTime))
+                    Text(stockholmClock(arrival)).monospacedDigit()
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(mood.muted)
+                .padding(.leading, 4)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibility(stage))
@@ -282,11 +293,15 @@ struct StageBar: View {
 
     private func accessibility(_ stage: TripStage) -> String {
         switch stage {
-        case .home: "Gå senast \(stockholmClock(state.leaveBy))"
-        case .walking: state.metersLeft.map { "\(metersText($0)) kvar till \(state.station)" } ?? "På väg till \(state.station)"
-        case .atStop: "Avgår \(stockholmClock(state.trainTime))"
+        case .home: "Gå senast \(stockholmClock(state.leaveBy))" + arrivalSuffix
+        case .walking: (state.metersLeft.map { "\(metersText($0)) kvar till \(state.station)" } ?? "På väg till \(state.station)") + arrivalSuffix
+        case .atStop: "Avgår \(stockholmClock(state.trainTime))" + arrivalSuffix
         case .onboard: "Framme cirka \(stockholmClock(state.arrival ?? state.trainTime))"
         }
+    }
+
+    private var arrivalSuffix: String {
+        state.arrival.map { ", \(arrivalPhrase(label, arrival: $0))" } ?? ""
     }
 }
 
