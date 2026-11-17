@@ -40,11 +40,16 @@ public struct TripAttributes: ActivityAttributes {
         public var metersLeft: Double?
         /// När du är framme där du ska, för skedet ombord.
         public var arrival: Date?
+        /// Avgången efter den här: när du ska gå och när den går. Missar du den här kan låsskärmen
+        /// räkna ner till nästa själv, även om appen inte hinner vakna.
+        public var nextLeaveBy: Date?
+        public var nextTrainTime: Date?
         public init(status: Status, leaveBy: Date, trainTime: Date, line: String, towards: String, station: String,
                     key: String, mode: Int, minutes: Int, snoozeMinutes: Int? = nil, snoozed: Bool = false,
                     offerSkip: Bool = false, askingSkip: Bool = false, skipped: Bool = false,
                     weather: Weather? = nil, arrived: Bool = false, boarded: Bool = false,
-                    stage: TripStage? = nil, walked: Double? = nil, metersLeft: Double? = nil, arrival: Date? = nil) {
+                    stage: TripStage? = nil, walked: Double? = nil, metersLeft: Double? = nil, arrival: Date? = nil,
+                    nextLeaveBy: Date? = nil, nextTrainTime: Date? = nil) {
             self.status = status
             self.leaveBy = leaveBy
             self.trainTime = trainTime
@@ -66,6 +71,8 @@ public struct TripAttributes: ActivityAttributes {
             self.walked = walked
             self.metersLeft = metersLeft
             self.arrival = arrival
+            self.nextLeaveBy = nextLeaveBy
+            self.nextTrainTime = nextTrainTime
         }
 
         /// Skedet att visa.

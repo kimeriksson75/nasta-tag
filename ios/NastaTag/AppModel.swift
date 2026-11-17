@@ -556,6 +556,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
                                     offerSkip: trip.status == .missed, askingSkip: askingSkip,
                                     weather: trip.key == atStop?.key ? nil : weather(for: trip),
                                     arrived: trip.key == atStop?.key, arrival: trip.arrival)
+        if trip.key != atStop?.key, let after = target(after: trip) {
+            state.nextLeaveBy = after.leaveAt
+            state.nextTrainTime = after.time
+        }
         // På väg: förloppet fylls efter sträckan, i steg som inte fladdrar.
         if trip.key != atStop?.key, let walking = walking(to: trip.stop) {
             state.stage = .walking
@@ -623,20 +627,13 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             return
         }
         let known = buildTrips((journeys ?? []) + followedJourneys, now: now, walkFactor: walkFactor)
-        // Missad men inte avgången än: låsskärmen visar det en stund, med knappen, och följer sedan nästa.
-        if let trip = known.first(where: { $0.key == followed.key }), trip.status == .missed {
-            return showFollowedMissed(trip, activity: activity)
+        let current = known.first { $0.key == followed.key }
+        // Missad, eller redan borta ur SL:s svar: låsskärmen visar det en stund och följer sedan nästa.
+        // Den slutar aldrig bara för att avgången gick, då tappar du nästa.
+        guard let trip = current, trip.status != .missed else {
+            return showFollowedMissed(current, followed: followed, activity: activity)
         }
         followedMissedUntil = nil
-        guard let trip = known.first(where: { $0.key == followed.key }) else {
-            // Bara när avgången faktiskt har gått: annars väntar vi på nästa svar från SL.
-            guard now > followed.trainTime || followed.leaveBy.timeIntervalSince(now) < -60 else { return }
-            var last = followed
-            last.status = .missed
-            stopFollowing()
-            Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(120))) }
-            return
-        }
         let state = state(for: trip)
         guard state != followed else { return }
         let worse = followedStatus.map { urgency(trip.status) > urgency($0) } ?? false
@@ -651,24 +648,41 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// När den följda avgången blev missad. Efter så lång tid som appen visar det följer låsskärmen nästa.
     private var followedMissedUntil: Date?
 
-    private func showFollowedMissed(_ trip: Trip, activity: Activity<TripAttributes>) {
-        guard let until = followedMissedUntil else {
+    private func showFollowedMissed(_ trip: Trip?, followed: TripAttributes.ContentState, activity: Activity<TripAttributes>) {
+        if followedMissedUntil == nil {
             followedMissedUntil = now.addingTimeInterval(Self.missedSeconds)
             followedStatus = .missed
-            Task { await activity.update(.init(state: state(for: trip), staleDate: trip.time)) }
-            return
         }
-        guard now >= until, !askingSkip else { return }
-        followedMissedUntil = nil
-        guard let next, next.key != trip.key else {
-            var last = activity.content.state
+        if let until = followedMissedUntil, now >= until, !askingSkip, let next, next.key != followed.key {
+            followedMissedUntil = nil
+            return retargetFollowing()
+        }
+        // Finns ingen nästa än väntar kortet på nästa svar från SL, med nedräkningen om den finns.
+        // Först långt efter att avgången gick, utan något att följa, tas kortet bort.
+        if next == nil, now.timeIntervalSince(followed.trainTime) > Self.giveUpSeconds {
+            var last = followed
             last.status = .missed
             stopFollowing()
             Task { await activity.end(.init(state: last, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(120))) }
             return
         }
-        retargetFollowing()
+        var missed = trip.map(state(for:)) ?? followed
+        missed.status = .missed
+        missed.offerSkip = true
+        missed.askingSkip = askingSkip
+        missed.snoozeMinutes = nil
+        missed.weather = nil
+        missed.stage = nil
+        if let next, next.key != followed.key {
+            missed.nextLeaveBy = next.leaveAt
+            missed.nextTrainTime = next.time
+        }
+        guard missed != followed else { return }
+        Task { await activity.update(.init(state: missed, staleDate: missed.nextLeaveBy)) }
     }
+
+    /// Hur länge kortet väntar på en ny avgång efter att den följda gick, innan det ger upp.
+    private static let giveUpSeconds: TimeInterval = 30 * 60
 
     private func urgency(_ status: Status) -> Int {
         switch status {

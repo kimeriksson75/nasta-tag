@@ -10,18 +10,19 @@ import WidgetKit
 struct TripLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
-            LockScreenView(state: context.state, label: context.attributes.label)
-                .activityBackgroundTint(Mood(context.state.status).background)
-                .activitySystemActionForegroundColor(Mood(context.state.status).ink)
+            let state = context.state.shown(stale: context.isStale)
+            LockScreenView(state: state, label: context.attributes.label)
+                .activityBackgroundTint(Mood(state.status).background)
+                .activitySystemActionForegroundColor(Mood(state.status).ink)
         } dynamicIsland: { context in
-            let state = context.state
+            let state = context.state.shown(stale: context.isStale)
             let mood = Mood(state.status)
             let message = state.message(label: context.attributes.label)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(message.title).font(.caption.weight(.semibold))
-                        Text(message.wait).font(.title.weight(.heavy)).monospacedDigit()
+                        WaitText(state: state, wait: message.wait).font(.title.weight(.heavy)).monospacedDigit()
                     }
                     .foregroundStyle(mood.accent)
                     .padding(.leading, 4)
@@ -41,7 +42,17 @@ struct TripLiveActivity: Widget {
             } compactLeading: {
                 Circle().fill(mood.accent).frame(width: 12, height: 12)
             } compactTrailing: {
-                Text(state.boarded == true ? stockholmClock(state.arrival ?? state.trainTime) : state.status == .rush && state.arrived != true ? "nu" : message.wait).font(.caption.weight(.bold)).monospacedDigit()
+                Group {
+                    if state.boarded == true {
+                        Text(stockholmClock(state.arrival ?? state.trainTime))
+                    } else if state.status == .rush && state.arrived != true {
+                        Text("nu")
+                    } else {
+                        WaitText(state: state, wait: message.wait)
+                    }
+                }
+                .font(.caption.weight(.bold)).monospacedDigit()
+                .frame(maxWidth: 44)
             } minimal: {
                 Circle().fill(mood.accent).frame(width: 12, height: 12)
             }
@@ -51,6 +62,24 @@ struct TripLiveActivity: Widget {
 }
 
 extension TripAttributes.ContentState {
+    /// Har avgången gått utan att appen hunnit säga det visar kortet den som missad,
+    /// med nedräkningen till nästa i stället för en tid som inte stämmer längre.
+    func shown(stale: Bool) -> Self {
+        guard stale, status != .missed, boarded != true, arrived != true, skipped != true else { return self }
+        var missed = self
+        missed.status = .missed
+        missed.offerSkip = true
+        missed.snoozeMinutes = nil
+        missed.weather = nil
+        return missed
+    }
+
+    /// När du ska gå till nästa avgång, om den inte heller har passerat.
+    var upcomingLeaveBy: Date? {
+        guard status == .missed, let nextLeaveBy, nextLeaveBy > .now else { return nil }
+        return nextLeaveBy
+    }
+
     func message(label: String) -> DepartureMessage {
         if boarded == true {
             return boardedMessage(trainTime: trainTime, arrival: arrival, label: label)
@@ -142,12 +171,16 @@ struct LockScreenView: View {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(message.title).font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
-                    Text(message.wait)
+                    WaitText(state: state, wait: message.wait)
                         .font(.system(size: 30, weight: .heavy))
                         .monospacedDigit()
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
-                    Text(message.caption).font(.subheadline)
+                    if state.upcomingLeaveBy != nil, let nextTrainTime = state.nextTrainTime {
+                        Text("tills du går till \(stockholmClock(nextTrainTime))").font(.subheadline)
+                    } else {
+                        Text(message.caption).font(.subheadline)
+                    }
                 }
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
@@ -178,6 +211,21 @@ struct LockScreenView: View {
         .fontDesign(.rounded)
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
+    }
+}
+
+/// Minuterna, eller när avgången är missad nedräkningen till när du ska gå till nästa.
+/// iOS räknar ner den själv, så den stämmer även om appen sover.
+struct WaitText: View {
+    let state: TripAttributes.ContentState
+    let wait: String
+
+    var body: some View {
+        if let leaveBy = state.upcomingLeaveBy {
+            Text(timerInterval: Date.now...leaveBy, countsDown: true)
+        } else {
+            Text(wait)
+        }
     }
 }
 

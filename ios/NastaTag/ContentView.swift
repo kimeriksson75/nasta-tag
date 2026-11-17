@@ -238,7 +238,10 @@ struct ContentView: View {
                 .font(.title2.weight(.heavy))
                 .foregroundStyle(mood.accent)
                 .frame(maxWidth: .infinity)
-            Ring(trip: trip, wait: message.wait, caption: message.caption, mood: .idle)
+            // Nedräkningen till nästa avgång står kvar i ringen, så att du ser hur länge du har på dig.
+            let after = model.next.flatMap { $0.key == trip.key ? nil : $0 }
+            Ring(trip: trip, wait: after.map { "\(minutesToLeave($0.slackMinutes)) min" } ?? message.wait,
+                 caption: after.map { "tills du går till \(stockholmClock($0.time))" } ?? message.caption, mood: .idle)
                 .frame(maxWidth: 280)
                 .padding(.top, 32)
                 .padding(.bottom, 28)
