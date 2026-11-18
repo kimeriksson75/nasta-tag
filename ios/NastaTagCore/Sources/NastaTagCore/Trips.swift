@@ -18,6 +18,18 @@ public struct Mode: Sendable {
         }
     }
 
+    /// Symbolen för trafikslaget, till exempel i änden av förloppet på låsskärmen.
+    public var symbol: String {
+        switch noun {
+        case "pendeltåget": "train.side.front.car"
+        case "tåget": "tram.fill.tunnel"
+        case "spårvagnen": "lightrail.fill"
+        case "bussen": "bus.fill"
+        case "båten": "ferry.fill"
+        default: "tram.fill"
+        }
+    }
+
     static func isWalk(_ productClass: Int?) -> Bool { productClass == 99 || productClass == 100 }
 }
 
@@ -145,12 +157,18 @@ public func parseJourney(_ journey: Journey) -> Trip? {
 }
 
 /// Resorna med marginal och färg. Samma avgång kan komma flera gånger, den räknas en gång.
-public func buildTrips(_ journeys: [Journey], now: Date) -> [Trip] {
+/// `walkFactor` över 1 räknar med längre gångtid, till exempel när det är halt.
+public func buildTrips(_ journeys: [Journey], now: Date, walkFactor: Double = 1) -> [Trip] {
     var seen = Set<String>()
     return journeys.compactMap(parseJourney)
         .filter { seen.insert($0.key).inserted }
         .map { trip in
             var trip = trip
+            if walkFactor > 1 {
+                let extra = trip.walkMinutes * (walkFactor - 1)
+                trip.leaveAt.addTimeInterval(-extra * 60)
+                trip.walkMinutes += extra
+            }
             trip.slackMinutes = trip.leaveAt.timeIntervalSince(now) / 60
             trip.status = classify(trip.slackMinutes)
             return trip

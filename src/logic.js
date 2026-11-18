@@ -177,22 +177,96 @@ export function classify(slackMinutes) {
   return 'calm';
 }
 
-const LEADS = {
-  calm: ['Ingen stress.\nDu behöver gå om', 'Lugnt läge.\nDet räcker att gå om', 'Gott om tid.\nDu kan gå om', 'Ta en kaffe till.\nGå om'],
-  hurry: ['Raska på.\nDu behöver gå om', 'Snart dags.\nDu behöver gå om', 'Börja packa ihop.\nGå om', 'Skorna på.\nDu behöver gå om'],
-  rush: ['Spring.\nDu behöver gå', 'Nu gäller det.\nDu måste gå', 'Full fart.\nGå', 'Ut genom dörren.\nGå'],
+// Rösten, samma som i iOS-appen (Board.swift): som en kompis som kan tidtabellen.
+// Rubriken är en egen mening. Siffran, raden under och avgångens namn läses ihop till en mening.
+const HEADLINES = {
+  calm: ['Gott om tid.', 'Ingen brådska.', 'Du hinner.', 'Luta dig tillbaka.', 'Häng kvar en stund.'],
+  hurry: ['På med skorna.', 'Börja avrunda.', 'Samla ihop grejerna.', 'Dags att röra på sig.', 'Snart dags.'],
+  rush: ['Spring!', 'Nu gäller det!', 'Raska steg!', 'Full fart!', 'Iväg med dig!'],
+  missed: ['Den hinner du inte.', 'Släpp den.', 'Den får gå utan dig.', 'Det kommer fler.', 'Missad. Ingen fara.'],
 };
-const BRIDGES = ['för att hinna med', 'så hinner du med', 'så når du'];
+// Bara på morgonen, när avgången går före tio.
+const MORNING_HEADLINES = ['Kaffet hinner du.'];
+// Raden under siffran: liten bokstav, ingen punkt, och den slutar där avgångens namn tar vid.
+const CAPTIONS = {
+  calm: ['tills du behöver gå mot', 'tills du ska gå mot', 'innan du behöver dra mot', 'kvar innan du ska gå mot'],
+  hurry: ['tills du behöver gå mot', 'sen drar du mot', 'sen är det dags för', 'kvar innan du ska gå mot'],
+  rush: ['så hinner du med', 'om du ska hinna med', 'för att hinna med'],
+  missed: ['ta nästa efter'],
+};
+// Det stora ordet när det är bråttom. Aldrig "gå".
+const RUSH_WORDS = ['Nu', 'Iväg', 'Kör'];
+// Påminnelsen när det blir gult eller rött. {m} är minuter, {n} avgångens namn.
+const HURRY_ALERTS = ['Gå om {m} min, så hinner du med {n}.', 'Om {m} min behöver du gå mot {n}.',
+  'Skorna på. Om {m} min går du mot {n}.', 'Snart dags: {n} vill ha dig om {m} min.'];
+const RUSH_ALERTS = ['Spring nu, så hinner du med {n}.', 'Iväg nu om du ska hinna med {n}.',
+  'Nu kör vi. {n} väntar inte.', 'Full fart, så hinner du med {n}.'];
+
+// Småord som får finnas i både rubriken och raden under.
+const SMALL_WORDS = new Set(['du', 'att', 'så', 'med', 'om', 'på', 'i', 'en', 'det', 'är',
+  'för', 'mot', 'till', 'efter', 'sen', 'vi', 'dig']);
+export const words = (text) => new Set(text.toLowerCase().split(/[^\p{L}]+/u).filter((w) => w && !SMALL_WORDS.has(w)));
+const sharesWord = (a, b) => [...words(a)].some((w) => words(b).has(w));
+
+// Samma avgång ger alltid samma ord, olika avgångar blandar. Samma räkning som i appen,
+// så att webben och telefonen säger samma sak om samma avgång.
+const MASK = (1n << 64n) - 1n;
+function pick(list, time, salt, avoiding = null) {
+  const fitting = avoiding ? list.filter((item) => !sharesWord(item, avoiding)) : list;
+  const options = fitting.length ? fitting : list;
+  let x = (BigInt.asUintN(64, BigInt(Math.trunc(time.getTime() / 60000))) + BigInt(salt) * 0x9E3779B97F4A7C15n) & MASK;
+  x = ((x ^ (x >> 30n)) * 0xBF58476D1CE4E5B9n) & MASK;
+  x = ((x ^ (x >> 27n)) * 0x94D049BB133111EBn) & MASK;
+  x ^= x >> 31n;
+  return options[Number(x % BigInt(options.length))];
+}
+
+const stockholmHour = (date) => Number(new Intl.DateTimeFormat('sv-SE', {
+  hour: 'numeric', hourCycle: 'h23', timeZone: 'Europe/Stockholm',
+}).format(date));
+
+// Veckodag i Stockholm, 1 är söndag och 7 lördag, som i appen.
+const WEEKDAYS = { Sun: 1, Mon: 2, Tue: 3, Wed: 4, Thu: 5, Fri: 6, Sat: 7 };
+const stockholmWeekday = (date) => WEEKDAYS[new Intl.DateTimeFormat('en-US', {
+  weekday: 'short', timeZone: 'Europe/Stockholm',
+}).format(date)];
+
+// Orden för stunden: vart du ska och när avgången går. Samma som i appen (Moments.swift).
+function momentHeadlines(label, time) {
+  const hour = stockholmHour(time);
+  const day = stockholmWeekday(time);
+  if (day === 7 || day === 1) return ['Helg, ingen stress.'];
+  if (label === 'Jobbet') {
+    if (day === 2) return ['Ny vecka, nya tåg.'];
+    if (day === 6) return ['Fredagsfeeling.'];
+    return hour < 10 ? ['Morgonen är din.'] : [];
+  }
+  if (label === 'Hem') {
+    if (hour >= 21 || hour < 4) return ['Sängen kallar.', 'Kvällen är ung.'];
+    if (day === 6 && hour >= 14) return ['Helgen väntar.', 'Snart helg.'];
+    if (hour >= 16) return ['Soffan väntar.', 'Middagen hägrar.'];
+  }
+  return [];
+}
+
+// Ord för stunden får två platser i listan, så att de syns ungefär hälften av gångerna.
+const withMoment = (list, moment) => [...list, ...moment, ...moment];
+
+export function headlines(status, time, label = null) {
+  const list = HEADLINES[status] ?? [];
+  if (status !== 'calm') return list;
+  const morning = stockholmHour(time) < 10 ? MORNING_HEADLINES : [];
+  return withMoment([...list, ...morning], momentHeadlines(label, time));
+}
 
 // Orden följer avgången, så att de inte byts varje gång skärmen ritas om.
 // Minuterna rundas nedåt: hellre en minut för tidigt än ett missat tåg.
-export function departureMessage({ status, slackMinutes, time }) {
-  const pick = (list) => list[Math.floor(time / 60000) % list.length];
-  return {
-    lead: pick(LEADS[status]),
-    wait: status === 'rush' ? 'nu' : `${Math.floor(slackMinutes)} min`,
-    bridge: pick(BRIDGES),
-  };
+export function departureMessage({ status, slackMinutes, time }, label = null) {
+  const headline = pick(headlines(status, time, label), time, 1);
+  const wait = status === 'rush' ? pick(RUSH_WORDS, time, 2, headline)
+    : status === 'missed' ? '–' : `${Math.max(0, Math.floor(slackMinutes))} min`;
+  const caption = pick(CAPTIONS[status] ?? [], time, 3, headline);
+  return { headline, wait, caption };
 }
 
 const TRIP_PHRASES = { Hem: 'hem', Jobbet: 'till jobbet' };
@@ -241,9 +315,12 @@ const stockholmClock = new Intl.DateTimeFormat('sv-SE', {
   hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm',
 });
 
+// Påminnelsen: en hel mening, som inte upprepar rubriken.
 export function reminderText(trip, label) {
-  const { lead, wait, bridge } = departureMessage(trip);
-  return `${lead.replace('\n', ' ')} ${wait} ${bridge} ${tripName(trip, label)}`;
+  const { headline } = departureMessage(trip, label);
+  const minutes = Math.max(0, Math.floor(trip.slackMinutes));
+  return pick(trip.status === 'rush' ? RUSH_ALERTS : HURRY_ALERTS, trip.time, 4, headline)
+    .replace('{m}', minutes).replace('{n}', tripName(trip, label));
 }
 
 const URGENCY = { calm: 0, hurry: 1, rush: 2 };
@@ -258,7 +335,7 @@ export function reminderStep({ key, status, label }, trips) {
   return { status: train.status, done: Boolean(text) && train.status === 'rush', text };
 }
 
-const WATCH_VERDICTS = { calm: '🟢 Gott om tid', hurry: '🟡 Raska på', rush: '🔴 Spring' };
+const WATCH_DOTS = { calm: '🟢', hurry: '🟡', rush: '🔴' };
 
 // Kort svar för klockan: färg och besked först, sedan tid och rutt.
 export function watchSummary({ place, atPlace, trips }) {
@@ -266,7 +343,7 @@ export function watchSummary({ place, atPlace, trips }) {
   const { next } = pickTrips(trips);
   if (!next) return `Hittar ingen resa du hinner med just nu\n${place.label}`;
   return [
-    WATCH_VERDICTS[next.status],
+    `${WATCH_DOTS[next.status]} ${departureMessage(next, place.label).headline}`,
     `${stockholmClock.format(next.time)} ${lineText(next)} från ${next.stop.name}`,
     `Gå senast ${stockholmClock.format(next.leaveAt)}, ${Math.max(1, Math.round(next.walkMinutes))} min gång`,
     routeText(next, place.label),

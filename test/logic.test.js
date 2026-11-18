@@ -114,7 +114,7 @@ test('klocksvar: besked, tid, gå senast och rutt', () => {
     journey(walk(at('10:09'), at('10:12')), ride(2, '18', 'Alvik', 'Gubbängen', at('10:12'), at('10:40'))),
   ], now);
   assert.equal(watchSummary({ place: { label: 'Jobbet' }, atPlace: false, trips }), [
-    '🟢 Gott om tid',
+    '🟢 Ingen brådska.',
     '11:12 Linje 18 mot Alvik från Gubbängen',
     'Gå senast 11:09, 3 min gång',
     '3 min gång → Gubbängen → Jobbet',
@@ -159,19 +159,42 @@ test('klockan: hem och jobb utan minne', () => {
   assert.equal(watchDestination({ home, work, position: home, now: new Date(morning) }).hereId, 'home');
 });
 
-test('besked: minuter kvar rundas nedåt, bråttom blir nu', () => {
+test('besked: minuter kvar rundas nedåt, bråttom får ett ord', () => {
   const time = new Date('2026-11-04T21:51:00');
   assert.equal(departureMessage({ status: 'hurry', slackMinutes: 4.9, time }).wait, '4 min');
   assert.equal(departureMessage({ status: 'calm', slackMinutes: 12.2, time }).wait, '12 min');
-  assert.equal(departureMessage({ status: 'rush', slackMinutes: 1.5, time }).wait, 'nu');
-  assert.match(departureMessage({ status: 'hurry', slackMinutes: 3, time }).lead, /gå om$/i);
-  assert.match(departureMessage({ status: 'rush', slackMinutes: 1, time }).lead, /gå$/i);
+  assert.ok(['Nu', 'Iväg', 'Kör'].includes(departureMessage({ status: 'rush', slackMinutes: 1.5, time }).wait));
+  for (const status of ['calm', 'hurry', 'rush']) {
+    const { headline, caption } = departureMessage({ status, slackMinutes: 3, time });
+    assert.match(headline, /^\p{Lu}.*[.!]$/u, 'rubriken är en egen mening');
+    assert.match(caption, /^\p{Ll}.* (mot|för|med|efter)$/u, 'raden under leder in i avgångens namn');
+  }
+});
+
+test('besked: samma ord som i iOS-appen för samma avgång', () => {
+  // Facit från NastaTagCore (Board.swift), så att webben och telefonen säger samma sak.
+  const at = (seconds, status) => departureMessage({ status, slackMinutes: 3.5, time: new Date(seconds * 1000) });
+  assert.deepEqual(at(1800000000, 'hurry'), { headline: 'Samla ihop grejerna.', wait: '3 min', caption: 'sen är det dags för' });
+  assert.deepEqual(at(1800003600, 'rush'), { headline: 'Iväg med dig!', wait: 'Nu', caption: 'om du ska hinna med' });
+  // En söndag: helgens ord.
+  assert.deepEqual(at(1794721920, 'calm'), { headline: 'Helg, ingen stress.', wait: '3 min', caption: 'innan du behöver dra mot' });
+});
+
+test('besked: ord efter resa och tid, samma som i iOS-appen', () => {
+  // Facit från NastaTagCore (MomentTests.swift): en tisdagskväll hem och en måndagsmorgon till jobbet.
+  const at = (seconds, label) => departureMessage({ status: 'calm', slackMinutes: 9, time: new Date(seconds * 1000) }, label).headline;
+  assert.equal(at(1794931200, 'Hem'), 'Middagen hägrar.');
+  assert.equal(at(1794931440, 'Hem'), 'Soffan väntar.');
+  assert.equal(at(1794812400, 'Jobbet'), 'Ny vecka, nya tåg.');
+  // Bråttom är bråttom, vilken dag det än är.
+  const hurry = departureMessage({ status: 'hurry', slackMinutes: 3, time: new Date(1794931200 * 1000) }, 'Hem').headline;
+  assert.ok(!['Middagen hägrar.', 'Soffan väntar.'].includes(hurry));
 });
 
 test('besked: orden ligger still för samma avgång och varierar mellan avgångar', () => {
   const at = (minute) => departureMessage({
     status: 'calm', slackMinutes: 9, time: new Date(2026, 10, 4, 21, minute),
-  }).lead;
+  }).headline;
   assert.equal(at(51), at(51));
   assert.ok(new Set([50, 51, 52, 53].map(at)).size > 1);
 });
@@ -189,11 +212,11 @@ test('påminnelse: notis när läget skärps, klar när det är dags att gå', (
   const calm = reminderStep(reminder('calm'), [train('calm', 8)]);
   assert.deepEqual([calm.text, calm.done], [null, false], 'ingen notis när inget ändrats');
   const hurry = reminderStep(reminder('calm'), [train('hurry', 4.5)]);
-  assert.match(hurry.text, /4 min .*21:50-tåget till jobbet$/);
+  assert.match(hurry.text, /4 min .*21:50-tåget till jobbet[.]$/);
   assert.equal(hurry.done, false);
   assert.equal(hurry.status, 'hurry');
   const rush = reminderStep(reminder('hurry'), [train('rush', 1.5)]);
-  assert.match(rush.text, /nu .*21:50-tåget till jobbet$/);
+  assert.match(rush.text, /21:50-tåget till jobbet[.]$/);
   assert.equal(rush.done, true);
   const skip = reminderStep(reminder('calm'), [train('rush', 1)]);
   assert.equal(skip.done, true, 'grönt direkt till rött ger en notis');
@@ -215,7 +238,9 @@ test('påminnelse: texten är en hel mening', () => {
   const time = new Date('2026-11-04T21:50:00');
   const text = reminderText({ status: 'hurry', slackMinutes: 3.2, time, mode: 5 }, 'Hem');
   assert.doesNotMatch(text, /\n/);
-  assert.match(text, /3 min .* 21:50-bussen hem$/);
+  assert.match(text, /3 min/);
+  assert.match(text, /21:50-bussen hem/);
+  assert.match(text, /[.]$/);
 });
 
 test('riktning och avstånd till stationen', () => {

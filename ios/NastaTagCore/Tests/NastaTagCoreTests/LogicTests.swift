@@ -85,13 +85,27 @@ private func journeys() throws -> [Journey] {
     let time = Date(timeIntervalSince1970: 1_800_000_000)
     let calm = departureMessage(status: .calm, minutes: 8, trainTime: time)
     #expect(calm.wait == "8 min")
-    #expect(calm.caption == "tills du ska gå")
+    #expect(Voice.captions[.calm]!.contains(calm.caption))
     let rush = departureMessage(status: .rush, minutes: 1, trainTime: time)
-    #expect(rush.wait == "Gå nu")
+    #expect(Voice.headlines[.rush]!.contains(rush.headline))
+    // Ett budskap: rubriken säger spring, då får siffran inte säga gå.
+    #expect(!rush.wait.contains("Gå") && !rush.caption.contains("gå"))
     for status in [Status.calm, .hurry, .rush] {
         let headline = departureMessage(status: status, minutes: 3, trainTime: time).headline
         #expect(!headline.contains("gå") && !headline.contains("min"))
     }
     #expect(minutesToLeave(4.9) == 4)
     #expect(minutesToLeave(-0.2) == 0)
+}
+
+/// Siffran, raden under och avgångens namn läses ihop.
+@Test func ringReadsAsOneSentence() {
+    let time = Date(timeIntervalSince1970: 1_800_000_000) // 10:40 i Stockholm
+    let name = tripName(time, mode: 2, "Hem")
+    func sentence(_ status: Status, _ minutes: Int) -> String {
+        let m = departureMessage(status: status, minutes: minutes, trainTime: time)
+        return "\(m.wait) \(m.caption) \(name)"
+    }
+    #expect(sentence(.calm, 8).hasPrefix("8 min "))
+    #expect(sentence(.missed, 0) == "– ta nästa efter \(name)")
 }

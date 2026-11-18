@@ -3,66 +3,108 @@ import MapLibre
 import NastaTagCore
 import SwiftUI
 
-/// Gångvägen till stationen i första person: du står i mitten som en pil
-/// och kartan vrids med kompassen, så det du har framför dig är uppåt.
+/// Gångvägen till stationen i första person: kartan följer dig och vrids med kompassen,
+/// så det du har framför dig är uppåt. Du kan zooma och dra, och komma tillbaka med en knapp.
 /// Samma karta som på webben: OpenFreeMap, målad i appens färg för läget.
 struct WalkMapView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let mood: Mood
+    @State private var following = true
+    @State private var recenter = 0
 
     var body: some View {
         let theme = MapTheme(mood)
-        ZStack(alignment: .top) {
-            WalkMap(theme: theme, position: model.position, heading: model.heading,
-                    route: model.walkRoute?.polyline.coordinates ?? [], station: model.stop)
-                .overlay { Me().fill(theme.route).stroke(theme.halo, lineWidth: 2).frame(width: 36, height: 36) }
+        ZStack {
+            WalkMap(theme: theme, route: model.walkRoute?.polyline.coordinates ?? [], station: model.stop,
+                    start: model.position, recenter: recenter, onFollowing: { following = $0 })
                 .ignoresSafeArea()
-            header
+            VStack(spacing: 12) {
+                ringChip
+                Spacer()
+                if !following {
+                    Button { recenter += 1 } label: {
+                        Image(systemName: "location.north.fill").font(.title3.weight(.bold))
+                            .foregroundStyle(mood.accent)
+                            .frame(width: 52, height: 52)
+                            .background(Circle().fill(mood.background.opacity(0.92)))
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .accessibilityLabel("Följ mig igen")
+                    .transition(.opacity)
+                }
+                walkCard
+            }
+            .animation(.easeInOut(duration: 0.2), value: following)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
         }
         .background(mood.background)
-        .preferredColorScheme(mood == .hurry ? .light : .dark)
+        .fontDesign(.rounded)
+        .preferredColorScheme(.dark)
         .onChange(of: model.position) { Task { await model.loadWalkRoute() } }
         .task { await model.loadWalkRoute() }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            if let meters = model.stopDistance {
-                Text(distanceText(meters))
-                    .font(.system(size: 34, weight: .heavy))
-                    .monospacedDigit()
+    /// Ringen flyter överst, så att du ser hur bråttom det är medan du går.
+    @ViewBuilder private var ringChip: some View {
+        HStack(spacing: 14) {
+            if let trip = model.next, let destination = model.destination {
+                let message = model.message(for: trip)
+                ZStack {
+                    LiveRing(leaveAt: trip.leaveAt, key: trip.key, mood: mood, lineWidth: 6)
+                    Text(trip.status == .rush ? "Nu" : "\(minutesToLeave(trip.slackMinutes))")
+                        .font(.headline.weight(.black))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(countsDown: true))
+                }
+                .frame(width: 56, height: 56)
+                VStack(alignment: .leading, spacing: 2) {
+                    // Medan du går hejar rubriken efter hur långt du har kommit.
+                    let cheer = walkHeadline(stage: model.walkStage, status: trip.status, trainTime: trip.time)
+                    Text(cheer.map { c in message.weather.map { "\($0.emoji) \(c)" } ?? c } ?? message.title)
+                        .font(.headline.weight(.heavy)).foregroundStyle(mood.accent)
+                        .contentTransition(.opacity)
+                    Text(tripName(trip, destination.label)).font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
+                }
+                .lineLimit(1)
             }
-            if let station = model.stop?.name {
-                Text(station).font(.headline).lineLimit(1)
-            }
-            Spacer()
+            Spacer(minLength: 0)
             Button { dismiss() } label: {
-                Image(systemName: "xmark").font(.title3.weight(.bold))
+                Image(systemName: "xmark").font(.headline.weight(.heavy))
                     .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+                    .background(Circle().fill(mood.track))
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Stäng kartan")
         }
         .foregroundStyle(mood.ink)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(mood.background.ignoresSafeArea(edges: .top))
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 32).fill(mood.background.opacity(0.92)))
     }
-}
 
-/// Du är pilen. Den pekar alltid uppåt, det är kartan som vrids. Samma form som på webben.
-private struct Me: Shape {
-    func path(in rect: CGRect) -> Path {
-        let x = rect.width / 24, y = rect.height / 24
-        var path = Path()
-        path.move(to: CGPoint(x: 12 * x, y: 2 * y))
-        path.addLine(to: CGPoint(x: 4.5 * x, y: 21 * y))
-        path.addLine(to: CGPoint(x: 12 * x, y: 17 * y))
-        path.addLine(to: CGPoint(x: 19.5 * x, y: 21 * y))
-        path.closeSubpath()
-        return path
+    /// Hur långt det är kvar, nere vid tummen.
+    @ViewBuilder private var walkCard: some View {
+        if let station = model.stop?.name {
+            HStack(spacing: 12) {
+                Arrow().fill(mood.background).frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.stopDistance.map(distanceText) ?? "Du är framme")
+                        .font(.title2.weight(.black))
+                        .monospacedDigit()
+                    Text("till \(station)").font(.subheadline.weight(.semibold)).opacity(0.7)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(mood.background)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .background(RoundedRectangle(cornerRadius: 26).fill(mood.ink))
+        }
     }
 }
 
@@ -70,17 +112,11 @@ private struct Me: Shape {
 struct MapTheme: Equatable {
     var land, park, water, building, road, label, routeHex, haloHex: String
 
+    /// Mörk karta i alla lägen. Bara vägen, stationen och du har lägets färg.
     init(_ mood: Mood) {
-        switch mood {
-        case .idle: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#14171c", "#1a2420", "#10262f", "#1b1f26", "#3a424e", "#aab2bd", "#f5f6f7", "#14171c")
-        case .calm: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#157a4b", "#1a8755", "#0f6461", "#1b8656", "#4aa67b", "#e3f5ec", "#ffffff", "#157a4b")
-        case .hurry: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#f2b632", "#e9ad2b", "#d9a02b", "#eaaf2e", "#f9dc8f", "#3d3214", "#14171c", "#f2b632")
-        case .rush: (land, park, water, building, road, label, routeHex, haloHex) =
-            ("#d92d2d", "#cf2a2a", "#b52323", "#cf3030", "#ea7272", "#ffe5e5", "#ffffff", "#d92d2d")
-        }
+        (land, park, water, building, road, label, haloHex) =
+            ("#14161B", "#18201D", "#10222B", "#1B1E24", "#343944", "#9AA0A8", "#14161B")
+        routeHex = mood.accentHex
     }
 
     var route: Color { Color(uiColor: UIColor(hex: routeHex)) }
@@ -141,34 +177,46 @@ struct MapTheme: Equatable {
     }
 }
 
-/// MapLibre-kartan. Det enda man kan göra med fingrarna är att zooma runt sig själv.
+/// MapLibre-kartan. Kartan följer dig och vrids med kompassen med MapLibres egen följning,
+/// som glider jämnt mellan uppdateringarna. Du kan zooma, dra och vrida som du vill,
+/// och knappen i hörnet tar dig tillbaka.
 private struct WalkMap: UIViewRepresentable {
     let theme: MapTheme
-    let position: Coordinate?
-    let heading: Double?
     let route: [CLLocationCoordinate2D]
     let station: Stop?
+    let start: Coordinate?
+    /// Ökas när du trycker på knappen för att följa igen.
+    let recenter: Int
+    let onFollowing: (Bool) -> Void
 
     static let zoom = 17.0
     static let pitch = 30.0
-    static let minTurn = 2.0
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> MLNMapView {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("walk-style.json")
         try? theme.styleJSON.write(to: file, atomically: true, encoding: .utf8)
+        context.coordinator.parent = self
         let view = MLNMapView(frame: .zero, styleURL: file)
         view.delegate = context.coordinator
-        view.isScrollEnabled = false
-        view.isRotateEnabled = false
         view.isPitchEnabled = false
-        view.anchorRotateOrZoomGesturesToCenterCoordinate = true
         view.compassView.isHidden = true
         view.logoView.isHidden = true
         view.attributionButton.tintColor = UIColor(hex: theme.label)
-        view.setCenter(CLLocationCoordinate2D(latitude: 59.3293, longitude: 18.0686), zoomLevel: 14, animated: false)
+        // Över kortet och knappen längst ner, så att kartans upphovsrätt syns.
+        view.attributionButtonMargins = CGPoint(x: 12, y: 200)
+        view.tintColor = UIColor(hex: theme.routeHex)
+        let center = start.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+            ?? CLLocationCoordinate2D(latitude: 59.3293, longitude: 18.0686)
+        let camera = MLNMapCamera(lookingAtCenter: center, altitude: 0, pitch: WalkMap.pitch, heading: 0)
+        view.setCamera(camera, animated: false)
+        view.zoomLevel = WalkMap.zoom
+        view.showsUserLocation = true
+        view.showsUserHeadingIndicator = true
+        view.setUserTrackingMode(.followWithHeading, animated: false, completionHandler: nil)
         context.coordinator.parent = self
+        context.coordinator.recentered = recenter
         return view
     }
 
@@ -179,11 +227,11 @@ private struct WalkMap: UIViewRepresentable {
 
     final class Coordinator: NSObject, MLNMapViewDelegate {
         var parent: WalkMap?
+        var recentered = 0
         private var style: MLNStyle?
         private var painted: MapTheme?
         private var drawnRoute: [CLLocationCoordinate2D] = []
         private var drawnStation: Stop?
-        private var placed = false
 
         func mapView(_ mapView: MLNMapView, didFinishLoading style: MLNStyle) {
             self.style = style
@@ -193,12 +241,30 @@ private struct WalkMap: UIViewRepresentable {
             refresh(mapView)
         }
 
+        /// Du är ursprungspilen, inte MapLibres prick.
+        func mapView(_ mapView: MLNMapView, viewFor annotation: MLNAnnotation) -> MLNAnnotationView? {
+            guard annotation is MLNUserLocation else { return nil }
+            return ArrowPuck(fill: UIColor(hex: parent?.theme.routeHex ?? "#FFFFFF"),
+                             halo: UIColor(hex: parent?.theme.haloHex ?? "#14161B"))
+        }
+
+        func mapView(_ mapView: MLNMapView, didChange mode: MLNUserTrackingMode, animated: Bool) {
+            let following = mode != .none
+            DispatchQueue.main.async { self.parent?.onFollowing(following) }
+        }
+
         func refresh(_ view: MLNMapView) {
             guard let parent else { return }
-            follow(view, parent)
+            if parent.recenter != recentered {
+                recentered = parent.recenter
+                view.setUserTrackingMode(.followWithHeading, animated: true, completionHandler: nil)
+                view.setZoomLevel(WalkMap.zoom, animated: true)
+            }
             guard let style else { return }
             if painted != parent.theme {
                 view.attributionButton.tintColor = UIColor(hex: parent.theme.label)
+                view.tintColor = UIColor(hex: parent.theme.routeHex)
+                (view.userLocation.flatMap { view.view(for: $0) } as? ArrowPuck)?.fill = UIColor(hex: parent.theme.routeHex)
                 parent.theme.paint(style)
                 painted = parent.theme
             }
@@ -223,30 +289,43 @@ private struct WalkMap: UIViewRepresentable {
         private func same(_ a: [CLLocationCoordinate2D], _ b: [CLLocationCoordinate2D]) -> Bool {
             a.count == b.count && zip(a, b).allSatisfy { $0.latitude == $1.latitude && $0.longitude == $1.longitude }
         }
+    }
+}
 
-        /// Det du har framför dig är uppåt på skärmen. Kompassen darrar hela tiden,
-        /// så små vridningar och förflyttningar får vara.
-        private func follow(_ view: MLNMapView, _ parent: WalkMap) {
-            guard let position = parent.position else { return }
-            let center = CLLocationCoordinate2D(latitude: position.lat, longitude: position.lon)
-            let heading = parent.heading ?? view.direction
-            if !placed {
-                placed = true
-                view.setCenter(center, zoomLevel: WalkMap.zoom, direction: heading, animated: false)
-                let camera = view.camera
-                camera.pitch = WalkMap.pitch
-                view.setCamera(camera, animated: false)
-                return
-            }
-            let turned = abs((heading - view.direction + 540).truncatingRemainder(dividingBy: 360) - 180)
-            let moved = distanceMeters(Coordinate(lat: view.centerCoordinate.latitude, lon: view.centerCoordinate.longitude), position)
-            if turned < WalkMap.minTurn && moved < 1 { return }
-            let camera = view.camera
-            camera.centerCoordinate = center
-            camera.heading = heading
-            camera.pitch = WalkMap.pitch
-            view.setCamera(camera, withDuration: 0.25, animationTimingFunction: CAMediaTimingFunction(name: .linear))
-        }
+/// Ursprungspilen som markerar dig på kartan. Den pekar dit telefonen pekar: rakt upp när kartan
+/// vrids med dig, och åt rätt håll om du har vridit kartan själv.
+private final class ArrowPuck: MLNUserLocationAnnotationView {
+    private let shape = CAShapeLayer()
+    var fill: UIColor { didSet { shape.fillColor = fill.cgColor } }
+
+    init(fill: UIColor, halo: UIColor) {
+        self.fill = fill
+        super.init(frame: CGRect(x: 0, y: 0, width: 36, height: 36))
+        let s = 36.0 / 24
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: 12 * s, y: 2 * s))
+        path.addLine(to: CGPoint(x: 4.5 * s, y: 21 * s))
+        path.addLine(to: CGPoint(x: 12 * s, y: 17 * s))
+        path.addLine(to: CGPoint(x: 19.5 * s, y: 21 * s))
+        path.close()
+        shape.path = path.cgPath
+        shape.fillColor = fill.cgColor
+        shape.strokeColor = halo.cgColor
+        shape.lineWidth = 2
+        shape.lineJoin = .round
+        shape.frame = bounds
+        layer.addSublayer(shape)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func update() {
+        guard let mapView, let heading = userLocation?.heading else { return }
+        let degrees = (heading.trueHeading >= 0 ? heading.trueHeading : heading.magneticHeading) - mapView.direction
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        shape.setAffineTransform(CGAffineTransform(rotationAngle: degrees * .pi / 180))
+        CATransaction.commit()
     }
 }
 

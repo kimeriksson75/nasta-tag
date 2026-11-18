@@ -412,12 +412,12 @@ function render() {
   renderCompass();
   if ($('walk').open) showWalkStop(next.stop);
   renderReminder();
-  const message = departureMessage(next);
+  const message = departureMessage(next, destination.label);
   setStatus(next.status);
   $('retry').hidden = true;
-  $('verdict').textContent = message.lead;
+  $('verdict').textContent = message.headline;
   $('time').textContent = message.wait;
-  $('advice').textContent = message.bridge;
+  $('advice').textContent = message.caption;
   $('train').textContent = tripName(next, destination.label);
   $('line').textContent = lineText(next);
   renderLater(later.slice(0, LATER_COUNT));
