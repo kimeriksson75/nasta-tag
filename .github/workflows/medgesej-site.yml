@@ -1,0 +1,23 @@
+name: Bygg om medgesej.se
+
+# medgesej.se byggs av kimeriksson75/medgesej-site, som hämtar webbappen
+# härifrån och lägger den under /nasta-tag/. Den här workflowen säger till
+# när appen har ändrats.
+#
+# Kräver secret MEDGESEJ_SITE_TOKEN: en fine-grained token med
+# Contents: Read and write på kimeriksson75/medgesej-site.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.MEDGESEJ_SITE_TOKEN }}
+        run: gh api repos/kimeriksson75/medgesej-site/dispatches -f event_type=nasta-tag-updated
