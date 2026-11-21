@@ -290,3 +290,27 @@ public func fetchUpcomingJourneys(from: Coordinate, to: Coordinate, now: Date, w
     }
     return all
 }
+
+// MARK: Snooze
+
+/// Resan du får om du snoozar: den bästa av dem du kan gå till senare än den du har nu.
+public func snoozeTarget(after trip: Trip, in trips: [Trip]) -> Trip? {
+    pickTrips(trips.filter { $0.leaveAt > trip.leaveAt }).next
+}
+
+/// Snooze-knappen under resan. Den syns alltid när det finns en senare avgång att byta till,
+/// utom när du redan står vid hållplatsen. MustStayTests vaktar att den inte försvinner av misstag.
+public enum SnoozeButton: Equatable {
+    /// "Snooze N min": så mycket senare du kan gå.
+    case snooze(minutes: Int)
+    /// "Ångra snooze", som går att trycka på så länge avgången du hoppade över inte har gått.
+    case undo(enabled: Bool)
+    /// Ingen knapp: du står vid hållplatsen, eller det finns ingen senare avgång.
+    case none
+}
+
+public func snoozeButton(next: Trip, trips: [Trip], atStop: Bool, snoozed: Trip?, now: Date) -> SnoozeButton {
+    if let snoozed { return .undo(enabled: snoozed.leaveAt > now) }
+    guard !atStop, let later = snoozeTarget(after: next, in: trips) else { return .none }
+    return .snooze(minutes: max(1, Int((later.leaveAt.timeIntervalSince(next.leaveAt) / 60).rounded())))
+}

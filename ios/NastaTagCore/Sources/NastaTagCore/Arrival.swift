@@ -39,9 +39,23 @@ public func arrivedTrip(_ trip: Trip, now: Date) -> Trip {
 
 /// Avgången att vänta på när du kommer fram: bland dem som går härifrån och inte har gått än,
 /// den som är framme först.
-public func tripAtStop(_ trips: [Trip], position: Coordinate, accuracy: Double = 0, now: Date) -> Trip? {
-    pickTrips(trips.filter { $0.time > now && isAtStop(position, $0.stop, accuracy: accuracy) }
-        .map { arrivedTrip($0, now: now) }).next
+/// `place` är platsen du står vid, om du är vid en av dina. Bor du granne med en busshållplats är du
+/// hemma, inte framme vid bussen: då räknas du som framme först när du är tydligt närmare hållplatsen
+/// än platsen. Annars låstes bussen utanför porten och Snooze försvann medan du var kvar inne.
+public func tripAtStop(_ trips: [Trip], position: Coordinate, accuracy: Double = 0, now: Date, place: Coordinate? = nil) -> Trip? {
+    pickTrips(trips.filter { trip in
+        trip.time > now && isAtStop(position, trip.stop, accuracy: accuracy)
+            && !isStillAt(place, position: position, stop: trip.stop)
+    }.map { arrivedTrip($0, now: now) }).next
+}
+
+/// Så mycket närmare hållplatsen än platsen du måste vara, så att GPS:en inte hoppar fram och tillbaka.
+public let leftPlaceMarginMeters = 30.0
+
+/// Du är kvar vid platsen och inte vid hållplatsen intill.
+public func isStillAt(_ place: Coordinate?, position: Coordinate, stop: Stop) -> Bool {
+    guard let place else { return false }
+    return distanceMeters(position, stop.coordinate) + leftPlaceMarginMeters >= distanceMeters(position, place)
 }
 
 /// Vad som händer med en låst avgång: den står kvar, du åkte med, eller du gick därifrån.

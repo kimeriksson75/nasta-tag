@@ -142,20 +142,21 @@ struct ContentView: View {
                     .contentTransition(.opacity)
                     .padding(.top, 4)
                 Group {
-                if let skipped = model.snoozed {
-                    // När avgången du hoppade över har gått finns inget att ångra, men snoozen står kvar.
-                    Button("Ångra snooze") { model.toggleSnooze() }
-                        .buttonStyle(SnoozeToggle(mood: mood, on: true))
-                        .disabled(!model.canUndoSnooze)
-                        .opacity(model.canUndoSnooze ? 1 : 0.4)
-                        .accessibilityLabel(model.canUndoSnooze ? "Ångra snooze, ta \(stockholmClock(skipped.time)) igen" : "Snoozad, \(stockholmClock(skipped.time)) har gått")
-                } else if let minutes = model.snoozeMinutes {
-                    Button("Snooze \(minutes) min") { model.toggleSnooze() }
-                        .buttonStyle(SnoozeToggle(mood: mood, on: false))
-                        .accessibilityHint("Hoppa över den här avgången och ta nästa")
-                } else {
-                    Color.clear
-                }
+                    switch model.snoozeButton {
+                    case .undo(let enabled):
+                        // När avgången du hoppade över har gått finns inget att ångra, men snoozen står kvar.
+                        Button("Ångra snooze") { model.toggleSnooze() }
+                            .buttonStyle(SnoozeToggle(mood: mood, on: true))
+                            .disabled(!enabled)
+                            .opacity(enabled ? 1 : 0.4)
+                            .accessibilityLabel(model.snoozed.map { enabled ? "Ångra snooze, ta \(stockholmClock($0.time)) igen" : "Snoozad, \(stockholmClock($0.time)) har gått" } ?? "Ångra snooze")
+                    case .snooze(let minutes):
+                        Button("Snooze \(minutes) min") { model.toggleSnooze() }
+                            .buttonStyle(SnoozeToggle(mood: mood, on: false))
+                            .accessibilityHint("Hoppa över den här avgången och ta nästa")
+                    case .none:
+                        Color.clear
+                    }
                 }
                 .frame(height: SnoozeToggle.height)
                 .padding(.top, 12)

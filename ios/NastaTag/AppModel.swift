@@ -204,16 +204,18 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Resan du får om du snoozar: den bästa av dem som går senare än den du har nu.
     var snoozeTarget: Trip? { atStop == nil ? next.flatMap(target(after:)) : nil }
 
-    private func target(after trip: Trip) -> Trip? {
-        pickTrips(trips.filter { $0.leaveAt > trip.leaveAt }).next
+    private func target(after trip: Trip) -> Trip? { NastaTagCore.snoozeTarget(after: trip, in: trips) }
+
+    /// Knappen under resan, bestämd i NastaTagCore så att testerna vaktar när den syns.
+    var snoozeButton: SnoozeButton {
+        guard let next else { return .none }
+        return NastaTagCore.snoozeButton(next: next, trips: trips, atStop: atStop != nil, snoozed: snoozed, now: now)
     }
 
-    /// Hur mycket senare du kan gå om du snoozar, i hela minuter.
-    var snoozeMinutes: Int? { next.flatMap(snoozeMinutes(for:)) }
-
     private func snoozeMinutes(for trip: Trip) -> Int? {
-        guard atStop == nil, let later = target(after: trip) else { return nil }
-        return max(1, Int((later.leaveAt.timeIntervalSince(trip.leaveAt) / 60).rounded()))
+        guard case .snooze(let minutes) = NastaTagCore.snoozeButton(next: trip, trips: trips, atStop: atStop != nil, snoozed: nil, now: now)
+        else { return nil }
+        return minutes
     }
 
     /// Snoozar avgången du har nu, eller ångrar snoozen om du redan har en.
@@ -284,7 +286,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         }
         guard boarded == nil, !isSkipped, let position else { return }
         let candidates = trips.filter { trip in snoozed.map { trip.time > $0.time } ?? true }
-        guard let trip = tripAtStop(candidates, position: position, accuracy: accuracy, now: now) else { return }
+        let here = places.first { $0.id == hereId }?.coordinate
+        guard let trip = tripAtStop(candidates, position: position, accuracy: accuracy, now: now, place: here) else { return }
         atStop = trips.first { $0.key == trip.key } ?? trip
         missed = nil
         shown = nil
