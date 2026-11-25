@@ -4,6 +4,7 @@ import WidgetKit
 @main
 struct NastaTagWidgets: WidgetBundle {
     var body: some Widget {
+        NextTripWidget()
         TripLiveActivity()
     }
 }

@@ -4,6 +4,7 @@ import MapKit
 import NastaTagCore
 import Observation
 import SwiftUI
+import WidgetKit
 
 /// Appens tillstånd: var du är, vart du ska och resorna dit med alla trafikslag från SL:s reseplanerare.
 @MainActor
@@ -62,6 +63,24 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         TripActions.answerSkip = { [weak self] skip in self?.answerSkipFollowed(skip) }
     }
 
+    /// Det widgeten senast fick. Appens egna platser ligger kvar där de alltid har legat; widgeten får en kopia.
+    @ObservationIgnored private var shared: SharedState?
+
+    private func shareWithWidget() {
+        let state = SharedState(places: places, activeId: activeId, chosenId: chosenId,
+                                skippedDay: skippedDay, snoozedLeaveAt: snoozed?.leaveAt)
+        guard state != shared else { return }
+        shared = state
+        state.save()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// När appen läggs undan har den just haft färska tider, så widgeten hämtar också.
+    func refreshWidget() {
+        shared = nil
+        shareWithWidget()
+    }
+
     private func save() {
         UserDefaults.standard.set(try? JSONEncoder().encode(places), forKey: Self.placesKey)
         UserDefaults.standard.set(activeId, forKey: Self.activeKey)
@@ -109,6 +128,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         noticeArrival()
         noticeMissed()
         noteWalk()
+        shareWithWidget()
         if needsWeather { Task { await refreshWeather() } }
         if needsRefresh { Task { await refreshTrips() } } else { updateFollowing() }
         scheduleEdge()
@@ -334,7 +354,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Orden efteråt, valda när du tryckte så att de står still.
     private(set) var skipDone: String?
 
-    private var dayKey: String? { destination.map { "\($0.id)|\(stockholmDay(now))" } }
+    private var dayKey: String? { destination.map { NastaTagCore.skipKey(placeId: $0.id, now: now) } }
 
     /// Du har struntat i resan dit idag.
     var isSkipped: Bool { dayKey != nil && skippedDay == dayKey }

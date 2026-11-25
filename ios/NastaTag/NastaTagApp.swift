@@ -12,6 +12,7 @@ struct NastaTagApp: App {
                 .task { model.begin() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.refreshSoon() }
+                    if phase == .background { model.refreshWidget() }
                 }
         }
     }

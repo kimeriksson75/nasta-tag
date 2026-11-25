@@ -303,6 +303,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 99BHRW73S3;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = NastaTag.entitlements;
 				INFOPLIST_FILE = NastaTag/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -329,6 +330,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 99BHRW73S3;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = NastaTag.entitlements;
 				INFOPLIST_FILE = NastaTag/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -354,6 +356,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 99BHRW73S3;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = NastaTagWidget.entitlements;
 				INFOPLIST_FILE = NastaTagWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -375,6 +378,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 99BHRW73S3;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = NastaTagWidget.entitlements;
 				INFOPLIST_FILE = NastaTagWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Nästa tåg";
 				LD_RUNPATH_SEARCH_PATHS = (
