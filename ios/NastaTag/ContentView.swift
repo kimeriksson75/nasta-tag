@@ -98,9 +98,14 @@ struct ContentView: View {
                     .foregroundStyle(mood.accent)
                 Text("Med \(tripName(boarded.trip, destination.label)). Framme cirka \(stockholmClock(boarded.trip.arrival)).")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(mood.muted)
+                // Delningsrutan väljer mottagare: appen skickar inget själv och ser inga kontakter.
+                let tell = tellWords(boarded.trip, label: destination.label)
+                ShareLink(item: tell.message) { Text(tell.button) }
+                    .buttonStyle(Filled(mood: mood))
+                    .frame(maxWidth: 240)
+                    .padding(.top, 12)
                 Button("Visa avgångar") { model.dismissBoarded() }
                     .buttonStyle(Outline(mood: mood))
-                    .padding(.top, 12)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)

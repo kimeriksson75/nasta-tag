@@ -17,6 +17,14 @@ En ändring av något här beslutas med Kim först och skrivs in här i samma co
 | Följ på låsskärmen | Alltid, utom när avgången är missad | – (kolla i simulatorn) |
 | Uppdaterad HH:MM | Har alltid sin plats, syns efter första hämtningen | – (kolla i simulatorn) |
 
+## När tåget har gått med dig
+
+| Vad | När det syns | Vaktas av |
+|---|---|---|
+| Trevlig resa-raden och "Framme cirka HH:MM" | Alltid | – (kolla i simulatorn) |
+| Säg till hemma / Säg till jobbet / Säg till | Alltid. Delar ankomsttiden, aldrig adress eller hållplats, och skickar inget utan att du själv trycker | `TellTests` |
+| Visa avgångar | Alltid | – (kolla i simulatorn) |
+
 ## Beteenden
 
 - Snabbast fram vinner. Appen väljer aldrig ett långsammare färdmedel för att du råkar stå nära
