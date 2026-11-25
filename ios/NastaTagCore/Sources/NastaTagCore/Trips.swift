@@ -132,7 +132,15 @@ private func slDate(_ text: String?) -> Date? {
     return slParser.date(from: text) ?? slFractionParser.date(from: text)
 }
 
-private func isWalk(_ leg: Journey.Leg) -> Bool { Mode.isWalk(leg.transportation?.product?.productClass) }
+func isWalk(_ leg: Journey.Leg) -> Bool { Mode.isWalk(leg.transportation?.product?.productClass) }
+
+func isCancelled(_ leg: Journey.Leg) -> Bool { (leg.realtimeStatus ?? []).contains { $0.contains("CANCELLED") } }
+
+/// Avgången resan börjar med: fordonet och dess planerade tid.
+func departureKey(_ journey: Journey) -> String? {
+    guard let ride = journey.legs.first(where: { !isWalk($0) }) else { return nil }
+    return "\(ride.transportation?.id ?? "")|\(ride.origin.departureTimePlanned ?? "")"
+}
 
 /// När du är framme. SL flyttar fram fordonens tider när de är sena, men inte gången efteråt,
 /// så sista benets ankomst kan ligga före avgången. Därför räknas ankomsten från när sista
@@ -177,7 +185,7 @@ private func leaveTime(_ legs: [Journey.Leg], ride: Int, time: Date) -> Date? {
 public func parseJourney(_ journey: Journey) -> Trip? {
     let legs = journey.legs
     guard let ride = legs.firstIndex(where: { !isWalk($0) }),
-          !legs.contains(where: { ($0.realtimeStatus ?? []).contains { $0.contains("CANCELLED") } }),
+          !legs.contains(where: isCancelled), let key = departureKey(journey),
           let transportation = legs[ride].transportation,
           let first = legs.first, let last = legs.last,
           let time = legs[ride].origin.departure,
@@ -189,7 +197,7 @@ public func parseJourney(_ journey: Journey) -> Trip? {
     guard connectionsHold(legs), leaveAt <= time, time < arrival else { return nil }
     let origin = legs[ride].origin
     return Trip(
-        key: "\(transportation.id ?? "")|\(origin.departureTimePlanned ?? "")",
+        key: key,
         leaveAt: leaveAt,
         time: time,
         arrival: arrival,

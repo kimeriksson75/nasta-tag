@@ -1,6 +1,7 @@
 import ActivityKit
 import AppIntents
 import NastaTagCore
+import UserNotifications
 
 /// Knapparna på låsskärmen. De körs i appen, som har resorna, och appen kopplar in vad de gör.
 @MainActor
@@ -9,6 +10,13 @@ enum TripActions {
     static var stopFollowing: (() -> Void)?
     static var askSkip: (() -> Void)?
     static var answerSkip: ((Bool) -> Void)?
+}
+
+/// Tar bort den följda resans notiser, schemalagda och levererade.
+func removeFollowAlerts() {
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: FollowAlert.allIds)
+    center.removeDeliveredNotifications(withIdentifiers: FollowAlert.allIds)
 }
 
 /// "Fuck it." på låsskärmen när avgången är missad: frågar först, som rutan i appen.
@@ -63,6 +71,7 @@ struct StopFollowingIntent: LiveActivityIntent {
             stop()
         } else {
             // Appen har inte hunnit starta på riktigt: ta bort resan ändå.
+            removeFollowAlerts()
             for activity in Activity<TripAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }

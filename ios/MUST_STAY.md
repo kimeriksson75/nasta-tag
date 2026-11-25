@@ -23,6 +23,13 @@ En ändring av något här beslutas med Kim först och skrivs in här i samma co
   dess hållplats: hemma är hemma, även granne med en busshållplats (`MustStayTests`).
 - Tiderna kommer alltid i ordning: gå före avgång, avgång före framme (`TimesTests`).
 - En resa vars byte inte går att hinna visas inte (`TimesTests`).
+- "Följ på låsskärmen" är notisknappen, utan egen inställning. Kims beslut 2026-11-25 (`FollowAlertsTests`):
+  - Följer du ingen resa kommer inga notiser.
+  - Är du kvar kommer högst två per avgång: fem minuter före du ska gå, och när det blir rött (två minuter före).
+  - Har du börjat gå, står vid hållplatsen eller har åkt kommer inga, och kortet uppdateras tyst.
+  - Undantag: ställs avgången in eller ändras så att du inte hinner får du veta det, även när du går.
+  - Snooze, ångra och ändrade tider bokar om. Strunta i resan och Sluta följa tar bort allt.
+  - Säger du nej till notiser fungerar Följ som förut, med larm från kortet medan du är kvar.
 - Ingenting på skärmen flyttar sig när text eller resa byts.
 
 ## Före varje bygge till TestFlight

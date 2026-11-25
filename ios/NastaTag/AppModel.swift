@@ -32,6 +32,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     var fetchedAt: Date?
     private(set) var following: Activity<TripAttributes>?
     private var followedStatus: Status?
+    /// Den följda resans notiser.
+    private let notifier = FollowNotifier()
 
     private let manager = CLLocationManager()
     private var backgroundSession: CLBackgroundActivitySession?
@@ -94,7 +96,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         if let following {
             followedStatus = following.content.state.status
             resumeBackground()
+        } else {
+            notifier.clear()
         }
+        Task { await notifier.checkPermission() }
         ticker?.invalidate()
         ticker = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -105,6 +110,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
     /// Efter en ändring i inställningarna eller när appen kommer fram igen.
     func refreshSoon() {
         fetchedAt = nil
+        Task { await notifier.checkPermission() }
         tick()
     }
 
@@ -377,6 +383,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         snoozed = nil
         missed = nil
         askingSkip = false
+        notifier.clear()
         guard let activity = following else { return }
         var last = activity.content.state
         last.skipped = true
@@ -424,7 +431,37 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         guard let activity = following, let next else { return }
         followedStatus = next.status
         followedJourneys = []
+        planAlerts(next)
         Task { await activity.update(.init(state: state(for: next), staleDate: next.time)) }
+    }
+
+    // MARK: Notiser
+
+    private var followSpot: FollowSpot {
+        if atStop != nil { return .atStop }
+        if let walkStage, walkStage != .there { return .walking }
+        return .stillHere(atPlace: hereId != nil)
+    }
+
+    private func planAlerts(_ trip: Trip) {
+        guard let label = following?.attributes.label else { return }
+        let weather = weather(for: trip)
+        notifier.plan(trip, spot: followSpot, now: now) {
+            followAlertWords($0, trainTime: trip.time, mode: trip.mode, label: label, weather: weather)
+        }
+    }
+
+    /// Notisen när avgången har ändrats så att du inte hinner, eller nil. Utan tillåtna notiser larmar kortet.
+    private func changeAlert(_ trip: Trip?, followed: TripAttributes.ContentState, label: String) -> AlertConfiguration? {
+        let lost = trip == nil ? followChange((journeys ?? []) + followedJourneys, key: followed.key) : nil
+        guard let change = notifier.change(key: followed.key, trip: trip, lost: lost, spot: followSpot, now: now) else { return nil }
+        let words = followChangeWords(change, trainTime: trip?.time ?? followed.trainTime, mode: followed.mode, label: label,
+                                      next: next?.key == followed.key ? nil : next)
+        if notifier.allowed {
+            notifier.tellChange(words)
+            return nil
+        }
+        return AlertConfiguration(title: "\(words.title)", body: "\(words.body)", sound: .default)
     }
 
     /// Vid hållplatsen den låsta avgången, räknad till när den går. Annars den bästa resan.
@@ -625,6 +662,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             followedStatus = next.status
             followedJourneys = []
             resumeBackground()
+            Task {
+                await notifier.askPermission()
+                updateFollowing()
+            }
         } catch {
             problem = "Kunde inte visa resan på låsskärmen."
         }
@@ -645,6 +686,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
 
     private func stopFollowing() {
         following = nil
+        notifier.clear()
         askingSkip = false
         followedMissedUntil = nil
         followedStatus = nil
@@ -662,6 +704,7 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         if let trip = next, trip.key == atStop?.key {
             followedMissedUntil = nil
             followedStatus = trip.status
+            planAlerts(trip)
             let state = state(for: trip)
             guard state != followed else { return }
             Task { await activity.update(.init(state: state, staleDate: trip.time.addingTimeInterval(120))) }
@@ -675,11 +718,13 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             return showFollowedMissed(current, followed: followed, activity: activity)
         }
         followedMissedUntil = nil
+        planAlerts(trip)
         let state = state(for: trip)
         guard state != followed else { return }
         let worse = followedStatus.map { urgency(trip.status) > urgency($0) } ?? false
         followedStatus = trip.status
-        let alert = worse ? AlertConfiguration(
+        // Har du börjat gå uppdateras kortet tyst. Är notiser tillåtna kommer larmet från dem, inte en gång till härifrån.
+        let alert = worse && !notifier.allowed && !notifier.alerts.left ? AlertConfiguration(
             title: "\(message(for: trip).title)",
             body: "\(alertBody(status: trip.status, minutes: state.minutes, trainTime: trip.time, mode: trip.mode, label: activity.attributes.label, weather: weather(for: trip)))",
             sound: .default) : nil
@@ -693,7 +738,10 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
         if followedMissedUntil == nil {
             followedMissedUntil = now.addingTimeInterval(Self.missedSeconds)
             followedStatus = .missed
+            // Innan SL har svarat efter en omstart vet appen inget, och då får notiserna ligga kvar.
+            if journeys != nil { notifier.cancel(now: now) }
         }
+        let alert = changeAlert(trip, followed: followed, label: activity.attributes.label)
         if let until = followedMissedUntil, now >= until, !askingSkip, let next, next.key != followed.key {
             followedMissedUntil = nil
             return retargetFollowing()
@@ -718,8 +766,8 @@ final class AppModel: NSObject, CLLocationManagerDelegate {
             missed.nextLeaveBy = next.leaveAt
             missed.nextTrainTime = next.time
         }
-        guard missed != followed else { return }
-        Task { await activity.update(.init(state: missed, staleDate: missed.nextLeaveBy)) }
+        guard missed != followed || alert != nil else { return }
+        Task { await activity.update(.init(state: missed, staleDate: missed.nextLeaveBy), alertConfiguration: alert) }
     }
 
     /// Hur länge kortet väntar på en ny avgång efter att den följda gick, innan det ger upp.
